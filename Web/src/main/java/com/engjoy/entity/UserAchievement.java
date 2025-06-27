@@ -9,8 +9,8 @@ import lombok.Setter;
 public class UserAchievement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="userAchievement_id")
-    private Long Id;
+    @Column(name="ua_id")
+    private Long id;
     @ManyToOne
     @JoinColumn(name="account_id")
     private Account accountId;

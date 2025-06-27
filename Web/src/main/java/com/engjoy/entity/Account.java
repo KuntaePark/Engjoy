@@ -12,7 +12,7 @@ public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="account_id")
-    private Long Id;
+    private Long id;
     @Column(nullable=false)
     private String email;
     @Column(nullable=false)
@@ -23,4 +23,10 @@ public class Account {
     private String nickname;
     @Column(nullable=false)
     private LocalDate birth;
+
+    @OneToOne(cascade = CascadeType.ALL,mappedBy = "account")
+    @PrimaryKeyJoinColumn
+    private UserGameData
+    userGameData;
 }
+

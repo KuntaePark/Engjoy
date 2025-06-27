@@ -8,9 +8,8 @@ import lombok.Setter;
 @Setter
 public class UserGameData {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="userGameData_id")
-    private Long Id;
+    private Long id;
     private String charImgUrl;
     private int game1Score;
     private int game2Score;

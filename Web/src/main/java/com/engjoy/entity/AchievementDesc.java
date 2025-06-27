@@ -10,7 +10,7 @@ public class AchievementDesc {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="ad_id")
-    private Long Id;
+    private Long id;
     private String achvName;
     private String achvDesc;
 }
