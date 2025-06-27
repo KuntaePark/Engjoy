@@ -4,17 +4,17 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity
 @Getter
 @Setter
-public class UserAchievementEntity {
+public class UserAchievement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userAchievementId;
+    @Column(name="userAchievement_id")
+    private Long Id;
     @ManyToOne
     @JoinColumn(name="account_id")
-    private AccountEntity accountId;
+    private Account accountId;
     @ManyToOne
     @JoinColumn(name="ad_id")
-    private AchievementDescEntity achievementDescId;
+    private AchievementDesc achievementDescId;
 }

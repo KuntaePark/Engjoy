@@ -6,13 +6,13 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Entity
 @Getter
 @Setter
-public class AccountEntity {
+public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long accountId;
+    @Column(name="account_id")
+    private Long Id;
     @Column(nullable=false)
     private String email;
     @Column(nullable=false)
