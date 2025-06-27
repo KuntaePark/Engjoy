@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
+@Entity
 @Getter
 @Setter
 public class Account {
@@ -26,7 +27,6 @@ public class Account {
 
     @OneToOne(cascade = CascadeType.ALL,mappedBy = "account")
     @PrimaryKeyJoinColumn
-    private UserGameData
-    userGameData;
+    private UserGameData userGameData;
 }
 
