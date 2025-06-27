@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class UserGameData {
     @Id
-    @Column(name="userGameData_id")
+    @Column(name="account_id")
     private Long id;
     private String charImgUrl;
     private int game1Score;

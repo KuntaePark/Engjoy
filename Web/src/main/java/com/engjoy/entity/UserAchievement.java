@@ -13,8 +13,8 @@ public class UserAchievement {
     private Long id;
     @ManyToOne
     @JoinColumn(name="account_id")
-    private Account accountId;
+    private Account account;
     @ManyToOne
     @JoinColumn(name="ad_id")
-    private AchievementDesc achievementDescId;
+    private AchievementDesc achievementDesc;
 }
