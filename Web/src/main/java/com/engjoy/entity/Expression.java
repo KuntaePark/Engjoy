@@ -25,4 +25,8 @@ public class Expression {
     private int difficulty;
 
     private String pronAudio;
+
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "expression")
+    @PrimaryKeyJoinColumn
+    private WordInfo wordInfo;
 }

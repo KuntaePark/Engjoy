@@ -25,8 +25,6 @@ public class IncorrectExpr {
     @JoinColumn(name = "expr_id")
     private Expression expression;
 
-    @CreatedDate
-    @Column(updatable = false)
     private LocalDateTime usedTime;
 
     @ColumnDefault("0")

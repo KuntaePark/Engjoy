@@ -8,11 +8,11 @@ import lombok.Setter;
 @Getter @Setter
 public class WordInfo {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "wi_id")
+    @Column(name = "expr_id")
     private Long id;
 
     @OneToOne
+    @MapsId
     @JoinColumn(name = "expr_id")
     private Expression expression;
 

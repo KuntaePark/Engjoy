@@ -24,9 +24,7 @@ public class ExprUsed {
     @JoinColumn(name = "expr_id")
     private Expression expression;
 
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime useTime;
+    private LocalDateTime usedTime;
 
 
 }
