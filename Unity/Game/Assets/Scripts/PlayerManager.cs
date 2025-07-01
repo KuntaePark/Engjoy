@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -6,15 +6,21 @@ using UnityEngine;
 using DataForm;
 using System.Linq;
 
+
+
 //manages player objects in the game
+
 public class PlayerManager : MonoBehaviour
 {
-   private Dictionary<string, GameObject> playerObjects = new Dictionary<string, GameObject>();
+    public static PlayerManager Instance { get; private set; }
 
     public GameObject playerPrefab;
-    public float smoothFactor = 10.0f; 
+    public float positionLerpFactor = 15.0f;
 
-    public static PlayerManager Instance;
+    //ì”¬ì— í™œì„±í™”ëœ í”Œë ˆì´ì–´ ì˜¤ë¸Œì íŠ¸ë“¤ ê´€ë¦¬
+    private readonly Dictionary<string, PlayerController> playerControllers = new Dictionary<string, PlayerController>();
+
+
 
     private void Awake()
     {
@@ -28,64 +34,89 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
-    //WSClient -> GameManager¸¦ ÅëÇØ È£ÃâµÉ ¸ŞÀÎ ÇÔ¼ö
-    public void UpdatePlayers(Dictionary<string, PlayerData> players)
-    {
-        //ÇÃ·¹ÀÌ¾î »ı¼º ¹× ¾÷µ¥ÀÌÆ®
-        HashSet<string> serverPlayerIds = new HashSet<string>(players.Keys);
 
-        foreach (var playerPair in players)
+
+Â  Â  //WSClient -> GameManagerë¥¼ í†µí•´ í˜¸ì¶œë  ë©”ì¸ í•¨ìˆ˜
+Â  Â  public void UpdatePlayers(Dictionary<string, PlayerData> playersData)
+    {
+Â  Â  Â  Â  //í”Œë ˆì´ì–´ ìƒì„± ë° ì—…ë°ì´íŠ¸
+Â  Â  Â  Â  HashSet<string> serverPlayerIds = new HashSet<string>(playersData.Keys);
+
+
+
+        foreach (var playerPair in playersData)
         {
             string playerId = playerPair.Key;
-            PlayerData playerData = playerPair.Value;
-            Vector3 serverPosition = new Vector3(playerData.x, playerData.y, 0);
+           PlayerData playerData = playerPair.Value;
 
-            //°ÔÀÓ¿¡ ÇÃ·¹ÀÌ¾î°¡ Á¸ÀçÇÏ´Â °æ¿ì-> À§Ä¡ ¾÷µ¥ÀÌÆ®
-            if (playerObjects.TryGetValue(playerId, out GameObject playerObj))
+
+
+Â  Â  Â  Â  Â  Â  //ê²Œì„ì— í”Œë ˆì´ì–´ê°€ ì¡´ì¬í•˜ëŠ” ê²½ìš°-> ìœ„ì¹˜ ì—…ë°ì´íŠ¸
+Â  Â  Â  Â  Â  Â  if (playerControllers.TryGetValue(playerId, out PlayerController controller))
             {
-                playerObj.transform.position = Vector3.Lerp(playerObj.transform.position, serverPosition, Time.deltaTime * smoothFactor);
+                controller.UpdateState(playerData);
             }
 
-            //ÇÃ·¹ÀÌ¾î°¡ ¾ø´Â °æ¿ì -> »ı¼º
-            else
+
+
+Â  Â  Â  Â  Â  Â  //í”Œë ˆì´ì–´ê°€ ì—†ëŠ” ê²½ìš° -> ìƒì„±
+Â  Â  Â  Â  Â  Â  else
             {
-                GameObject newPlayer = Instantiate(playerPrefab, serverPosition, Quaternion.identity);
+                Vector3 startPosition = new Vector3(playerData.x, playerData.y, 0);
+                GameObject newPlayer = Instantiate(playerPrefab, startPosition, Quaternion.identity);
                 newPlayer.name = $"Player_{playerId}";
 
-                //PlayerController¿¡ ID ¼³Á¤
-                PlayerController controller = newPlayer.GetComponent<PlayerController>();
-                if(controller != null)
-                {
-                    controller.Id = playerId;
-                }
 
-                playerObjects.Add(playerId, newPlayer);
+
+Â  Â  Â  Â  Â  Â  Â  Â  //PlayerControllerì— ID ì„¤ì •
+Â  Â  Â  Â  Â  Â  Â  Â  PlayerController newController = newPlayer.GetComponent<PlayerController>();
+                newController.Initialize(playerId, playerData, positionLerpFactor);
+
+
+
+                playerControllers.Add(playerId, newController);
                 Debug.Log($"<color=cyan>Player Created: {playerId}</color>");
 
             }
         }
-        
-        //¼­¹ö¿¡ ¾ø´Âµ¥ ·ÎÄÃ¿¡ ³²¾ÆÀÖ´Â ÇÃ·¹ÀÌ¾î »èÁ¦
 
-        List<string> disconnectedIds = playerObjects.Keys.Except(serverPlayerIds).ToList();
+
+
+Â  Â  Â  Â  //ì„œë²„ì— ì—†ëŠ”ë° ë¡œì»¬ì— ë‚¨ì•„ìˆëŠ” í”Œë ˆì´ì–´ ì‚­ì œ
+Â  Â  Â  Â  List<string> disconnectedIds = new List<string>();
+
+        foreach (string clientId in playerControllers.Keys)
+        {
+            if (!serverPlayerIds.Contains(clientId))
+            {
+                disconnectedIds.Add(clientId);
+            }
+        }
+
+
 
         foreach (string id in disconnectedIds)
         {
-            if(playerObjects.TryGetValue(id, out GameObject playerToDestroy))
-            { 
-                Destroy(playerToDestroy);
-                playerObjects.Remove(id);
+            if (playerControllers.TryGetValue(id, out PlayerController controllerToDestroy))
+            {
+
+                Destroy(controllerToDestroy.gameObject);
+                playerControllers.Remove(id);
+
                 Debug.Log($"<color=red>Player removed: {id}</color>");
             }
         }
 
     }
 
-    //´Ù¸¥ ½ºÅ©¸³Æ®¿¡¼­ ÇÃ·¹ÀÌ¾î ¿ÀºêÁ§Æ® ÂüÁ¶¿ë ¸Ş¼­µå
-    public GameObject GetPlayerObjectById(string playerId)
-    {
-        playerObjects.TryGetValue(playerId, out GameObject player);
 
-        return player;
+
+Â  Â  //ë‹¤ë¥¸ ìŠ¤í¬ë¦½íŠ¸ì—ì„œ í”Œë ˆì´ì–´ ì˜¤ë¸Œì íŠ¸ ì°¸ì¡°ìš© ë©”ì„œë“œ
+
+Â  Â  public PlayerController GetPlayerObjectById(string playerId)
+    {
+        playerControllers.TryGetValue(playerId, out PlayerController controller);
+
+        return controller;
     }
 }

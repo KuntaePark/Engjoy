@@ -7,6 +7,7 @@ class Player {
     this.inputV = 0.0;
     this.holdingKeywordId = null; //들고 있는 키워드 ID
     this.interactableKeywordId = null; //상호작용 가능한 키워드 ID
+    this.isEscaped = false; //플레이어 탈출 여부
   }
 
   toPacket() {
@@ -15,6 +16,7 @@ class Player {
       x: this.x,
       y: this.y,
       holdingKeywordId: this.holdingKeywordId,
+      isEscaped: this.isEscaped,
     };
   }
 }

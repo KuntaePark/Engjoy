@@ -1,58 +1,80 @@
 const { Keyword } = require("./keywords.js");
 const Exit = require("./exit.js");
 const { generateId } = require("./utils.js");
-const { levelPresets, dummyWordPool } = require("./levelData.js");
+const { getRandomSentence, getRandomWords } = require("./dbUtils.js");
 
 //랜덤 정수 생성 헬퍼
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function setupLevel(gameState) {
-  console.log("LevelManager : Setting up the level...");
-
+async function setupLevel(gameState, gameLevel = 10) {
+  console.log(`LevelManager: Setting up level for gameLevel ${gameLevel}...`);
   gameState.keywords = {};
-  gameState.exits = {};
+  gameState.exit = null;
 
-  //영문장 랜덤으로 가져오기
-  const chosenLevel =
-    levelPresets[Math.floor(Math.random() * levelPresets.length)];
-  console.log(`[Level Setup] Randomly selected level : "${chosenLevel.id}"`);
+  //db에서 영문장 가져오기
+  const sentenceData = await getRandomSentence(gameLevel);
 
-  //띄어쓰기로로 문장을 단어로 분리
-  const allWordsInstance = Array.from(
-    new Set(chosenLevel.sentence.toLowerCase().split(" "))
+  //db조회 실패 시 함수 종료
+  if (!sentenceData) {
+    console.error("Failed to setup level: Could not fetch sentence from DB.");
+    return;
+  }
+
+  //.,!?;: 등의 구두점 제거
+  const cleanedText = sentenceData.word_text
+    .toLowerCase()
+    .replace(/[.,!?;:]/g, "");
+  const allWords = cleanedText.split(" ").filter((word) => word.length > 0);
+
+  const totalWordCount = allWords.length;
+
+  //영문장 키워드 수에 따라 빈칸 개수 결정
+  let answerCount;
+  if (totalWordCount <= 4) {
+    answerCount = 1;
+  } else if (totalWordCount <= 9) {
+    answerCount = 2;
+  } else {
+    answerCount = 3;
+  }
+
+  //오답 키워드 개수 랜덤 지정
+  let dummyCount;
+  if (answerCount === 1) {
+    dummyCount = 1;
+  } else {
+    dummyCount = 2;
+  }
+
+  //정답 키워드 랜덤 선택
+  //1.문장 내 단어 등장 횟수 계산
+  const wordCounts = allWords.reduce((counts, word) => {
+    counts[word] = (counts[word] || 0) + 1;
+    return counts;
+  }, {});
+
+  //2.등장 횟수가 1인 단어들만 따로 추려내기
+  const singleWords = Object.keys(wordCounts).filter(
+    (word) => wordCounts[word] === 1
   );
-  const totalWordCount = allWordsInstance.length;
 
-  //문장에 뚫을 빈칸 개수(정답 개수) 랜덤 지정
-  const wordsToLeaveBlank = getRandomInt(
-    chosenLevel.leaveBlankRange[0],
-    chosenLevel.leaveBlankRange[1]
-  );
+  //3.한 번만 등장한 단어들 중 정답 선택
+  singleWords.sort(() => 0.5 - Math.random()); //단어 무작위 섞기
+  const answerTexts = singleWords.slice(0, answerCount); //필요한 개수만큼 자르기
 
-  //오답 수 랜덤 지정
-  const answerCount = Math.max(1, totalWordCount - wordsToLeaveBlank);
-  const dummyWordCount = getRandomInt(
-    chosenLevel.dummyWordRange[0],
-    chosenLevel.dummyWordRange[1]
-  );
+  //만약 한 번만 등장하는 단어의 수가 정답 수보다 부족할 경우에 대한 경고
+  if (answerTexts.length < answerCount) {
+    console.warn(
+      `[LevelManager] Warning: Not enough singhe-occurance words.Target: ${answerCount}, Actual: ${answerTexts.length}`
+    );
+  }
 
-  //랜덤 지정된 수만큼 정답 키워드 생성
-  allWordsInstance.sort(() => 0.5 - Math.random());
-  const answerTexts = allWordsInstance.slice(0, answerCount);
+  //db에서 오답 키워드 가져오기
+  const dummyTexts = await getRandomWords(dummyCount);
 
-  //랜덤 지정된 수만큼 오답 키워드 생성
-  //DB에서 가져올 경우 -> 정답과 똑같은 단어는 자연스럽게 오답 키워드에서 걸러짐.
-  const dummies = dummyWordPool.filter(
-    (dummy) => !allWordsInstance.includes(dummy)
-  );
-  dummies.sort(() => 0.5 - Math.random());
-  const dummyTexts = dummies.slice(0, dummyWordCount);
-
-  //exit의 정답키워드 배열
-  const answerKeywordIds = [];
-
+  const answerMap = {};
   //정답 키워드 생성 및 gameState에 추가
   answerTexts.forEach((text) => {
     const keywordId = generateId(new Set(Object.keys(gameState.keywords)));
@@ -61,42 +83,34 @@ function setupLevel(gameState) {
       text,
       Math.random() * 15,
       Math.random() * 15,
-      true
+      true //정답 처리
     );
     gameState.keywords[keywordId] = newKeyword;
-    answerKeywordIds.push(keywordId);
+    answerMap[keywordId] = text;
   });
 
   //오답 키워드 생성 및 gameState에 추가
   dummyTexts.forEach((text) => {
     const keywordId = generateId(new Set(Object.keys(gameState.keywords)));
-    const newKeyword = newKeyword(
+    const newKeyword = new Keyword(
       keywordId,
       text,
       Math.random() * 15,
       Math.random() * 15,
-      false
+      false //오답 처리
     );
     gameState.keywords[keywordId] = newKeyword;
   });
 
   //출구 생성 및 gameState에 추가
-  const exitId = generateId(new Set(Object.keys(gameState.exits)));
-  let exitSentence = chosenLevel.sentence;
-  answerTexts.forEach((ans) => {
-    const regex = new RegExp(`\\b${ans}\\b`, "gi");
-    exitSentence = displaySentence.replace(regex, "___");
-  });
-
   const newExit = new Exit(
-    exitId,
     7.5, //x
     7.5, //y
-    exitSentence,
-    answerKeywordIds,
-    chosenLevel.translation
+    sentenceData.word_text,
+    answerMap,
+    sentenceData.meaning
   );
-  gameState.exits[exitId] = newExit;
+  gameState.exit = newExit;
 
   console.log("LevelManager: Level setup complete.");
 }

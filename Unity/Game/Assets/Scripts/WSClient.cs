@@ -1,30 +1,28 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 using DataForm;
 
+
+
 //plugin for websocket support in webgl builds
 using HybridWebSocket;
 using System.Collections.Concurrent;
-
-using System.Collections.Concurrent;
 using System;
+
+
 
 public class WsClient : MonoBehaviour
 {
-
     public static WsClient Instance { get; private set; }
-
     private WebSocket ws;
 
-    //¸ŞÀÎ ½º·¹µå¿¡¼­ ½ÇÇàÇÒ ¾×¼ÇÀ» ´ãÀ» Å¥
-    private readonly ConcurrentQueue<Action> mainThreadActions = new ConcurrentQueue<Action>();
-
-
+Â  Â  //ë©”ì¸ ìŠ¤ë ˆë“œì—ì„œ ì‹¤í–‰í•  ì•¡ì…˜ì„ ë‹´ì„ í
+Â  Â  private readonly ConcurrentQueue<Action> mainThreadActions = new ConcurrentQueue<Action>();
     private void Awake()
     {
-        if(Instance == null)
+        if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
@@ -33,8 +31,9 @@ public class WsClient : MonoBehaviour
         {
             Destroy(gameObject);
         }
-       
+
     }
+
 
     void Start()
     {
@@ -56,15 +55,22 @@ public class WsClient : MonoBehaviour
     }
 
 
+
+
+
     void Update()
     {
-        // Å¥¿¡ ½ÇÇàÇÒ ¾×¼ÇÀÌ ÀÖ´ÂÁö È®ÀÎ
-        while (mainThreadActions.TryDequeue(out var action))
+Â  Â  Â  Â  // íì— ì‹¤í–‰í•  ì•¡ì…˜ì´ ìˆëŠ”ì§€ í™•ì¸
+Â  Â  Â  Â  while (mainThreadActions.TryDequeue(out var action))
         {
-            // Å¥¿¡¼­ ¾×¼ÇÀ» ²¨³»¿Í ¸ŞÀÎ ½º·¹µå¿¡¼­ ½ÇÇà
-            action?.Invoke();
+Â Â  Â  Â  Â  Â  // íì—ì„œ ì•¡ì…˜ì„ êº¼ë‚´ì™€ ë©”ì¸ ìŠ¤ë ˆë“œì—ì„œ ì‹¤í–‰
+Â  Â  Â  Â  Â  Â  action?.Invoke();
         }
     }
+
+
+
+
 
 
 
@@ -76,6 +82,7 @@ public class WsClient : MonoBehaviour
             Debug.Log("WebSocket connection closed.");
         }
     }
+
     void Call(byte[] message)
     {
         string JsonData = System.Text.Encoding.UTF8.GetString(message);
@@ -83,44 +90,47 @@ public class WsClient : MonoBehaviour
         try
         {
 
+            Packet packet = JsonConvert.DeserializeObject<Packet>(JsonData);
 
-        Packet packet = JsonConvert.DeserializeObject<Packet>(JsonData);
-
-        switch (packet.type)
-        {
-            //payload¸¦ DataFormÀÇ GameState·Î ÆÄ½Ì
-            case "gameStateUpdate":
-                GameState newState = JsonConvert.DeserializeObject<GameState>(packet.payload);
-                    //ÆÄ½ÌµÈ GameState¸¦ GameManager¿¡ ½Ï º¸³»ÁÜ
-                    mainThreadActions.Enqueue(() =>
+            switch (packet.type)
+            {
+                //payloadë¥¼ DataFormì˜ GameStateë¡œ íŒŒì‹±
+                case "gameStateUpdate":
+                    GameState newState = JsonConvert.DeserializeObject<GameState>(packet.payload);
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  //íŒŒì‹±ëœ GameStateë¥¼ GameManagerì— ì‹¹ ë³´ë‚´ì¤Œ
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  mainThreadActions.Enqueue(() =>
                     {
                         GameManager.Instance.UpdateGameState(newState);
                     });
                     break;
-            //ÇÃ·¹ÀÌ¾î Á¤º¸ ¼­¹ö¿¡¼­ ¹Ş¾Æ¼­ GameManager¿¡ ³Ñ°ÜÁÖ±â
-            case "playerId":
-                    // Å¥¿¡ Ãß°¡.
-                    mainThreadActions.Enqueue(() =>
+
+                //í”Œë ˆì´ì–´ ì •ë³´ ì„œë²„ì—ì„œ ë°›ì•„ì„œ GameManagerì— ë„˜ê²¨ì£¼ê¸°
+                case "playerId":
+
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // íì— ì¶”ê°€.
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  mainThreadActions.Enqueue(() =>
                     {
                         GameManager.Instance.SetMyPlayerId(packet.payload);
                     });
                     break;
-            
 
-            default:
-                Debug.LogWarning("Unknown packet type received: " + packet.type);
-                break;
+                default:
+                    Debug.LogWarning("Unknown packet type received: " + packet.type);
+                    break;
+
             }
-        } 
+        }
         catch (System.Exception e)
         {
             Debug.LogError("!!!!!!!!!! REAL ERROR FOUND !!!!!!!!!!");
             Debug.LogError("[Error Message] " + e.Message);
             Debug.LogError("[Error Source] " + e.Source);
             Debug.LogError("[Stack Trace] " + e.StackTrace);
-            Debug.LogError("[Original JSON Data] " + JsonData); // ¿¡·¯¸¦ ÀÏÀ¸Å² ¿øº» µ¥ÀÌÅÍ
-        }
+            Debug.LogError("[Original JSON Data] " + JsonData); // ì—ëŸ¬ë¥¼ ì¼ìœ¼í‚¨ ì›ë³¸ ë°ì´í„°
+Â  Â  Â  Â  }
     }
+
+
 
     public void Send(string type, string JSONMessage)
     {
@@ -133,8 +143,8 @@ public class WsClient : MonoBehaviour
             };
             byte[] data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(sendPacket));
             ws.Send(data);
-            //Debug.Log("Sent packet type: " + type + ", payload: " + JSONMessage);
-        }
+Â  Â  Â  Â  Â  Â  //Debug.Log("Sent packet type: " + type + ", payload: " + JSONMessage);
+Â  Â  Â  Â  }
         else
         {
             Debug.LogWarning("WebSocket is not connected.");

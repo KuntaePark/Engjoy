@@ -1,8 +1,10 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-//DataForm : ¼­¹ö¿¡¼­ ÇÊ¿äÇÑ ÆÇÁ¤ µ¥ÀÌÅÍ¸¦ ´ã¾ÆµÎ´Â »óÀÚ (Entity³ª Dto°°Àº ´À³¦)
+
+
+//DataForm : ì„œë²„ì—ì„œ í•„ìš”í•œ íŒì • ë°ì´í„°ë¥¼ ë‹´ì•„ë‘ëŠ” ìƒì (Entityë‚˜ Dtoê°™ì€ ëŠë‚Œ)
 namespace DataForm
 {
     [System.Serializable]
@@ -15,9 +17,13 @@ namespace DataForm
     [System.Serializable]
     public class GameState
     {
-        public Dictionary<string, PlayerData> players;
-        public Dictionary<string, KeywordData> keywords;
-    }
+        public Dictionary<string, PlayerData> players; //í”Œë ˆì´ì–´ ë”•ì…”ë„ˆë¦¬
+Â  Â  Â  Â  public Dictionary<string, KeywordData> keywords; //í‚¤ì›Œë“œ ë”•ì…”ë„ˆë¦¬
+Â  Â  Â  Â  public ExitData exit; //ì¶œêµ¬ ë”•ì…”ë„ˆë¦¬
+Â  Â  }
+
+
+
 
 
     [System.Serializable]
@@ -27,18 +33,34 @@ namespace DataForm
         public float x;
         public float y;
         public string holdingKeywordId; //player's interacting keyword
-        public string interactableKeywordId; //player's closest interactable keyword
-    }
+Â  Â  Â  Â  public string interactableKeywordId; //player's closest interactable keyword
+Â  Â  Â  Â  public bool canInteractWithExit; //interactable exit flag
+Â  Â  }
+
+
 
     [System.Serializable]
-    public class  KeywordData
+    public class KeywordData
     {
         public string id;
         public string text;
         public float x;
         public float y;
         public string carrierId; //interacting player's id (if !carrierId, null)
-        
+    }
+
+
+    [System.Serializable]
+    public class ExitData
+    {
+
+        public float x;
+        public float y;
+        public bool isOpen;
+        public string sentence;
+        public string translation;
+        public int answerCount;
+        public int correctedCount;
     }
 
 }

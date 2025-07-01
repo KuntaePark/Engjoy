@@ -1,82 +1,95 @@
-using System.Collections;
+ï»¿using System.Collections;
+
 using System.Collections.Generic;
+
 using System.Collections.Concurrent;
-using System; // ActionÀ» »ç¿ëÇÏ±â À§ÇØ Ãß°¡
+
+using System; // Actionì„ ì‚¬ìš©í•˜ê¸° ìœ„í•´ ì¶”ê°€
 using DataForm;
 using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
 
+
+
 public class KeywordManager : MonoBehaviour
 {
-    public GameObject keywordPrefab;
-    private Dictionary<string, GameObject> keywordObjects = new Dictionary<string, GameObject>();
+    public static KeywordManager Instance { get; private set; }
 
-    public static KeywordManager Instance;
+
+    [SerializeField]
+    private GameObject keywordPrefab; //ìŠ¤í°í•  í‚¤ì›Œë“œ í”„ë¦¬íŒ¹
+Â  Â  private readonly Dictionary<string, KeywordController> keywordControllers = new Dictionary<string, KeywordController>();
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
-    //WSClient -> GameManager¸¦ ÅëÇØ È£ÃâµÉ ¸ŞÀÎ ÇÔ¼ö
-    public void UpdateKeywords(Dictionary<string, KeywordData> keywords)
+
+
+    public void UpdateKeywords(Dictionary<string, KeywordData> keywordsData)
     {
-        HashSet<string> serverKeywordIds = new HashSet<string>(keywords.Keys);
+        HashSet<string> serverKeywordIds = new HashSet<string>(keywordsData.Keys);
 
-        foreach (var keywordPair in keywords)
+Â  Â  Â  //í‚¤ì›Œë“œ ìƒíƒœ ì—…ë°ì´íŠ¸ ë˜ëŠ” ì‹ ê·œ ìƒì„±
+Â  Â  Â  Â  foreach (var pair in keywordsData)
         {
-            string keywordId = keywordPair.Key;
-            KeywordData keywordData = keywordPair.Value;
+            string keywordId = pair.Key;
+            KeywordData keywordData = pair.Value;
 
-            GameObject keywordObj;
-            keywordObjects.TryGetValue(keywordId, out keywordObj);
-
-                //°ÔÀÓ(¾À)¿¡ Å°¿öµå°¡ ¾ø´Â °æ¿ì -> »õ·Î »ı¼º
-                if (!keywordObjects.TryGetValue(keywordId, out keywordObj))
-                {
-                    Vector3 keywordPosition = new Vector3(keywordData.x, keywordData.y, 0);
-                    keywordObj = Instantiate(keywordPrefab, keywordPosition, Quaternion.identity);
-                    keywordObj.name = $"Keyword_{keywordId}";
-                    keywordObjects.Add(keywordId, keywordObj);
-
-                //KeywordController ÃÊ±âÈ­
-                KeywordController controller = keywordObj.GetComponent<KeywordController>();
-                if (controller != null)
-                {
-                    controller.Initialize(keywordId, keywordData.text);
-                }
-
-                }
-
-            //Å°¿öµåÀÇ ¼ÒÀ¯ÀÚ »óÅÂ ¹× À§Ä¡ ¾÷µ¥ÀÌÆ®
-            KeywordController keywordController = keywordObj.GetComponent<KeywordController>();
-
-            if (keywordController == null) continue;
-
-            //¾î¶² ÇÃ·¹ÀÌ¾î°¡ Å°¿öµå¸¦ È¦µùÇÏ°í ÀÖ´Â °æ¿ì
-            if (!string.IsNullOrEmpty(keywordData.carrierId))
+            if (keywordControllers.TryGetValue(keywordId, out KeywordController controller))
             {
-                //PlayerManager¿¡¼­ ÇØ´ç keywordÀÇ carrierId¿Í µ¿ÀÏÇÑ ÇÃ·¹ÀÌ¾î Ã£±â
-                GameObject playerObj = PlayerManager.Instance.GetPlayerObjectById(keywordData.carrierId);
-                if (playerObj != null) //Ã£¾Ò´Ù¸é
-                {
-                    keywordController.SetCarrier(playerObj.transform);
-                }
-                
+Â  Â  Â  Â  Â  Â  Â  Â  //ì´ë¯¸ ì¡´ì¬í•˜ë©´ ìƒíƒœ ì—…ë°ì´íŠ¸
+Â  Â  Â  Â  Â  Â  Â  Â  controller.UpdataState(keywordData);
             }
 
-            else //¸øÃ£¾Ò´Ù¸é (¶¥¿¡ ¶³¾îÁø »óÅÂ¶ó¸é)
+            else
             {
-                //µû¶ó´Ù´Ò ´ë»ó null ¼³Á¤, ¼­¹ö°¡ ÁöÁ¤ÇØÁØ À§Ä¡·Î ÀÌµ¿
-                keywordController.SetCarrier(null);
-                keywordObj.transform.position = new Vector3(keywordData.x, keywordData.y, 0);
+
+Â  Â  Â  Â  Â  Â  Â  Â  //ì—†ë‹¤ë©´ ìƒˆë¡œ ìƒì„±
+Â  Â  Â  Â  Â  Â  Â  Â  Vector3 startPosition = new Vector3(keywordData.x, keywordData.y, 0);
+                GameObject newKeywordObj = Instantiate(keywordPrefab, startPosition, Quaternion.identity);
+                newKeywordObj.name = $"Keyword_{keywordId}";
+
+
+
+                KeywordController newController = newKeywordObj.GetComponent<KeywordController>();
+                newController.Initialize(keywordData); //ì´ˆê¸°í™”
+Â  Â  Â  Â  Â  Â  Â  Â  keywordControllers.Add(keywordId, newController);
+
             }
-
-
         }
 
 
+
+Â  Â  Â  Â  //ì„œë²„ì—ì„œ ì‚­ì œëœ í‚¤ì›Œë“œë¥¼ í´ë¼ì´ì–¸íŠ¸ì—ì„œë„ ì‚­ì œ
+Â  Â  Â  Â  //í‚¤ì›Œë“œ ì¤ê±°ë‚˜ ì¶œêµ¬ì— ì œì¶œí–ˆì„ ë•Œ
+Â  Â  Â  Â  List<string> removedIds = new List<string>();
+        foreach (string clientId in keywordControllers.Keys)
+        {
+            if (!serverKeywordIds.Contains(clientId))
+            {
+                removedIds.Add(clientId);
+            }
+        }
+
+
+
+        foreach (string id in removedIds)
+        {
+            if (keywordControllers.TryGetValue(id, out KeywordController controllerToDestroy))
+            {
+               Destroy(controllerToDestroy.gameObject);
+                keywordControllers.Remove(id);
+            }
+        }
     }
 }

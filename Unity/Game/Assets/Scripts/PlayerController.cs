@@ -1,209 +1,164 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 using DataForm;
 
-public class PlayerController : MonoBehaviour
 
+
+public class PlayerController : MonoBehaviour
 {
 
-    public string Id { get; set; }
-
-    //º¯¼ö ÁöÁ¤
-    public int maxHP = 3; //ÃÖ´ë HP
-    public int currentHP; //ÇöÀç HP
-
-    public float currentMoveSpeed; //ÇöÀç ÀÌµ¿ ¼Óµµ
-    public float currentAttackSpeed; //ÇöÀç °ø°İ ¼Óµµ
-
-    public bool haveShield = false; //º¸È£¸· ÇÃ·¡±×
-    public bool haveBuff = false; //¹öÇÁ ÇÃ·¡±×
-
-    [Header("ÇÇ°İ ¼³Á¤")]
-    public float knockbackForce = 2f; //ÇÇ°İ ÆÇÁ¤ ½Ã ³Ë¹é Èû
-    public float graceDuration = 1f; //¹«Àû ½Ã°£
-    private bool isGrace = false; //¹«Àû ÇÃ·¡±×
-    private bool canMove = true; //ÇÃ·¹ÀÌ¾î Á¶ÀÛ ÇÃ·¡±×
-
-    public bool isDown = false; //ÀüÅõºÒ´É ÇÃ·¡±×
-    public bool interactInput = false; //»óÈ£ÀÛ¿ë ÇÃ·¡±×
-
-    public int facingDirection = 1; //½ºÇÁ¶óÀÌÆ® ¸Ó¸®¹æÇâ ¼¼ÆÃ¿ë º¯¼ö
-
-    public Rigidbody2D rb; //playerÀÇ rigidbody
-    public Animator ani; //player¿¡°Ô Àû¿ë½ÃÅ³ animator
-
-    UIManager uiManager; //UIManager ½ºÅ©¸³Æ® ÂüÁ¶
-
-    WsClient wsClient; //wsClient ÂüÁ¶
 
 
-    // ============================== °ÔÀÓ ½ÃÀÛ Àü µ¿ÀÛ ============================== 
-    private void Awake()
+    public string Id { get; private set; }
+    private bool IsMine => !string.IsNullOrEmpty(Id) && Id == GameManager.Instance.MyPlayerId;
+
+    //ì¹´ë©”ë¼ & ì˜¤ë””ì˜¤ ë¦¬ìŠ¤ë„ˆ
+    [SerializeField] private Camera playerCamera;
+    [SerializeField] private AudioListener audioListener;
+
+
+    //ë³€ìˆ˜ ì§€ì •
+    public int maxHP = 3; //ìµœëŒ€ HP
+Â  Â  public int currentHP; //í˜„ì¬ HP
+
+
+
+Â  Â  private Vector3 targetPosition; //íƒ€ê²Ÿì˜ ìœ„ì¹˜
+Â  Â  private float positionLerpFactor; //lerpê°’
+
+
+
+Â  Â  //sprite ì»´í¬ë„ŒíŠ¸
+Â  Â  private SpriteRenderer spriteRenderer;
+Â  Â  //public Animator ani; //playerì—ê²Œ ì ìš©ì‹œí‚¬ animator
+
+
+
+Â  Â  //ìƒí˜¸ì‘ìš© ê´€ë ¨ ìƒíƒœ
+Â  Â  private bool canInteractWithKeyword; //í‚¤ì›Œë“œ
+Â  Â  private bool canInteractWithExit; //ì¶œêµ¬
+
+Â  Â  UIManager uiManager; //UIManager ìŠ¤í¬ë¦½íŠ¸ ì°¸ì¡°
+
+Â  Â  WsClient wsClient; //wsClient ì°¸ì¡°
+
+
+
+
+
+Â  Â  // ============================== ì´ˆê¸°í™” (PlayerManagerì—ì„œ í˜¸ì¶œ) ==============================Â 
+
+Â  Â  public void Initialize(string id, PlayerData initialData, float lerpFactor)
+
     {
-        rb = GetComponent<Rigidbody2D>();
-        uiManager = FindObjectOfType<UIManager>();
+
+        Id = id;
+        positionLerpFactor = lerpFactor;
+
+        spriteRenderer = GetComponent<SpriteRenderer>();
+Â  Â  Â  Â  // animator = GetComponent<Animator>();
+        if(playerCamera == null ) playerCamera = gameObject.GetComponentInChildren<Camera>();
+        if (audioListener == null) audioListener = GetComponentInChildren<AudioListener>();
+
+        //í”Œë ˆì´ì–´ ë³¸ì¸ì˜ ì¹´ë©”ë¼ë§Œ í™œì„±í™”. ë‹¤ë¥¸ ì¹´ë©”ë¼ëŠ” ë¹„í™œì„±í™”.
+        if (playerCamera != null) playerCamera.enabled = IsMine;
+        if (audioListener != null) audioListener.enabled = IsMine;
+
+        transform.position = new Vector3(initialData.x, initialData.y, 0);
+        targetPosition = transform.position;
+
+        if (IsMine)
+        {
+            Debug.Log($"<color=lime>This is my character! ID: {this.Id}</color>");
+        }
+
+Â  Â  Â  Â  //ë°›ì€ ë°ì´í„°ë¡œ ìµœì´ˆ ìƒíƒœ ì—…ë°ì´íŠ¸
+Â  Â  Â  Â  UpdateVisuals(initialData);
     }
 
 
-    // ============================== °ÔÀÓ ½ÃÀÛ ============================== 
-    void Start()
-    {
-        // °ÔÀÓ ½ÃÀÛÇÒ ¶§ : 
-
-
-        currentHP = maxHP; //ÇÃ·¹ÀÌ¾î HP¸¦ ÃÖ´ë·Î ¸¸µé¾îÁÖ±â
-        //ÇÃ·¹ÀÌ¾îµé ±âº» ½ºÅÈ ±âº»¿¡ ¸ÂÃçÁÖ±â
-
-
-        //½ÃÀÛÇÒ ¶§ UI ¾÷µ¥ÀÌÆ® 
-
-        if (uiManager != null) 
-        {
-            uiManager.HPUI(currentHP);
-
-            uiManager.EffectUI(UIManager.EffectType.BUFF, haveBuff);
-            uiManager.EffectUI(UIManager.EffectType.SHIELD, haveShield);
-        }
-
-    }
 
 
 
-    // ============================== Update ============================== 
-    private void Update()
-    {
-        if(Input.GetKeyDown(KeyCode.Space))
-        {
-            interactInput = true;
-        }
-    }
+Â  Â  // ============================== ê²Œì„ ì‹œì‘ ==============================Â 
 
-
-    // ---------------------------- ¸ó½ºÅÍ¿Í Ãæµ¹ ÆÇÁ¤ ---------------------------- 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Monster")) //¸ó½ºÅÍ¿Í Ãæµ¹ ½Ã
-        {
-            //¸ó½ºÅÍ·ÎºÎÅÍ ÇÃ·¹ÀÌ¾î·Î ÇâÇÏ´Â ³Ë¹é ¹æÇâ °è»ê
-            Vector2 knockbackDirection = (transform.position - collision.transform.position).normalized;
-            //ÇÇ°İ ÆÇÁ¤ ÈÄ µ¥¹ÌÁö Ã³¸®ÇØÁÖ´Â ÇÔ¼ö È£Ãâ
-            TakeDamage(1, knockbackDirection);
-        }
-    }
-
-
-    // ---------------------------- ÇÇ°İ µ¥¹ÌÁö °è»ê ---------------------------- 
-    public void TakeDamage(int damage, Vector2 knockbackDirection) //ÇÃ·¹ÀÌ¾î ÇÇ°İ ÆÇÁ¤
+Â  Â  public void UpdateState(PlayerData data)
     {
 
-        if (isGrace) //¹«Àû ÆÇÁ¤ Áß Ãæµ¹Àº X
-        {
-            return;
-        }
-
-
-        if (haveShield) //º¸È£¸·ÀÌ ÀÖ´Ù¸é µ¥¹ÌÁö 1È¸ ¹«½Ã, º¸È£¸· Á¦°Å
-        {
-            StartCoroutine(KnockbackAndGrace(knockbackDirection));
-            RemoveShield();
-            return;
-        }
-
-        currentHP -= damage;
-        if (currentHP < 0)
-        {
-            currentHP = 0;
-        }
-
-        Debug.Log($"ÇÃ·¹ÀÌ¾î°¡ {damage}ÀÇ µ¥¹ÌÁö¸¦ ÀÔ¾ú½À´Ï´Ù. ÇöÀç Ã¼·Â : {currentHP}");
-
-        // UIManager¿¡ ÇöÀç HP »óÅÂ ¾÷µ¥ÀÌÆ®
-        if (uiManager != null)
-        {
-            uiManager.HPUI(currentHP);
-        }
+Â  Â  Â  Â  //ëª©í‘œ ìœ„ì¹˜ ê°±ì‹ 
+Â  Â  Â  Â  targetPosition = new Vector3(data.x, data.y, 0);
 
 
 
-        StartCoroutine(KnockbackAndGrace(knockbackDirection));
-
-        if(currentHP <= 0)
-        {
-            Debug.Log("ÇÃ·¹ÀÌ¾î°¡ ÀüÅõºÒ´ÉÀÌ µÇ¾ú½À´Ï´Ù.");
-            //ÇÃ·¹ÀÌ¾î ÀüÅõºÒ´É ·ÎÁ÷ Ãß°¡
-        }
-
-    }
+Â  Â  Â  Â  //ì„œë²„ê°€ ê²°ì •í•œ ìƒí˜¸ì‘ìš© ê°€ëŠ¥ ìƒíƒœ ê°±ì‹ 
+Â  Â  Â  Â  canInteractWithKeyword = data.interactableKeywordId != null;
+        canInteractWithExit = data.canInteractWithExit;
 
 
-    // ---------------------------- ³Ë¹é ¹× ¹«Àû ---------------------------- 
-    private IEnumerator KnockbackAndGrace(Vector2 knockbackDirection)
-    {
 
-        //¹«Àû »óÅÂ ÀüÈ¯
-        isGrace = true;
-        canMove = false;
-
-        //³Ë¹é Àû¿ë
-        rb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
-
-
-        //½ºÇÁ¶óÀÌÆ® ±ô¹ÚÀÌ´Â È¿°ú
-        float elapsedTime = 0f;
-        while (elapsedTime < graceDuration)
-        {
-            gameObject.GetComponent<SpriteRenderer>().enabled = !gameObject.GetComponent<SpriteRenderer>().enabled;
-            elapsedTime += 0.1f;
-            yield return new WaitForSeconds(0.1f);
-
-        }
-
-        //¹«Àû ½Ã°£ÀÌ ³¡³ª¸é º¹±Í
-        gameObject.GetComponent<SpriteRenderer>().enabled = true;
-        isGrace = false;
-        canMove = true;
-
+Â  Â  Â  Â  //ì„œë²„ ë°ì´í„°ì— ë”°ë¥¸ ì‹œê°ì  ìš”ì†Œ ì—…ë°ì´íŠ¸
+Â  Â  Â  Â  UpdateVisuals(data);
 
     }
 
 
 
-    //====================================== FixedUpdate ===============================
-    void FixedUpdate()
+
+
+    public void UpdateVisuals(PlayerData data)
     {
-        if (!string.IsNullOrEmpty(Id) && Id == GameManager.Instance.MyPlayerId)
+
+Â  Â  Â  Â  //ìƒí˜¸ì‘ìš© ê°€ëŠ¥ ìƒíƒœì¼ ë•Œ ëŠë‚Œí‘œ í‘œì‹œ ë“±ì˜ UI ê´€ë ¨ ê¸°ëŠ¥
+
+Â  Â  }
+
+
+
+
+
+Â  Â  // ============================== Update ==============================Â 
+
+Â  Â  private void Update()
+    {
+
+        transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * positionLerpFactor);
+
+
+Â  Â  Â  Â  //ì´ í´ë¼ì´ì–¸íŠ¸ê°€ ì¡°ì¢…í•˜ëŠ” 'ë‚´' ìºë¦­í„°ì¼ ê²½ìš°ì—ë§Œ ì…ë ¥ ì²˜ë¦¬
+Â  Â  Â  Â  if (IsMine)
+        {
+            HandleInput();
+        }
+
+    }
+
+
+    private void HandleInput()
+    {
+
+Â  Â  Â  Â  //ì´ë™ ì…ë ¥
+Â  Â  Â  Â  float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+
+
+
+        if (horizontal != 0 || vertical != 0)
         {
 
-        if (canMove)
-        {
-
-            // ---------------------------- ÀÌµ¿Å° ---------------------------- 
-
-            //Unity > Edit > Project Settings > Input Manager > Axes ¿¡ 'Horizontal'¶ó´Â NameÀ¸·Î ¼¼ÆÃµÇ¾î ÀÖ´Â Å° ÀÔ·ÂÀ» ¹Ş±â.
-            //A(¿ŞÂÊ), D(¿À¸¥ÂÊ) = ¼öÆò Å°
-            float horizontal = Input.GetAxis("Horizontal");
-            //W(À§ÂÊ), S(¾Æ·¡ÂÊ) = ¼öÁ÷ Å°
-            float vertical = Input.GetAxis("Vertical");
-
-                ////¼­¹ö¿¡ ÀÌµ¿°ª º¸³»±â
-                if (horizontal != 0 || vertical != 0)
-                {
-                    var inputData = new { x = horizontal, y = vertical };
-                    WsClient.Instance.Send("input", JsonConvert.SerializeObject(inputData));
-                }
-
-            // ---------------------------- »óÈ£ÀÛ¿ëÅ° ---------------------------- 
-            if (interactInput)
-            {
-                Debug.Log("Sent 'interact' message to server. ");
-                WsClient.Instance.Send("interact", "");
-
-                interactInput = false;
-            }
+            var inputData = new { x = horizontal, y = vertical };
+            WsClient.Instance.Send("input", JsonConvert.SerializeObject(inputData));
 
         }
+
+
+
+Â  Â  Â  Â  //ìƒí˜¸ì‘ìš© ì…ë ¥(Space)
+Â  Â  Â  Â  if (Input.GetKeyDown(KeyCode.Space))
+        {
+
+            WsClient.Instance.Send("interact", "");
 
         }
 
@@ -212,104 +167,6 @@ public class PlayerController : MonoBehaviour
 
 
 
-
-    // ---------------------------- ¾ÆÀÌÅÛ Àû¿ë ÇÔ¼öµé ---------------------------- 
-    public bool ApplyPotion(int healAmount)
-    {
-        //ÇÃ·¹ÀÌ¾îÀÇ HP°¡ °¡µæÃ¡´Ù¸é ½ÇÆĞ ¹İÈ¯,
-        if (currentHP >= maxHP)
-        {
-            Debug.Log("ÇÃ·¹ÀÌ¾îÀÇ HP°¡ °¡µæ Â÷ È¸º¹ÇÒ ¼ö ¾ø½À´Ï´Ù.");
-            return false;
-        }
-
-        //HP°¡ 3 ÀÌÇÏ¶ó¸é : 
-        //¾ÆÀÌÅÛ Àû¿ë ·ÎÁ÷ + Debug.Log($"HP°¡ È¸º¹µÇ¾ú½À´Ï´Ù. ÇöÀç HP: {currentHP});
-        currentHP += healAmount;
-        Debug.Log($"Player°¡ {healAmount}¸¸Å­ Ã¼·ÂÀ» È¸º¹Çß½À´Ï´Ù. | ÇöÀç HP: {currentHP}");
-
-
-        //UI ¾÷µ¥ÀÌÆ®(HP)
-        if (uiManager != null)
-        {
-            uiManager.HPUI(currentHP);
-        }
-
-        return true;
-    }
-
-    public void ApplyBuff(float buffAmount)
-    {
-        //¾ÆÀÌÅÛ Àû¿ë ·ÎÁ÷
-        haveBuff = true;
-
-        //currentMoveSpeed = moveSpeed * buffAmount; //ÀÌ¼ÓÁõ°¡
-        //currentAttackSpeed = attackSpeed * buffAmount; //°ø¼ÓÁõ°¡
-
-        Debug.Log("¹öÇÁ Àû¿ë!");
-
-        //UI ¾÷µ¥ÀÌÆ® ¿äÃ»(Buff)
-        if (uiManager != null)
-        {
-            uiManager.EffectUI(UIManager.EffectType.BUFF, haveBuff);    
-        }
-
-    }
-
-
-    public void RemoveBuff()
-    {
-        //´ÙÀ½ ½ºÅ×ÀÌÁö·Î ³Ñ¾î°¥ ¶§ ¹öÇÁ »èÁ¦
-        haveBuff = false;
-
-       
-
-        Debug.Log("¹öÇÁ »èÁ¦ ¼º°ø.");
-
-        //UI ¾÷µ¥ÀÌÆ® ¿äÃ»(Buff)
-        if (uiManager != null)
-        {
-            uiManager.EffectUI(UIManager.EffectType.BUFF, haveBuff);
-        }
-        
-    }
-
-
-    public void ApplyShield()
-    {
-        //¾ÆÀÌÅÛ Àû¿ë ·ÎÁ÷
-        haveShield = true;
-        Debug.Log("º¸È£¸· Àû¿ë ¼º°ø!");
-
-        //UI ¾÷µ¥ÀÌÆ® ¿äÃ»(Shield)
-        if (uiManager != null)
-        {
-            uiManager.EffectUI(UIManager.EffectType.SHIELD, haveShield);
-        }
-
-    }
-
-    public void RemoveShield()
-    {
-        //¾ÆÀÌÅÛ Àû¿ë ·ÎÁ÷
-        haveShield = false;
-        Debug.Log("º¸È£¸·ÀÌ °ø°İÀ» ¸·¾Ò½À´Ï´Ù!");
-
-        //UI ¾÷µ¥ÀÌÆ® ¿äÃ»(Shield)
-        if (uiManager != null)
-        {
-            uiManager.EffectUI(UIManager.EffectType.SHIELD, haveShield);
-        }
-
-    }
-
-
-    // ---------------------------- ÁÂ¿ì¹İÀü ---------------------------- 
-    void Flip() //½ºÇÁ¶óÀÌÆ® ÁÂ¿ì¹İÀü
-    {
-        facingDirection *= -1;
-        transform.localScale = new Vector2(transform.localScale.x * -1, transform.localScale.y);
-    }
 
 
 
