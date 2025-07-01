@@ -1,11 +1,13 @@
 package com.engjoy.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
 
 @Getter @Setter
+@AllArgsConstructor
 public class PrintContentDto {
     private String question;
     private String answer;

@@ -11,6 +11,6 @@ public class PrintOptionDto {
     private PRINTFORM printForm;
     private boolean selectAll;
     private List<Long> exprIdsToPrint;
-    private PrintOptionDto printOptionDto;
+    private PrintOptionDetailDto printOptionDetailDto;
     private QuizSettingDto quizSettingDto;
 }

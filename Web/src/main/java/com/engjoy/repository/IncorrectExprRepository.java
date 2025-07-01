@@ -21,10 +21,10 @@ public interface IncorrectExprRepository extends JpaRepository<IncorrectExpr,Lon
     Long countByAccountAndUsedTimeBetween(Account account, LocalDateTime startDate, LocalDateTime endDate);
     Optional<IncorrectExpr> findByAccountAndExpression(Account account, Expression expression);
 
-    @Query("SELECT ie FROM IncorrectExpr ie" +
-            "WHERE ie.account = :account" +
-            "AND ie.incorrectCount >= : minCount" +
-            "AND (ie.lastRecommendedDate IS NULL OR ie.lastRecommendedDate < :today)" +
+    @Query("SELECT ie FROM IncorrectExpr ie " +
+            "WHERE ie.account = :account " +
+            "AND ie.incorrectCount >= :minCount " +
+            "AND (ie.lastRecommendedDate IS NULL OR ie.lastRecommendedDate < :today) " +
             "ORDER BY ie.incorrectCount DESC, ie.usedTime ASC")
     List<IncorrectExpr> findTopWordDaily(
             @Param("account") Account account,

@@ -3,6 +3,7 @@ package com.engjoy.repository;
 import com.engjoy.constant.EXPRTYPE;
 import com.engjoy.entity.Account;
 import com.engjoy.entity.ExprUsed;
+import com.engjoy.entity.Expression;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,16 +15,20 @@ import java.time.LocalDateTime;
 
 @Repository
 public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
-    @Query("SELECT eu FROM ExprUsed eu WHERE eu.account = :account " +
-            "AND eu.expression.exprType = :exprType ORDER BY eu.useTime DESC")
-    Page<ExprUsed> findRecentUsed(
-            @Param("account")Account account,
-            @Param("exprType")EXPRTYPE exprType,
-            Pageable pageable);
+//    @Query("SELECT eu FROM ExprUsed eu WHERE eu.account = :account " +
+//            "AND eu.expression.exprType = :exprType ORDER BY eu.useTime DESC")
+//    Page<ExprUsed> findRecentUsed(
+//            @Param("account")Account account,
+//            @Param("exprType")EXPRTYPE exprType,
+//            Pageable pageable);
 
-    @Query("SELECT eu FROM ExprUsed eu WHERE eu.account = :account " +
+    boolean existsByAccountAndExpression(Account account, Expression expression);
+
+    @Query("SELECT eu FROM ExprUsed eu " +
+            " WHERE eu.account = :account " +
             "AND eu.expression.exprType = :exprType " +
-            "AND eu.useTime BETWEEN :startDate AND :endDate ORDER BY eu.useTime DESC")
+            "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
+            "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
     Page<ExprUsed> findUsedByDateRange(
             @Param("account") Account account,
             @Param("exprType") EXPRTYPE exprType,
@@ -31,14 +36,20 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
 
-    @Query("SELECT COUNT(eu) FROM ExprUsed eu WHERE eu.account = :account AND eu.useTime BETWEEN : startDate AND :endDate")
+    @Query("SELECT COUNT(eu) FROM ExprUsed eu " +
+            "WHERE eu.account = :account " +
+            "AND eu.usedTime >= :startDate " +
+            "AND eu.usedTime < :endDate")
     Long countUsedByDateRange(
             @Param("account") Account account,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT COUNT(eu) FROM ExprUsed eu WHERE eu.account = :account " +
-            "AND eu.expression.exprType = :exprType AND eu.useTime BETWEEN :startDate AND : endDate")
+    @Query("SELECT COUNT(eu) FROM ExprUsed eu " +
+            " WHERE eu.account = :account " +
+            "AND eu.expression.exprType = :exprType " +
+            "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
+            "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
     Long countUsedByTypeAndDateRange(
             @Param("account") Account account,
             @Param("exprType") EXPRTYPE exprType,

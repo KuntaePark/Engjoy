@@ -30,13 +30,15 @@ public class ExpressionService {
     private final ExprFavoritesRepository exprFavoritesRepository;
     private final WordInfoRepository wordInfoRepository;
     private final IncorrectExprRepository incorrectExprRepository;
-    private final AccountRepository accountRepository;
+//    private final AccountRepository accountRepository;
 
     // 사용자의 전체 단어장 페이지 조회 or 필터링된 카드 목록 페이징 반환
     public Page<ExpressionDto> getExpressions(Long accountId, ExpressionSearchDto expressionSearchDto, Pageable pageable){
         Page<Expression> expressionPage;
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("계정이 존재하지 않습니다."));
+//        Account account = accountRepository.findById(accountId)
+//                .orElseThrow(() -> new IllegalArgumentException("계정이 존재하지 않습니다."));
+        Account account = new Account();
+        account.setId(accountId);
 
         if(expressionSearchDto.getKeyword() != null && !expressionSearchDto.getKeyword().isEmpty()){
            expressionPage = expressionRepository.findByWordTextContainingIgnoreCase(expressionSearchDto.getKeyword(),pageable);
@@ -49,9 +51,10 @@ public class ExpressionService {
         }
 
         return expressionPage.map(expression -> {
-            boolean isUsed = exprUsedRepository.findRecentUsed(account,expression.getExprType(), PageRequest.of(0,1))
-                    .stream()
-                    .anyMatch(eu -> eu.getExpression().getId().equals(expression.getId()));
+//            boolean isUsed = exprUsedRepository.findRecentUsed(account,expression.getExprType(), PageRequest.of(0,1))
+//                    .stream()
+//                    .anyMatch(eu -> eu.getExpression().getId().equals(expression.getId()));
+            boolean isUsed = exprUsedRepository.existsByAccountAndExpression(account,expression);
             boolean isFavorite = exprFavoritesRepository.findByAccountAndExpression(account,expression).isPresent();
 
             return ExpressionDto.from(expression,isFavorite,isUsed,null);
@@ -69,8 +72,10 @@ public class ExpressionService {
     // 특정 단어/문장에 대한 사용자의 즐겨찾기 상태 토글(없으면 생성,있으면 삭제)
     @Transactional
     public boolean toggleFavoriteStatus(Long accountId, Long exprId){
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
+//        Account account = accountRepository.findById(accountId)
+//                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
+        Account account = new Account();
+        account.setId(accountId);
         Expression expression = expressionRepository.findById(exprId)
                 .orElseThrow(()->new IllegalArgumentException("해당 ID에 관한 표현이 없습니다."));
         Optional<ExprFavorites> existingFavorite = exprFavoritesRepository.findByAccountAndExpression(account,expression);
@@ -86,8 +91,11 @@ public class ExpressionService {
 
     // 사용자의 오답 리스트를 페이징하여 조회
     public Page<IncorrectExprDto> getIncorrectExpressions(Long accountId, Pageable pageable){
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
+//        Account account = accountRepository.findById(accountId)
+//                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
+        Account account = new Account();
+        account.setId(accountId);
+
         Page<IncorrectExpr> incorrectExprs = incorrectExprRepository.findByAccount(account,pageable);
         return incorrectExprs.map(IncorrectExprDto::from);
     }
@@ -95,8 +103,11 @@ public class ExpressionService {
     // '오늘의 복습 추천' 단어/문장 조회
     @Transactional
     public Optional<ExpressionDto> getDailyRecommendation(Long accountId){
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
+//        Account account = accountRepository.findById(accountId)
+//                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
+        Account account = new Account();
+        account.setId(accountId);
+
         LocalDate today = LocalDate.now();
 
         List<IncorrectExpr> recommendedList = incorrectExprRepository.findTopWordDaily(
@@ -108,9 +119,7 @@ public class ExpressionService {
 
             Expression expression = recommendedExpr.getExpression();
 
-            boolean isUsed = exprUsedRepository.findRecentUsed(account,expression.getExprType(), PageRequest.of(0,1))
-                    .stream()
-                    .anyMatch(eu -> eu.getExpression().getId().equals(expression.getId()));
+            boolean isUsed = exprUsedRepository.existsByAccountAndExpression(account, expression);
             boolean isFavorite = exprFavoritesRepository.findByAccountAndExpression(account,expression).isPresent();
 
             return Optional.of(ExpressionDto.from(expression, isFavorite, isUsed,null));

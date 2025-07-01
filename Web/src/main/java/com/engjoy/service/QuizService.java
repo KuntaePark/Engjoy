@@ -1,37 +1,22 @@
-// QuizService.java
 package com.engjoy.service;
 
-import com.engjoy.dto.QuizAnsweredDto;
-import com.engjoy.dto.QuizGradedDto; // 업데이트된 DTO import
-import com.engjoy.dto.QuizPageDto;
-import com.engjoy.dto.QuizQuestionDto;
-import com.engjoy.dto.QuizResultDto; // 업데이트된 DTO import
-import com.engjoy.dto.QuizSettingDto;
-import com.engjoy.entity.Account;
-import com.engjoy.entity.ExprUsed;
-import com.engjoy.entity.Expression;
-import com.engjoy.entity.IncorrectExpr;
+import com.engjoy.dto.*;
+import com.engjoy.entity.*;
 import com.engjoy.constant.CATEGORY;
 import com.engjoy.constant.EXPRTYPE;
 import com.engjoy.constant.QUIZCOUNT;
-import com.engjoy.repository.AccountRepository;
-import com.engjoy.repository.ExprFavoritesRepository;
-import com.engjoy.repository.ExprUsedRepository;
-import com.engjoy.repository.ExpressionRepository;
-import com.engjoy.repository.IncorrectExprRepository;
+import com.engjoy.repository.*;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import org.aspectj.weaver.ast.Expr;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,179 +27,181 @@ public class QuizService {
     private final ExprUsedRepository exprUsedRepository;
     private final IncorrectExprRepository incorrectExprRepository;
     private final ExpressionService expressionService;
-    private final AccountRepository accountRepository;
+//    private final AccountRepository accountRepository;
     private final ExprFavoritesRepository exprFavoritesRepository;
 
     private static final String QUIZ_STATE_SESSION_KEY = "QUIZ_STATE";
 
-    /** 퀴즈 문제 생성 */
-    public QuizPageDto createQuizQuestions(Long accountId, QuizSettingDto quizSettingDto) {
+    // 퀴즈 문제 생성
+    public QuizPageDto createQuizQuestions(Long accountId, QuizSettingDto quizSettingDto){
         Account account = getAccount(accountId);
         String notifyMsg = null;
 
-        int requestedCount = getQuizCountValue(quizSettingDto.getQuizcount());
-        List<Expression> expressions = getExpressionsForQuiz(account, quizSettingDto, requestedCount);
+        int requestedCount = getQuizCountValue(quizSettingDto.getQuizcount()); // 사용자가 퀴즈 설정시 선택한 개수
+        List<Expression> expressions = getExpressionsForQuiz(account,quizSettingDto, requestedCount); // 최근 일주일간 사용한 표현 5개 가져오기
 
-
-        if (expressions.size() < requestedCount) {
-            notifyMsg = "복습할 문제가 " + expressions.size() + "개입니다. " + expressions.size() + "문제로 시작합니다.";
+        if(expressions.size() < requestedCount){
+            notifyMsg = "복습할 문제가" + expressions.size() + "개입니다." + expressions.size() + "문제로 시작합니다.";
         }
 
         Collections.shuffle(expressions);
         List<QuizQuestionDto> questions = expressions.stream()
-                .map(expr -> QuizQuestionDto.from(
+                .map(expr->QuizQuestionDto.from(
                         expr,
                         generateQuizChoices(expr),
-                        exprFavoritesRepository.findByAccountAndExpression(account, expr).isPresent()
+                        exprFavoritesRepository.findByAccountAndExpression(account,expr).isPresent()
                 ))
                 .collect(Collectors.toList());
-
-        return QuizPageDto.from(questions, notifyMsg, questions.size());
+        return QuizPageDto.from(questions,notifyMsg,questions.size());
     }
 
-    /** 정답 채점 */
+    // 퀴즈 채점
     @Transactional
-    public QuizGradedDto gradeQuizAnswer(Long accountId, QuizAnsweredDto answerDto) {
+    public QuizGradedDto gradeQuizAnswer(Long accountId, QuizAnsweredDto answeredDto){
         Account account = getAccount(accountId);
-        Expression expr = getExpression(answerDto.getExprId());
+        Expression expr = getExpressions(answeredDto.getExprId());
 
-        boolean isCorrect = checkAnswer(expr, answerDto);
-        if (!isCorrect) incrementIncorrectCount(expr.getId(), account);
+        boolean isCorrect = checkAnswer(expr,answeredDto);
 
-        exprUsedRepository.save(ExprUsed.builder()
-                .account(account).expression(expr).useTime(LocalDateTime.now()).build());
+        if(!isCorrect){
+            incrementIncorrectCount(expr.getId(), account);
+        }
 
-        // QuizGradedDto.from 메서드 사용 (메시지 필드는 DTO의 from 메서드에서 null로 처리됨)
-        return QuizGradedDto.from(expr.getId(), isCorrect,
+        return QuizGradedDto.from(
+                expr.getId(),
+                isCorrect,
                 expr.getExprType() == EXPRTYPE.WORD ? expr.getMeaning() : null,
-                expr.getExprType() == EXPRTYPE.SENTENCE ? List.of(expr.getMeaning()) : null);
+                expr.getExprType() == EXPRTYPE.SENTENCE ? List.of(expr.getMeaning()) : null
+        );
     }
 
-    /** 최종 결과 계산 */
-    public QuizResultDto calculateQuizResult(Long accountId, HttpSession session) {
-        List<QuizGradedDto> results = (List<QuizGradedDto>) session.getAttribute(QUIZ_STATE_SESSION_KEY);
-        if (results == null || results.isEmpty()) return QuizResultDto.from(0, 0, 0);
+    // 퀴즈 결과 계산
+    public QuizResultDto calculateQuizResult(Long accountId, HttpSession session){
+        List<QuizGradedDto> results = (List<QuizGradedDto>)  session.getAttribute(QUIZ_STATE_SESSION_KEY);
+        if(results == null || results.isEmpty()) return QuizResultDto.from(0,0,0);
 
         int total = results.size();
-        // QuizResultDto의 필드명 변경: correctAnswers -> correctCount
         int correct = (int) results.stream().filter(QuizGradedDto::isCorrect).count();
         int gold = results.stream().mapToInt(r -> {
-            Expression e = getExpression(r.getExprId());
+            Expression e = getExpressions(r.getExprId());
             return e == null ? 0 : r.isCorrect()
                     ? calculateNormalReward(e)
                     : calculateIncorrectReward(e, accountId);
         }).sum();
 
         session.removeAttribute(QUIZ_STATE_SESSION_KEY);
-        // QuizResultDto.from 메서드 사용 (correctCount 필드명 반영)
-        return QuizResultDto.from(total, correct, gold);
+        return QuizResultDto.from(total,correct,gold);
     }
 
-    /** 오답 횟수 증가 */
+    // 오답 횟수 증가
     @Transactional
-    public void incrementIncorrectCount(Long exprId, Account account) {
-        Expression expr = getExpression(exprId);
-        IncorrectExpr incorrect = incorrectExprRepository
-                .findByAccountAndExpression(account, expr)
-                .orElseGet(() -> IncorrectExpr.builder().account(account).expression(expr).incorrectCount(0).build());
-
-        incorrect.setIncorrectCount(incorrect.getIncorrectCount() + 1);
-        incorrectExprRepository.save(incorrect);
+    public void incrementIncorrectCount(Long exprId, Account account){
+        Expression expr = getExpressions(exprId);
+        IncorrectExpr incorrectExpr = incorrectExprRepository
+                .findByAccountAndExpression(account,expr)
+                .orElseGet(()->{
+                    IncorrectExpr newEntity = new IncorrectExpr();
+                    newEntity.setAccount(account);
+                    newEntity.setExpression(expr);
+                    newEntity.setIncorrectCount(0);
+                    return newEntity;
+                });
+        incorrectExpr.setIncorrectCount(incorrectExpr.getIncorrectCount()+1);
+        incorrectExpr.setUsedTime(LocalDateTime.now());
+        incorrectExprRepository.save(incorrectExpr);
     }
 
-    /** 일반 퀴즈 보상 계산 */
-    public int calculateNormalReward(Expression expr) {
-        return expr.getDifficulty() * 10;
+    // 보상 계산 - 정답
+    public int calculateNormalReward(Expression expression){
+        return expression.getDifficulty() * 10;
     }
 
-    /** 오답 퀴즈 보상 계산 */
-    public int calculateIncorrectReward(Expression expr, Long accountId) {
+    // 보상 계산 - 오답
+    public int calculateIncorrectReward(Expression expression, Long accountId){
         Account account = getAccount(accountId);
-        return incorrectExprRepository.findByAccountAndExpression(account, expr)
-                .map(i -> i.getIncorrectCount() * 5).orElse(0);
+        return incorrectExprRepository.findByAccountAndExpression(account,expression)
+                .map(i -> i.getIncorrectCount() *5)
+                .orElse(0);
     }
 
-    /** 퀴즈 보기 생성 */
-    public List<String> generateQuizChoices(Expression expr) {
+    // 보기 선택지 생성
+    public List<String> generateQuizChoices(Expression expression){
         List<String> choices = new ArrayList<>();
-        choices.add(expr.getMeaning());
-        choices.addAll(expressionService.generateChoices(expr.getMeaning(), 3));
+        choices.add(expression.getMeaning());
+        choices.addAll(expressionService.generateChoices(expression.getMeaning(),3));
         Collections.shuffle(choices);
         return choices;
     }
 
-    /** 퀴즈 개수 Enum -> int 변환 */
-    private int getQuizCountValue(QUIZCOUNT quizCount) {
-        return switch (quizCount) {
+    // 퀴즈 개수 매핑
+    private int getQuizCountValue(QUIZCOUNT quizCount){
+        return switch (quizCount){
             case FIVE -> 5;
             case TEN -> 10;
             case FIFTEEN -> 15;
         };
     }
 
-    /** 정답 확인 로직 */
-    private boolean checkAnswer(Expression expr, QuizAnsweredDto dto) {
-        if (expr.getExprType() == EXPRTYPE.WORD) {
-            return expr.getMeaning().equalsIgnoreCase(dto.getSubmitWord());
-        } else {
-            return dto.getSubmitSentence() != null &&
-                    !dto.getSubmitSentence().isEmpty() &&
-                    expr.getMeaning().equalsIgnoreCase(dto.getSubmitSentence().get(0));
+    // 정답 확인 로직
+    private boolean checkAnswer(Expression expression, QuizAnsweredDto answeredDto){
+        if(expression.getExprType() == EXPRTYPE.WORD){
+            return expression.getMeaning().equalsIgnoreCase(answeredDto.getSubmitWord());
+        }else{
+            return answeredDto.getSubmitSentence() != null &&
+                    !answeredDto.getSubmitSentence().isEmpty() &&
+                    expression.getMeaning().equalsIgnoreCase(answeredDto.getSubmitSentence().get(0));
         }
     }
 
-    /** 퀴즈용 Expression 리스트 가져오기 */
-    private List<Expression> getExpressionsForQuiz(Account account, QuizSettingDto dto, int requestedCount) {
-        LocalDateTime start = dto.getStartDate() != null ? dto.getStartDate().atStartOfDay() : null;
-        LocalDateTime end = dto.getEndDate() != null ? dto.getEndDate().plusDays(1).atStartOfDay().minusNanos(1) : null;
+    // 퀴즈용 Expression 목록 조회
+    private List<Expression> getExpressionsForQuiz(Account account, QuizSettingDto quizSettingDto, int requestedCount) {
+        LocalDateTime start = quizSettingDto.getStartDate() != null ? quizSettingDto.getStartDate().atStartOfDay() : null;
+        LocalDateTime end = quizSettingDto.getEndDate() != null ? quizSettingDto.getEndDate().plusDays(1).atStartOfDay().minusNanos(1) : null;
 
-        if (dto.getCategory() == CATEGORY.MIXED) {
-            long wordCount = exprUsedRepository.countUsedByTypeAndDateRange(account, EXPRTYPE.WORD, start, end);
-            long sentenceCount = exprUsedRepository.countUsedByTypeAndDateRange(account, EXPRTYPE.SENTENCE, start, end);
-            long total = wordCount + sentenceCount;
-
+        if (quizSettingDto.getCategory() == CATEGORY.MIXED) {
+            long word = exprUsedRepository.countUsedByTypeAndDateRange(account, EXPRTYPE.WORD, start, end);
+            long sentence = exprUsedRepository.countUsedByTypeAndDateRange(account, EXPRTYPE.SENTENCE, start, end);
+            long total = word + sentence;
             if (total == 0) return Collections.emptyList();
 
-            int wordCountForQuiz = (int) Math.round((double) word / total * requestedCount);
-            int sentenceCountForQuiz = requestedCount - wordCountForQuiz;
+            int wordCount = (int) Math.round((double) word / total * requestedCount);
+            int sentenceCount = requestedCount - wordCount;
 
-            return combine(
-                    getExprList(account, EXPRTYPE.WORD, start, end, wordCountForQuiz),
-                    getExprList(account, EXPRTYPE.SENTENCE, start, end, sentenceCountForQuiz)
-            );
+            List<Expression> expressions = new ArrayList<>(getExprList(account,EXPRTYPE.WORD, start, end, wordCount));
+            expressions.addAll(getExprList(account,EXPRTYPE.SENTENCE, start, end,sentenceCount));
+            return expressions;
 
-        } else if (dto.getCategory() == CATEGORY.INCORRECT) {
+        }
+
+        if (quizSettingDto.getCategory() == CATEGORY.INCORRECT){
             return incorrectExprRepository.findByAccount(account,
-                            PageRequest.of(0, requestedCount, Sort.by("incorrectCount").descending().and(Sort.by("usedTime").ascending())))
+                    PageRequest.of(0, requestedCount, Sort.by("incorrectCount").descending().and(Sort.by("usedTime").ascending())))
                     .map(IncorrectExpr::getExpression).getContent();
         }
 
-        EXPRTYPE type = dto.getCategory() == CATEGORY.WORD ? EXPRTYPE.WORD : EXPRTYPE.SENTENCE;
-        return getExprList(account, type, start, end, requestedCount);
+        EXPRTYPE exprType = quizSettingDto.getCategory() == CATEGORY.WORD ? EXPRTYPE.WORD : EXPRTYPE.SENTENCE;
+        return getExprList(account,exprType,start, end, requestedCount);
     }
 
-    /** 공통된 Expression 목록 조회 */
-    private List<Expression> getExprList(Account account, EXPRTYPE type, LocalDateTime start, LocalDateTime end, int count) {
-        return exprUsedRepository.findUsedByDateRange(account, type, start, end, PageRequest.of(0, count))
+    // 특정 타입의 Expression 리스트
+    private List<Expression> getExprList(Account account, EXPRTYPE exprType, LocalDateTime start, LocalDateTime end, int count){
+        return exprUsedRepository.findUsedByDateRange(account, exprType,start, end, PageRequest.of(0, count))
                 .map(ExprUsed::getExpression).getContent();
     }
 
-    /** 유틸: 리스트 병합 */
-    private List<Expression> combine(List<Expression> a, List<Expression> b) {
-        List<Expression> result = new ArrayList<>(a);
-        result.addAll(b);
-        return result;
+    // 계정 조회
+    private Account getAccount(Long id){
+//        return accountRepository.findById(id)
+//                .orElseThrow(()->new IllegalArgumentException("계정이 존재하지 않습니다."));
+        Account account = new Account();
+        account.setId(id);
+        return account;
     }
 
-    /** Account 엔티티 조회 */
-    private Account getAccount(Long id) {
-        return accountRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("계정이 존재하지 않습니다."));
-    }
-
-    /** Expression 엔티티 조회 */
-    private Expression getExpression(Long id) {
+    // Expression 조회
+    private Expression getExpressions(Long id){
         return expressionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Expression not found: " + id));
+                .orElseThrow(()->new IllegalArgumentException("Expression이 존재하지 않습니다."));
     }
+
 }
