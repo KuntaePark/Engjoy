@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
 
     public PlayerManager playerManager;
     public KeywordManager keywordManager;
+    public MonsterManager monsterManager;
 
     public GameObject exitPrefab; //GameManager가 직접 Exit를 관리
     private ExitController exitController; //ExitController를 직접 관리
@@ -41,6 +42,7 @@ public class GameManager : MonoBehaviour
         //player, keyword를 GameManager와 연결!
         playerManager = FindObjectOfType<PlayerManager>();
         keywordManager = FindObjectOfType<KeywordManager>();
+        monsterManager = FindObjectOfType<MonsterManager>();
     }
 
 
@@ -82,6 +84,11 @@ public class GameManager : MonoBehaviour
             }
             //출구 상태 업데이트
             exitController.UpdateState(newState.exit);
+        }
+
+       if(monsterManager != null && newState.monsters != null)
+        {
+            monsterManager.UpdateMonsters(newState.monsters);
         }
         else if (exitController != null)
         {

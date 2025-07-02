@@ -48,7 +48,7 @@ public class KeywordManager : MonoBehaviour
             if (keywordControllers.TryGetValue(keywordId, out KeywordController controller))
             {
                 //이미 존재하면 상태 업데이트
-                controller.UpdataState(keywordData);
+                controller.UpdateState(keywordData);
             }
 
             else

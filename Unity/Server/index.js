@@ -48,6 +48,10 @@ wss.on("connection", (ws) => {
       case "interact":
         gameState.playerInteracts(ws.playerId);
         break;
+
+      case "playerAttack":
+        gameState.playerAttacks(ws.playerId);
+        break;
     }
   });
 

@@ -2,6 +2,7 @@ const { Keyword } = require("./keywords.js");
 const Exit = require("./exit.js");
 const { generateId } = require("./utils.js");
 const { getRandomSentence, getRandomWords } = require("./dbUtils.js");
+const { Monster, MonsterType } = require("./monster.js");
 
 //랜덤 정수 생성 헬퍼
 function getRandomInt(min, max) {
@@ -13,6 +14,35 @@ async function setupLevel(gameState, gameLevel = 10) {
   gameState.keywords = {};
   gameState.exit = null;
 
+  gameState.monsters = {};
+
+  // ================= ▼▼▼ 몬스터 세팅 ▼▼▼ =================
+  console.log("LevelManager: Spawning monsters...");
+
+  //테스트용 러너 한 마리 소환
+  const runnerId = generateId(new Set(Object.keys(gameState.monsters)));
+  const runnerMonster = new Monster(
+    runnerId,
+    MonsterType.RUNNER,
+    6.0, //x
+    9.0, //y
+    3 //hp
+  );
+  gameState.monsters[runnerId] = runnerMonster;
+
+  //테스트용 체이서 한 마리 소환
+  const chaserId = generateId(new Set(Object.keys(gameState.monsters)));
+  const chaserMonster = new Monster(
+    chaserId,
+    MonsterType.CHASER,
+    5.0, //x
+    10.0, //y
+    2 //hp
+  );
+  gameState.monsters[chaserId] = chaserMonster;
+  // ================= ▲▲▲ 몬스터 세팅 ▲▲▲ =================
+
+  // ================= ▼▼▼ 키워드 세팅 ▼▼▼ =================
   //db에서 영문장 가져오기
   const sentenceData = await getRandomSentence(gameLevel);
 
@@ -75,32 +105,72 @@ async function setupLevel(gameState, gameLevel = 10) {
   const dummyTexts = await getRandomWords(dummyCount);
 
   const answerMap = {};
-  //정답 키워드 생성 및 gameState에 추가
-  answerTexts.forEach((text) => {
+
+  //키워드 텍스트를 배열로 정리
+  const allKeywordTexts = [
+    ...answerTexts.map((text) => ({ text, isAnswer: true })),
+    ...dummyTexts.map((text) => ({ text, isAnswer: false })),
+  ];
+
+  //키워드를 가진 Runner몬스터 스폰
+  allKeywordTexts.forEach((keywordInfo) => {
     const keywordId = generateId(new Set(Object.keys(gameState.keywords)));
+    const monsterId = generateId(new Set(Object.keys(gameState.monsters)));
+
+    //키워드 생성
     const newKeyword = new Keyword(
       keywordId,
-      text,
-      Math.random() * 15,
-      Math.random() * 15,
-      true //정답 처리
+      keywordInfo.text,
+      0,
+      0,
+      keywordInfo.isAnswer
     );
+    newKeyword.carrierId = monsterId;
     gameState.keywords[keywordId] = newKeyword;
-    answerMap[keywordId] = text;
+
+    if (keywordInfo.isAnswer) {
+      answerMap[keywordId] = keywordInfo.text;
+    }
+
+    //키워드를 가진 러너 몬스터 생성
+    const newMonster = new Monster(
+      monsterId,
+      MonsterType.RUNNER,
+      getRandomInt(0, 15),
+      getRandomInt(0, 15),
+      3,
+      keywordId
+    );
+    gameState.monsters[monsterId] = newMonster;
   });
 
-  //오답 키워드 생성 및 gameState에 추가
-  dummyTexts.forEach((text) => {
-    const keywordId = generateId(new Set(Object.keys(gameState.keywords)));
-    const newKeyword = new Keyword(
-      keywordId,
-      text,
-      Math.random() * 15,
-      Math.random() * 15,
-      false //오답 처리
+  //키워드를 가지지 않은 더미 러너 몬스터 생성
+  const dummyRunnerCount = allKeywordTexts.length / 2;
+  for (let i = 0; i < dummyRunnerCount; i++) {
+    const monsterId = generateId(new Set(Object.keys(gameState.monsters)));
+    const newMonster = new Monster(
+      monsterId,
+      MonsterType.RUNNER,
+      getRandomInt(0, 15),
+      getRandomInt(0, 15),
+      3
     );
-    gameState.keywords[keywordId] = newKeyword;
-  });
+    gameState.monsters[monsterId] = newMonster;
+  }
+
+  //체이서 몬스터 생성
+  const chaserCount = 2;
+  for (let i = 0; i < chaserCount; i++) {
+    const monsterId = generateId(new Set(Object.keys(gameState.monsters)));
+    const newMonster = new Monster(
+      monsterId,
+      MonsterType.CHASER,
+      getRandomInt(0, 15),
+      getRandomInt(0, 15),
+      2
+    );
+    gameState.monsters[monsterId] = newMonster;
+  }
 
   //출구 생성 및 gameState에 추가
   const newExit = new Exit(
@@ -111,6 +181,7 @@ async function setupLevel(gameState, gameLevel = 10) {
     sentenceData.meaning
   );
   gameState.exit = newExit;
+  // ================= ▲▲▲ 키워드 세팅 ▲▲▲ =================
 
   console.log("LevelManager: Level setup complete.");
 }

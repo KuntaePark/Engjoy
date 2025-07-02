@@ -19,9 +19,9 @@ namespace DataForm
     {
         public Dictionary<string, PlayerData> players; //플레이어 딕셔너리
         public Dictionary<string, KeywordData> keywords; //키워드 딕셔너리
+        public Dictionary<string, MonsterData> monsters; //몬스터 딕셔너리
         public ExitData exit; //출구 딕셔너리
     }
-
 
 
 
@@ -36,7 +36,6 @@ namespace DataForm
         public string interactableKeywordId; //player's closest interactable keyword
         public bool canInteractWithExit; //interactable exit flag
     }
-
 
 
     [System.Serializable]
@@ -61,6 +60,18 @@ namespace DataForm
         public string translation;
         public int answerCount;
         public int correctedCount;
+    }
+
+    [System.Serializable]
+    public class MonsterData
+    {
+        public string id;
+        public string type; //"RUNNER", "CHASER"    
+        public float x;
+        public float y;
+        public int hp;
+        public string holdingKeywordId; //심어져있는 키워드
+        public bool isActive; //몬스터 활성화 플래그
     }
 
 }
