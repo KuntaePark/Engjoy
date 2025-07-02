@@ -1,4 +1,9 @@
 package com.engjoy.repository;
 
-public class UserAchievementRepository {
+import com.engjoy.entity.UserAchievement;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+
+public interface UserAchievementRepository extends JpaRepository<UserAchievement, Long> {
+
 }

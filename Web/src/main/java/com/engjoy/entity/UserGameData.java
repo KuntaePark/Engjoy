@@ -13,7 +13,7 @@ public class UserGameData {
     private Long id;
     private String charImgUrl;
     private int game1Score;
-    private int game2Score;
+    private int game2HighScore;
     private int gold;
     private Long ranking;
     private float rankingPercent;
