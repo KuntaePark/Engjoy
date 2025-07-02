@@ -1,27 +1,22 @@
 class Exit {
-  constructor(x, y, originalSentence, answerMap, translation) {
+  constructor(x, y, originalSentence, answerTexts, translation) {
     this.x = x;
     this.y = y;
 
-    this.originalSentence = originalSentence; //출구에 세팅될 영문장
-    this.answerMap = answerMap; //정답 키워드 목록
-    this.answerKeywordIds = Object.keys(this.answerMap); //정답 키워드 ID
-    this.translation = translation; //출구에 세팅될 영문장의 해설
-
-    this.isOpen = false; //출구 개방상태
-    this.correctedKeywordIds = []; //매칭된 정답 키워드 ID
+    this.originalSentence = originalSentence; //원본 문장
+    this.answerTexts = answerTexts; //정답 단어 목록
+    this.translation = translation; //문장 해설
+    this.isOpen = false;
+    this.correctedTexts = [];
   }
 
   toPacket() {
-    let currentExitSentence = this.originalSentence;
+    let sentenceToShow = this.originalSentence;
 
-    for (const [id, text] of Object.entries(this.answerMap)) {
-      //아직 정답이 맞춰지지 않았다면
-
-      if (!this.correctedKeywordIds.includes(id)) {
-        //해당 텍스트를 빈칸으로 교체
-        const regex = new RegExp(`\\b${text}\\b`, "gi");
-        currentExitSentence = currentExitSentence.replace(regex, "___");
+    for (const answer of this.answerTexts) {
+      if (!this.correctedTexts.includes(answer)) {
+        const regex = new RegExp(`\\b${answer}\\b`, "gi");
+        sentenceToShow = sentenceToShow.replace(regex, "___");
       }
     }
 
@@ -29,23 +24,24 @@ class Exit {
       x: this.x,
       y: this.y,
       isOpen: this.isOpen,
-      sentence: currentExitSentence,
+      sentence: sentenceToShow, //실시간으로 생성된 문장 전송
       translation: this.translation,
-      answerCount: this.answerKeywordIds.length,
-      correctedCount: this.correctedKeywordIds.length,
+      answerCount: this.answerTexts.length,
+      correctedCount: this.correctedTexts.length,
     };
   }
 
-  matchKeyword(holdingKeywordId) {
+  matchKeyword(holdingKeywordText) {
     //키워드 매칭
 
-    const isCorrectAnswer = this.answerKeywordIds.includes(holdingKeywordId); //예비용: 이미 제출된 답인지 아닌지 확인 // const isAlreadySubmitted = //   this.correctedKeywordIds.includes(holdingKeywordId); //만약 정답이라면
+    const isCorrectAnswer = this.answerTexts.includes(holdingKeywordText);
+    // const isAlreadySubmitted = this.correctedTexts.includes(holdingKeywordText);
 
     if (isCorrectAnswer) {
-      this.correctedKeywordIds.push(holdingKeywordId);
-      console.log(`[Exit] Correct keyword submitted: ${holdingKeywordId}`);
+      this.correctedTexts.push(holdingKeywordText);
+      console.log(`[Exit] Correct keyword submitted: ${holdingKeywordText}`);
 
-      if (this.correctedKeywordIds.length === this.answerKeywordIds.length) {
+      if (this.correctedTexts.length === this.answerTexts.length) {
         this.isOpen = true;
         console.log("[Exit] All keywords matched. The exit is now open.");
 

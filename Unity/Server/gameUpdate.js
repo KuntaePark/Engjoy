@@ -26,15 +26,9 @@ const ROAM_AREA_SIZE = 15; //로밍 범위
 function update(gameState) {
   // ================= ▼▼▼ 플레이어 관련 동기화 ▼▼▼ =================
   for (const id in gameState.players) {
-    const p = gameState.players[id]; //키워드 들고 있으면 키워드 위치도 플레이어 위치로 고정!(동기화)
+    const p = gameState.players[id];
 
-    if (p.holdingKeywordId && gameState.keywords[p.holdingKeywordId]) {
-      const holdingKeyword = gameState.keywords[p.holdingKeywordId];
-
-      holdingKeyword.x = p.x;
-      holdingKeyword.y = p.y;
-    } //플레이어 이동 계산
-
+    //플레이어 이동 계산
     const newX = p.x + p.inputH * deltaTime * PLAYER_SPEED;
     const newY = p.y + p.inputV * deltaTime * PLAYER_SPEED; //충돌 체크 로직
 
@@ -70,19 +64,6 @@ function update(gameState) {
     updateExitInteractionState(p, gameState.exit);
   }
 
-  //몬스터가 들고 있는 키워드 위치 동기화
-  for (const id in gameState.monsters) {
-    const monster = gameState.monsters[id];
-    if (
-      monster.holdingKeywordId &&
-      gameState.keywords[monster.holdingKeywordId]
-    ) {
-      const keyword = gameState.keywords[monster.holdingKeywordId];
-      keyword.x = monster.x;
-      keyword.y = monster.y;
-    }
-  }
-
   // ================= ▼▼▼ 몬스터 관련 함수 호출 ▼▼▼ =================
   for (const id in gameState.monsters) {
     const monster = gameState.monsters[id];
@@ -91,6 +72,18 @@ function update(gameState) {
     updateMonsterMovement(monster, gameState);
   }
   // ================= ▲▲▲ 몬스터 관련 함수 호출 ▲▲▲ =================
+
+  //플레이어가 들고 있는 키워드 동기화
+  for (const id in gameState.players) {
+    const p = gameState.players[id]; //키워드 들고 있으면 키워드 위치도 플레이어 위치로 고정!(동기화)
+
+    if (p.holdingKeywordId && gameState.keywords[p.holdingKeywordId]) {
+      const holdingKeyword = gameState.keywords[p.holdingKeywordId];
+
+      holdingKeyword.x = p.x;
+      holdingKeyword.y = p.y;
+    }
+  }
 }
 
 function updateExitInteractionState(player, exit) {
@@ -235,9 +228,9 @@ function updateMonsterMovement(monster, gameState) {
         if (monster.roamTimer <= 0 || monster.roamTargetX === null) {
           //현재 위치 주변에 새로운 목표 좌표 랜덤 설정
           monster.roamTargetX =
-            monster.x + (Math.random() - 0.5) * ROAMING_SPEED * deltaTime;
+            monster.x + (Math.random() - 0.5) * ROAM_AREA_SIZE;
           monster.roamTargetY =
-            monster.y + (Math.random() - 0.5) * ROAMING_SPEED * deltaTime;
+            monster.y + (Math.random() - 0.5) * ROAM_AREA_SIZE;
 
           //2~6초 사이의 랜덤 시간 지정
           monster.roamTimer = 2 + Math.random() * 4;
@@ -262,7 +255,7 @@ function updateMonsterMovement(monster, gameState) {
 
             if (!isNaN(moveX) && !isNaN(moveY)) {
               monster.x += moveX;
-              monster.Y += moveY;
+              monster.y += moveY;
             }
           }
         }

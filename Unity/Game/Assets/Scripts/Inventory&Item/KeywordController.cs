@@ -18,8 +18,6 @@ public class KeywordController : MonoBehaviour
     public string keywordId;
     private Vector3 targetPosition; //서버가 지정한, 혹은 따라다녀야할 목표 위치
 
-    private bool droppedByMonster = false;
-
 
     private void Awake()
     {
@@ -27,6 +25,7 @@ public class KeywordController : MonoBehaviour
         {
             keywordText = GetComponentInChildren<TextMeshPro>();
         }
+        
     }
 
 
@@ -44,59 +43,24 @@ public class KeywordController : MonoBehaviour
         transform.position = new Vector3(initialData.x, initialData.y, 0);
         targetPosition = transform.position;
 
-        UpdateVisibility(initialData);
     }
 
 
 
     public void UpdateState(KeywordData data)
     {
-        //data.carrierId를 보고 스스로 목표 위치를 결정
-        if (!string.IsNullOrEmpty(data.carrierId))
+       //플레이어가 키워드 들고 있는지 확인
+       if (!string.IsNullOrEmpty(data.carrierId))
         {
-
-            //나를 어부바한 플레이어를 찾는다.
-            PlayerController carrier = PlayerManager.Instance.GetPlayerObjectById(data.carrierId);
-
-            if (carrier != null)
+            PlayerController carrier = PlayerManager.Instance.GetPlayerObjectById(data.carrierId);
+            if(carrier != null)
             {
-                //그 플레이어의 위치를 나의 목표 위치로 삼는다.
-                targetPosition = carrier.transform.position + followOffset;
+                targetPosition = carrier.transform.position + followOffset;
             }
-        }
-
-        else
-        {
-            //들고 있는 플레이어가 없으면 서버가 지정한 월드 좌표를 목표 위치로 삼는다.
-            targetPosition = new Vector3(data.x, data.y, 0);
-        }
-
-        UpdateVisibility(data);
-    }
-
-    private void UpdateVisibility(KeywordData data)
-    {
-        if (keywordText == null) return;
-
-        //한 번이라도 드랍된 적 있다면?
-        if (droppedByMonster)
-        {
-            keywordText.enabled = true;
-            return;
-        }
-
-        //아직 드랍된 적이 있다면
-        bool isCarried = !string.IsNullOrEmpty(data.carrierId);
-        if(isCarried)
-        {
-            //처음에 몬스터가 들고 있을 때에는
-            keywordText.enabled = false;
-        }
-        else
-        {
-            //아무도 안들고 있다면? 몬스터가 방금 드랍했다면?
-            keywordText.enabled= true;
-            droppedByMonster = true;
+            else
+            {
+                targetPosition = new Vector3(data.x, data.y, 0);
+            }
         }
     }
 

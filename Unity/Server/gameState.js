@@ -145,12 +145,18 @@ class GameState {
         console.log(`[Monster Down] Monster ${hitMonster.id} is dead.`);
 
         //그 몬스터가 키워드를 들고 있는 경우
-        if (hitMonster.holdingKeywordId) {
-          const droppedKeyword = this.keywords[hitMonster.holdingKeywordId];
-          if (droppedKeyword) {
-            console.log(`Monster dropped keyword ${droppedKeyword.text}`);
-            droppedKeyword.carrierId = null;
-          }
+        if (hitMonster.keywordData) {
+          const keywordId = generateId(new Set(Object.keys(this.keywords)));
+          //몬스터가 죽은 위치에 몬스터가 가진 정보로 새 키워드 생성
+          const newKeyword = new Keyword(
+            keywordId,
+            hitMonster.keywordData.text,
+            hitMonster.x,
+            hitMonster.y,
+            hitMonster.keywordData.isAnswer
+          );
+
+          this.keywords[keywordId] = newKeyword;
         }
 
         delete this.monsters[hitMonster.id];
@@ -196,7 +202,7 @@ class GameState {
 
     if (!exit || !keyword) return; //출구에 판정 요청 //키워드 판정이나 잠금해제 여부는 matchKeyword에서 해줌
 
-    const result = exit.matchKeyword(holdingKeywordId);
+    const result = exit.matchKeyword(keyword.text);
 
     if (result.matched) {
       //정답 키워드일 경우
@@ -218,6 +224,7 @@ class GameState {
   }
   // ================= ▲▲▲ 플레이어&키워드 상호작용 ▲▲▲ =================
 
+  // ================= ▼▼▼ 몬스터 피격 ▼▼▼ =================
   monsterHitsPlayer(monsterId, playerId) {
     const player = this.players[playerId];
 
@@ -236,7 +243,10 @@ class GameState {
       console.log(`Player dropped keyword ${droppedKeyword.text}`);
       droppedKeyword.carrierId = null;
     }
+
+    player.holdingKeywordId = null;
   }
+  // ================= ▲▲▲ 몬스터 피격 ▲▲▲ =================
 
   // ================= ▼▼▼ 게임 상태 데이터 패킹 ▼▼▼ =================
   getFullStatePacket() {

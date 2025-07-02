@@ -16,32 +16,6 @@ async function setupLevel(gameState, gameLevel = 10) {
 
   gameState.monsters = {};
 
-  // ================= ▼▼▼ 몬스터 세팅 ▼▼▼ =================
-  console.log("LevelManager: Spawning monsters...");
-
-  //테스트용 러너 한 마리 소환
-  const runnerId = generateId(new Set(Object.keys(gameState.monsters)));
-  const runnerMonster = new Monster(
-    runnerId,
-    MonsterType.RUNNER,
-    6.0, //x
-    9.0, //y
-    3 //hp
-  );
-  gameState.monsters[runnerId] = runnerMonster;
-
-  //테스트용 체이서 한 마리 소환
-  const chaserId = generateId(new Set(Object.keys(gameState.monsters)));
-  const chaserMonster = new Monster(
-    chaserId,
-    MonsterType.CHASER,
-    5.0, //x
-    10.0, //y
-    2 //hp
-  );
-  gameState.monsters[chaserId] = chaserMonster;
-  // ================= ▲▲▲ 몬스터 세팅 ▲▲▲ =================
-
   // ================= ▼▼▼ 키워드 세팅 ▼▼▼ =================
   //db에서 영문장 가져오기
   const sentenceData = await getRandomSentence(gameLevel);
@@ -104,8 +78,6 @@ async function setupLevel(gameState, gameLevel = 10) {
   //db에서 오답 키워드 가져오기
   const dummyTexts = await getRandomWords(dummyCount);
 
-  const answerMap = {};
-
   //키워드 텍스트를 배열로 정리
   const allKeywordTexts = [
     ...answerTexts.map((text) => ({ text, isAnswer: true })),
@@ -114,32 +86,15 @@ async function setupLevel(gameState, gameLevel = 10) {
 
   //키워드를 가진 Runner몬스터 스폰
   allKeywordTexts.forEach((keywordInfo) => {
-    const keywordId = generateId(new Set(Object.keys(gameState.keywords)));
     const monsterId = generateId(new Set(Object.keys(gameState.monsters)));
 
-    //키워드 생성
-    const newKeyword = new Keyword(
-      keywordId,
-      keywordInfo.text,
-      0,
-      0,
-      keywordInfo.isAnswer
-    );
-    newKeyword.carrierId = monsterId;
-    gameState.keywords[keywordId] = newKeyword;
-
-    if (keywordInfo.isAnswer) {
-      answerMap[keywordId] = keywordInfo.text;
-    }
-
-    //키워드를 가진 러너 몬스터 생성
     const newMonster = new Monster(
       monsterId,
       MonsterType.RUNNER,
       getRandomInt(0, 15),
       getRandomInt(0, 15),
       3,
-      keywordId
+      keywordInfo
     );
     gameState.monsters[monsterId] = newMonster;
   });
@@ -176,8 +131,8 @@ async function setupLevel(gameState, gameLevel = 10) {
   const newExit = new Exit(
     7.5, //x
     7.5, //y
-    sentenceData.word_text,
-    answerMap,
+    sentenceData.word_text, //원본 문장 전달
+    answerTexts, //정답 단어들의 배열
     sentenceData.meaning
   );
   gameState.exit = newExit;

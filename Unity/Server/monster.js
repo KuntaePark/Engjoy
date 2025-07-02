@@ -4,13 +4,13 @@ const MonsterType = {
 };
 
 class Monster {
-  constructor(id, type, x, y, hp, holdingKeywordId = null) {
+  constructor(id, type, x, y, hp, keywordData = null) {
     this.id = id;
     this.type = type; //몬스터 유형(RUNNER, CHASER)
     this.x = x;
     this.y = y;
     this.hp = hp; //몬스터의 체력
-    this.holdingKeywordId = holdingKeywordId; //몬스터가 떨굴 키워드ID
+    this.keywordData = keywordData; //키워드 정보 직접 저장
     this.isActive = false;
 
     //로밍 상태를 위한 변수 추가
@@ -26,7 +26,6 @@ class Monster {
       x: this.x,
       y: this.y,
       hp: this.hp,
-      holdingKeywordId: this.holdingKeywordId,
       isActive: this.isActive,
     };
   }

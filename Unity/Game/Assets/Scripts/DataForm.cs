@@ -70,7 +70,6 @@ namespace DataForm
         public float x;
         public float y;
         public int hp;
-        public string holdingKeywordId; //심어져있는 키워드
         public bool isActive; //몬스터 활성화 플래그
     }
 
