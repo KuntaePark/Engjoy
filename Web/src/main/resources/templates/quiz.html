@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css"></th:block>
+<th:block layout:fragment="script">
+    <script>
+        window.location.href = '/take';
+    </script>
+</th:block>
+<div class="flex items-center justify-center py-12">
+    <p class="text-lg">퀴즈를 시작합니다. 잠시만 기다려 주세요...</p>
+</div>
+<th:block layout:fragment="main">
+
+</th:block>
+</html>

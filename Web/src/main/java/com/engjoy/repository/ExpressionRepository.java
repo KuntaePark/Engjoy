@@ -23,15 +23,22 @@ public interface ExpressionRepository extends JpaRepository<Expression, Long> {
     @Query("SELECT e.meaning FROM Expression e")
     List<String> findAllMeanings();
 
-    @Query("SELECT DISTINCT eu.expression FROM ExprUsed eu " +
+    @Query("SELECT DISTINCT e FROM ExprUsed eu JOIN eu.expression e LEFT JOIN FETCH e.wordInfo " +
             "WHERE eu.account.id = :accountId " +
-            "AND (:category IS NULL OR eu.expression.exprType = :category) "+
+            "AND (:category IS NULL OR e.exprType = :category) " +
             "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
             "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
     List<Expression> findWithFilters(
             @Param("accountId") Long accountId,
-            @Param("category")CATEGORY category,
-            @Param("startDate")LocalDateTime startDate,
+            @Param("category") CATEGORY category,
+            @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
-            );
+    );
+
+    @Query("SELECT e FROM Expression e LEFT JOIN FETCH e.wordInfo ORDER BY function('RAND')")
+    List<Expression> findRandomExpressions(Pageable pageable);
+
+    @Query(value = "SELECT e.meaning FROM expression e WHERE e.expr_id NOT IN :excludeIds ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    List<String> findRandomMeanings(@Param("excludeIds") List<Long> excludeIds, @Param("limit") int limit);
+
 }

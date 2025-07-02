@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <style>
+        /* 선택된 답변 버튼 스타일 (단어 퀴즈용) */
+        .answer-btn.selected {
+            border-color: #4f46e5; /* indigo-600 */
+            background-color: #e0e7ff; /* indigo-100 */
+            font-weight: 600;
+        }
+        /* 드래그 앤 드롭 관련 스타일 (문장 퀴즈용) */
+        #answer-board .word-btn { cursor: grab; }
+        .sortable-ghost { opacity: 0.4; background: #c7d2fe; }
+    </style>
+</th:block>
+<th:block layout:fragment="script">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <script th:inline="javascript">
+        // --- 데이터 초기화 ---
+        const question = /*[[${question}]]*/ null;
+        const currentIndex = /*[[${currentIndex}]]*/ 0;
+        const totalQuestions = /*[[${totalQuestions}]]*/ 0;
+        const isSentenceQuiz = question.exprType === 'SENTENCE';
+        let selectedAnswer = null; // 단어 퀴즈에서 선택한 답변 저장용
+
+        // --- 페이지 로드 완료 후 스크립트 실행 ---
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 공통 요소 가져오기 ---
+            const quizContainer = document.getElementById('quiz-container');
+            const feedbackArea = document.getElementById('feedback-area');
+            const submitBtn = document.getElementById('submitBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const skipBtn = document.getElementById('skipBtn');
+            const resetBtn = document.getElementById('resetBtn');
+
+            // --- 퀴즈 유형별 요소 가져오기 및 이벤트 리스너 설정 ---
+            if (isSentenceQuiz) {
+                // 문장 퀴즈용 요소
+                const answerBoard = document.getElementById('answer-board');
+                const wordBank = document.getElementById('word-bank');
+
+                if (answerBoard && wordBank) {
+                    // 드래그앤드롭 기능 활성화
+                    new Sortable(answerBoard, { animation: 150, ghostClass: 'sortable-ghost' });
+
+                    // 단어 은행 -> 정답판으로 이동
+                    wordBank.addEventListener('click', e => {
+                        const btn = e.target.closest('.word-btn');
+                        if (btn) answerBoard.appendChild(btn);
+                    });
+                    // 정답판 -> 단어 은행으로 복귀
+                    answerBoard.addEventListener('click', e => {
+                        const btn = e.target.closest('.word-btn');
+                        if (btn) wordBank.appendChild(btn);
+                    });
+                }
+                if (resetBtn) {
+                     resetBtn.addEventListener('click', () => {
+                        const answerWords = answerBoard.querySelectorAll('.word-btn');
+                        answerWords.forEach(btn => wordBank.appendChild(btn));
+                    });
+                }
+
+            } else {
+                // 단어 퀴즈용 요소
+                const choicesArea = document.getElementById('choices-area');
+                if (choicesArea) {
+                    choicesArea.querySelectorAll('.answer-btn').forEach(button => {
+                        button.addEventListener('click', () => {
+                            choicesArea.querySelectorAll('.answer-btn').forEach(btn => btn.classList.remove('selected'));
+                            button.classList.add('selected');
+                            selectedAnswer = button.dataset.answer;
+                        });
+                    });
+                }
+            }
+
+            // --- 공통 버튼 이벤트 리스너 ---
+            if (submitBtn) {
+                submitBtn.addEventListener('click', () => {
+                    let answeredDto;
+                    if (isSentenceQuiz) {
+                        const submittedWords = Array.from(answerBoard.querySelectorAll('.word-btn')).map(btn => btn.innerText.trim());
+                        if (submittedWords.length === 0) { alert('단어를 옮겨 문장을 만들어주세요!'); return; }
+                        answeredDto = { exprId: question.exprId, submitSentence: submittedWords };
+                    } else {
+                        if (!selectedAnswer) { alert('답을 선택해주세요!'); return; }
+                        answeredDto = { exprId: question.exprId, submitWord: selectedAnswer };
+                    }
+                    disableAllAnswerButtons();
+                    submitAnswer(answeredDto);
+                });
+            }
+
+            if (skipBtn) skipBtn.addEventListener('click', () => goToNextQuestion());
+            if (nextBtn) nextBtn.addEventListener('click', () => goToNextQuestion());
+
+            // --- 함수 정의 ---
+            function submitAnswer(answeredDto) {
+                const token = document.querySelector("meta[name='_csrf']")?.content;
+                const header = document.querySelector("meta[name='_csrf_header']")?.content;
+                const headers = { 'Content-Type': 'application/json' };
+                if (token && header) {
+                    headers[header] = token;
+                }
+
+                fetch('/quiz/submit', { method: 'POST', headers: headers, body: JSON.stringify(answeredDto) })
+                    .then(response => {
+                        if (!response.ok) {
+                             // 403 에러 등 텍스트 기반 에러 메시지 처리를 위해 response.text() 사용
+                            return response.text().then(text => { throw new Error('채점 실패: ' + text) });
+                        }
+                        return response.json();
+                    })
+                    .then(gradedResult => {
+                        showFeedback(gradedResult);
+                        toggleActionButtons();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        feedbackArea.innerHTML = `<p class="text-red-600">오류가 발생했습니다.</p>`;
+                    });
+            }
+
+            function showFeedback(gradedResult) {
+                if (gradedResult.isCorrect) {
+                    feedbackArea.innerHTML = `<p class="text-2xl font-bold text-green-600">정답입니다! ✅</p>`;
+                } else {
+                    let correctAnswerText = '';
+
+                    // ✅ DTO의 실제 필드 이름인 correctWordAnswer와 correctSentenceAnswer를 사용합니다.
+                    if (gradedResult.correctWordAnswer) {
+                        correctAnswerText = `정답: ${gradedResult.correctWordAnswer}`;
+                    } else if (gradedResult.correctSentenceAnswer) {
+                        correctAnswerText = `정답: ${gradedResult.correctSentenceAnswer.join(' ')}`;
+                    }
+
+                    feedbackArea.innerHTML = `<p class="text-xl font-bold text-red-600">오답입니다. ${correctAnswerText}</p>`;
+                }
+            }
+
+            function toggleActionButtons() {
+                if(submitBtn) submitBtn.classList.add('hidden');
+                if(skipBtn) skipBtn.classList.add('hidden');
+                if(resetBtn) resetBtn.classList.add('hidden');
+                if(nextBtn) nextBtn.classList.remove('hidden');
+            }
+
+            function disableAllAnswerButtons() {
+                if (isSentenceQuiz) {
+                    const sortableInstance = Sortable.get(answerBoard);
+                    if (sortableInstance) sortableInstance.option('disabled', true);
+                    const allWordBtns = document.querySelectorAll('.word-btn');
+                    if (allWordBtns) allWordBtns.forEach(btn => btn.classList.add('cursor-not-allowed'));
+                } else {
+                    const choicesArea = document.getElementById('choices-area');
+                    if (choicesArea) {
+                        choicesArea.querySelectorAll('.answer-btn').forEach(btn => {
+                            btn.disabled = true;
+                            btn.classList.add('cursor-not-allowed', 'opacity-70');
+                        });
+                    }
+                }
+            }
+
+            function goToNextQuestion() {
+                if (currentIndex + 1 >= totalQuestions) {
+                    fetch('/quiz/result').then(res => res.json()).then(showFinalResult);
+                } else {
+                    window.location.href = `/quiz/take?index=${currentIndex + 1}`;
+                }
+            }
+
+            function showFinalResult(finalResult) {
+                 if(quizContainer) {
+                    quizContainer.innerHTML = `
+                    <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">퀴즈 결과</h2>
+                    <div class="space-y-4 text-lg">
+                        <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>총 문제</span><span class="font-bold">${finalResult.totalQuestions}</span></div>
+                        <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>맞은 개수</span><span class="font-bold text-green-600">${finalResult.correctCount}</span></div>
+                        <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>획득 골드 💰</span><span class="font-bold text-yellow-500">${finalResult.rewardGold}</span></div>
+                    </div>
+                    <div class="mt-8">
+                        <a href="/expressions" class="w-full inline-block px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 text-center">단어장으로 돌아가기</a>
+                    </div>
+                    `;
+                 }
+                 // 하단 버튼 영역도 숨기거나 제거
+                 const actionButtons = document.querySelector('.fixed.bottom-10');
+                 if(actionButtons) actionButtons.style.display = 'none';
+            }
+        });
+    </script>
+</th:block>
+
+
+<th:block layout:fragment="main">
+    <div id="quiz-container" class="w-full max-w-3xl p-8 bg-white rounded-lg shadow-md my-12">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">퀴즈</h2>
+            <p class="text-right text-gray-600">
+                <span th:text="${currentIndex + 1}">1</span> / <span th:text="${totalQuestions}">10</span>
+            </p>
+            <a th:href="@{/quiz/exit}" class="px-3 py-1 text-sm text-red-600 bg-red-100 rounded-full hover:bg-red-200">나가기</a>
+        </div>
+
+        <div class="mb-6">
+            <p class="text-2xl font-bold text-center text-gray-900" th:text="${question.questionText}">문제(뜻)가 여기에 표시됩니다.</p>
+        </div>
+
+        <div th:if="${question.exprType.name() == 'SENTENCE'}">
+            <div id="answer-board" class="min-h-[6rem] p-3 mb-4 bg-gray-100 rounded-lg border-2 border-dashed flex flex-wrap gap-2 items-center"></div>
+            <div id="word-bank" class="flex flex-wrap gap-2 justify-center mb-6 min-h-[4rem] p-2 border rounded-lg">
+                <button th:each="word : ${question.choices}" class="word-btn p-3 text-lg font-semibold text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200">
+                    <span th:text="${word}">word</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="choices-area" th:if="${question.exprType.name() == 'WORD'}" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <button th:each="choice : ${question.choices}" th:data-answer="${choice}" class="answer-btn p-4 text-lg text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-indigo-100">
+                <span th:text="${choice}">Choice Text</span>
+            </button>
+        </div>
+
+        <div id="feedback-area" class="text-center h-20"></div>
+    </div>
+
+    <div class="fixed bottom-10 right-10 z-50">
+        <div class="flex gap-2">
+            <div class="relative w-24 h-12">
+                <button id="submitBtn" class="absolute inset-0 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg">제출</button>
+                <button id="nextBtn" class="absolute inset-0 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hidden">다음</button>
+            </div>
+            <button id="resetBtn" th:if="${question.exprType.name() == 'SENTENCE'}" class="bg-white text-gray-700 px-4 py-2 rounded-full shadow-lg">초기화</button>
+            <button id="skipBtn" class="bg-white text-gray-700 px-4 py-2 rounded-full shadow-lg">건너뛰기</button>
+        </div>
+    </div>
+</th:block>
+</html>

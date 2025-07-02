@@ -16,10 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -129,13 +126,23 @@ public class ExpressionService {
     }
 
     // 정답을 제외한 나머지 단어 뜻에서 지정된 개수만큼 무작위로 오답 보기 생성(퀴즈 및 인쇄)
-    public List<String> generateChoices(String correctAnswer, int count){
-        List<String> allMeanings = expressionRepository.findAllMeanings();
-        allMeanings.remove(correctAnswer);
-        Collections.shuffle(allMeanings);
-        return allMeanings.stream()
-                .limit(count)
+    public List<String> generateChoices(String correctAnswer, List<String> allMeanings, int count) {
+        // 정답 제외
+        List<String> filtered = allMeanings.stream()
+                .filter(meaning -> !meaning.equalsIgnoreCase(correctAnswer))
                 .collect(Collectors.toList());
+
+        Collections.shuffle(filtered);
+
+        // 부족하면 "보기부족"으로 채움
+        if (filtered.size() < count) {
+            while (filtered.size() < count) {
+                filtered.add("※보기부족※");
+            }
+            return filtered.subList(0, count);
+        }
+
+        return filtered.subList(0, count);
     }
 
     // 사전 페이지의 단어/문장 목록을 페이징하여 조회
@@ -165,4 +172,18 @@ public class ExpressionService {
         }
         return PageRequest.of(page,size,sort);
     }
+
+    public Map<Long, List<String>> generateChoicesForBatch(List<Expression> expressions, List<String> allMeanings) {
+        Map<Long, List<String>> result = new HashMap<>();
+        for (Expression expr : expressions) {
+            List<String> choices = new ArrayList<>();
+            choices.add(expr.getMeaning());
+            choices.addAll(generateChoices(expr.getMeaning(), allMeanings, 3));
+            Collections.shuffle(choices);
+            result.put(expr.getId(), choices);
+        }
+        return result;
+    }
+
+
 }

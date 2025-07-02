@@ -24,17 +24,17 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
 
     boolean existsByAccountAndExpression(Account account, Expression expression);
 
-    @Query("SELECT eu FROM ExprUsed eu " +
-            " WHERE eu.account = :account " +
+    @Query("SELECT eu FROM ExprUsed eu JOIN FETCH eu.expression " +
+            "WHERE eu.account = :account " +
             "AND eu.expression.exprType = :exprType " +
-            "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
-            "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
-    Page<ExprUsed> findUsedByDateRange(
+            "AND eu.usedTime BETWEEN :start AND :end")
+    Page<ExprUsed> findUsedByDateRangeFetchExpr(
             @Param("account") Account account,
             @Param("exprType") EXPRTYPE exprType,
-            @Param("startDate")LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
             Pageable pageable);
+
 
     @Query("SELECT COUNT(eu) FROM ExprUsed eu " +
             "WHERE eu.account = :account " +

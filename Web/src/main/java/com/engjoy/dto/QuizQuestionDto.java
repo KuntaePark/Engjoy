@@ -17,15 +17,19 @@ public class QuizQuestionDto {
     private boolean isFavorite;
     private String pronAudio;
 
-    public static QuizQuestionDto from(Expression expression,List<String> choices,
-                                       boolean isFavorite){
+    public static QuizQuestionDto from(Long exprId,
+                                       EXPRTYPE exprType,
+                                       String questionText,
+                                       List<String> choices,
+                                       boolean isFavorite,
+                                       String pronAudio) {
         QuizQuestionDto dto = new QuizQuestionDto();
-        dto.setExprId(expression.getId());
-        dto.setExprType(expression.getExprType());
-        dto.setQuestionText(expression.getMeaning()); // 단어 퀴즈면 뜻이 문제가 될 수 잇음
+        dto.setExprId(exprId);
+        dto.setExprType(exprType);
+        dto.setQuestionText(questionText);
         dto.setChoices(choices);
         dto.setFavorite(isFavorite);
-        dto.setPronAudio(expression.getPronAudio());
+        dto.setPronAudio(pronAudio);
         return dto;
     }
 

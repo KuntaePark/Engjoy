@@ -122,7 +122,8 @@
             <h1 class="text-4xl font-bold text-gray-900">나의 단어장</h1>
             <p class="text-lg text-gray-600 mt-2">학습한 단어와 문장을 복습하고 관리하세요.</p>
             <div class="mt-4">
-                <a href="/expressions/incorrect" class="text-blue-600 hover:underline">오답 노트 바로가기 &rarr;</a>
+                <a th:href="@{/incorrect}" class="text-blue-600 hover:underline">오답 노트 바로가기 &rarr;</a>
+                <a th:href="@{/quizSetting}" class="btn btn-primary">복습 퀴즈</a>
             </div>
         </header>
 

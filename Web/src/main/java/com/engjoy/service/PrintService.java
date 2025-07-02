@@ -9,10 +9,19 @@ import com.engjoy.dto.QuizSettingDto;
 import com.engjoy.entity.Expression;
 import com.engjoy.repository.ExpressionRepository;
 import com.engjoy.repository.WordInfoRepository;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.properties.TextAlignment;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.weaver.ast.Expr;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,16 +37,16 @@ public class PrintService {
     private final WordInfoRepository wordInfoRepository;
 
     // 사용자의 인쇄 옵션에 따라 PDF생성 후 byte배열로 반환
-//    public byte[] createPrintablePdf(PrintOptionDto printOptionDto, Long accountId) throws IOException {
-//        // 인쇄할 Expression 목록 조회
-//        List<Expression> expressionsToPrint = getExpressionsToPrint(printOptionDto, accountId);
-//        // 사용자가 선택한 정렬 적용
-//        List<Expression> sortedExpressions = applyOrderType(expressionsToPrint, printOptionDto.getPrintOptionDetailDto().getOrderType());
-//        // 인쇄 형태에 맞게 데이터 목록 생성
-//        List<PrintContentDto> contents = createContents(sortedExpressions, printOptionDto.getPrintForm());
-//
-//        return createPdf(contents, printOptionDto);
-//    }
+    public byte[] createPrintablePdf(PrintOptionDto printOptionDto, Long accountId) throws IOException {
+        // 인쇄할 Expression 목록 조회
+        List<Expression> expressionsToPrint = getExpressionsToPrint(printOptionDto, accountId);
+        // 사용자가 선택한 정렬 적용
+        List<Expression> sortedExpressions = applyOrderType(expressionsToPrint, printOptionDto.getPrintOptionDetailDto().getOrderType());
+        // 인쇄 형태에 맞게 데이터 목록 생성
+        List<PrintContentDto> contents = createContents(sortedExpressions, printOptionDto.getPrintForm());
+
+        return createPdf(contents, printOptionDto);
+    }
 
     // 인쇄 옵션에 따라 인쇄할 목록 가져오기
     private List<Expression> getExpressionsToPrint(PrintOptionDto printOptionDto, Long accountId) {
@@ -124,21 +133,37 @@ public class PrintService {
             choices.add(expression.getMeaning());
             Collections.shuffle(choices);
 
-            return new PrintContentDto(expression.getWordText(), expression.getMeaning(), choices, null, null, null, null, null);
+            return new PrintContentDto(
+                    expression.getWordText(), // question
+                    expression.getMeaning(),  // answer
+                    choices,                  // choices
+                    null, null,           // wordText, meaning 은 null
+                    null, null, null, null, null // 나머지 필드도 null
+            );
         }).collect(Collectors.toList());
     }
 
     // 단어-뜻 리스트 형식
     private List<PrintContentDto> makeList(List<Expression> expressions) {
         return expressions.stream()
-                .map(expr -> new PrintContentDto(expr.getWordText(), expr.getMeaning(), null, null, null, null, null, null))
+                .map(expr -> new PrintContentDto(
+                        null, null, null,     // question, answer, choices 는 null
+                        expr.getWordText(),   // wordText
+                        expr.getMeaning(),    // meaning
+                        null, null, null, null, null // 나머지 필드도 null
+                ))
                 .collect(Collectors.toList());
     }
 
     // 워크시트 형식
     private List<PrintContentDto> makeWorkSheet(List<Expression> expressions) {
         return expressions.stream()
-                .map(expr -> new PrintContentDto(expr.getWordText(), "________________", null, null, null, null, null, null))
+                .map(expr -> new PrintContentDto(
+                        null, null, null,     // question, answer, choices 는 null
+                        expr.getWordText(),   // wordText
+                        "________________",   // meaning
+                        null, null, null, null, null // 나머지 필드도 null
+                ))
                 .collect(Collectors.toList());
     }
     // 오답 보기 무작위 추출
@@ -150,7 +175,35 @@ public class PrintService {
     }
 
     // 생성된 데이터 목록을 받아 최총 PDF 문서
+    private byte[] createPdf(List<PrintContentDto> contents, PrintOptionDto printOptionDto) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
 
+        // 중요: 폰트 경로를 실제 환경에 맞게 수정해야 합니다.
+        ClassPathResource fontResource = new ClassPathResource("fonts/Pretendard-Regular.ttf");
+        PdfFont font = PdfFontFactory.createFont(fontResource.getURL().toString(), "Identity-H");
+
+        document.setFont(font);
+
+        document.add(new Paragraph("나의 단어/문장 학습지").setFontSize(20).setBold().setTextAlignment(TextAlignment.CENTER));
+
+        for (int i = 0; i < contents.size(); i++) {
+            PrintContentDto content = contents.get(i);
+            String line = (i + 1) + ". " + content.getWordText() + " : " + content.getMeaning();
+            document.add(new Paragraph(line).setFontSize(12).setMarginTop(10));
+
+            if (printOptionDto.getPrintForm() == PRINTFORM.EXAM && content.getChoices() != null) {
+                for (int j = 0; j < content.getChoices().size(); j++) {
+                    String choiceLine = "   " + (j + 1) + ") " + content.getChoices().get(j);
+                    document.add(new Paragraph(choiceLine).setFontSize(11));
+                }
+            }
+        }
+        document.close();
+        return baos.toByteArray();
+    }
 
 }
 

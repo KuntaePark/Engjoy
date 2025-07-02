@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css"></th:block>
+<th:block layout:fragment="script">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const createPdfBtn = document.getElementById('create-pdf-btn');
+
+            createPdfBtn.addEventListener('click', () => {
+                // 1. 사용자가 선택한 옵션들을 form에서 읽어옴
+                const form = document.getElementById('print-options-form');
+                const formData = new FormData(form);
+
+                // 2. 서버로 보낼 PrintOptionDto JSON 객체 생성
+                const printOptionDto = {
+                    selectAll: formData.get('selectionType') === 'all',
+                    exprIdsToPrint: [], // '부분 선택'일 경우 여기에 ID 배열을 채워야 합니다.
+                    printForm: formData.get('printForm'),
+                    quizSettingDto: {
+                        dateRange: formData.get('dateRange'),
+                        category: formData.get('category'),
+                        // startDate, endDate는 필요 시 JavaScript로 계산하여 추가
+                    },
+                    printOptionDetailDto: {
+                        orderType: formData.get('orderType')
+                    }
+                };
+
+                // 버튼 텍스트를 '생성 중...'으로 변경
+                createPdfBtn.disabled = true;
+                createPdfBtn.innerText = 'PDF 생성 중...';
+
+                // 3. fetch API를 사용해 서버에 PDF 생성 요청
+                fetch('/print/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(printOptionDto)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob(); // 응답을 Blob 객체로 변환
+                    }
+                    throw new Error('PDF 생성에 실패했습니다.');
+                })
+                .then(blob => {
+                    // 4. 응답받은 Blob 데이터로 다운로드 링크를 만들어 실행
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'my_word_list.pdf'; // 다운로드될 파일 이름
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url); // 임시 URL 해제
+                    document.body.removeChild(a);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('오류가 발생했습니다: ' + error.message);
+                })
+                .finally(() => {
+                    // 버튼 상태 원상 복구
+                    createPdfBtn.disabled = false;
+                    createPdfBtn.innerText = '학습지 생성 및 다운로드';
+                });
+            });
+        });
+    </script>
+</th:block>
+
+
+<th:block layout:fragment="main">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-6">학습지 인쇄 설정</h1>
+        <form id="print-options-form" class="space-y-8 bg-white p-8 rounded-lg shadow">
+            <fieldset>
+                <legend class="text-lg font-medium text-gray-900">1. 인쇄 대상</legend>
+                <div class="mt-4 space-y-4">
+                    <div class="flex items-center">
+                        <input id="select-all" name="selectionType" type="radio" value="all" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" checked>
+                        <label for="select-all" class="ml-3 block text-sm font-medium text-gray-700">전체 단어/문장 필터링</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="select-partial" name="selectionType" type="radio" value="partial" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" disabled>
+                        <label for="select-partial" class="ml-3 block text-sm font-medium text-gray-500">부분 선택 (개발 중)</label>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div id="filter-options" class="space-y-4 border-t pt-6">
+                <h3 class="text-md font-medium text-gray-800">필터 옵션</h3>
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700">학습 타입</label>
+                    <select id="category" name="category" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="MIXED">전체</option>
+                        <option value="WORD">단어</option>
+                        <option value="SENTENCE">문장</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="dateRange" class="block text-sm font-medium text-gray-700">학습 기간</label>
+                    <select id="dateRange" name="dateRange" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="ALL">전체 기간</option>
+                        <option value="TODAY">오늘</option>
+                        <option value="LAST_WEEK">최근 1주</option>
+                        <option value="LAST_MONTH">최근 1달</option>
+                    </select>
+                </div>
+            </div>
+
+            <fieldset class="border-t pt-6">
+                <legend class="text-lg font-medium text-gray-900">2. 인쇄 형태</legend>
+                <div class="mt-4 grid grid-cols-1 gap-y-4 sm:grid-cols-3 sm:gap-x-4">
+                    <label class="relative bg-white border rounded-lg p-4 flex cursor-pointer focus:outline-none">
+                        <input type="radio" name="printForm" value="LIST" class="sr-only">
+                        <span class="flex-1 flex flex-col text-center">
+                            <span class="block text-sm font-medium text-gray-900">리스트형</span>
+                            <span class="mt-1 flex items-center justify-center text-sm text-gray-500">단어와 뜻 목록</span>
+                        </span>
+                    </label>
+                    <label class="relative bg-white border rounded-lg p-4 flex cursor-pointer focus:outline-none">
+                        <input type="radio" name="printForm" value="EXAM" class="sr-only" checked>
+                        <span class="flex-1 flex flex-col text-center">
+                            <span class="block text-sm font-medium text-gray-900">시험지형</span>
+                            <span class="mt-1 flex items-center justify-center text-sm text-gray-500">객관식 문제</span>
+                        </span>
+                    </label>
+                    <label class="relative bg-white border rounded-lg p-4 flex cursor-pointer focus:outline-none">
+                        <input type="radio" name="printForm" value="WORKSHEET" class="sr-only">
+                        <span class="flex-1 flex flex-col text-center">
+                            <span class="block text-sm font-medium text-gray-900">워크시트형</span>
+                            <span class="mt-1 flex items-center justify-center text-sm text-gray-500">빈칸 채우기</span>
+                        </span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <div class="border-t pt-6">
+                <label for="orderType" class="text-lg font-medium text-gray-900">3. 정렬 방식</label>
+                <select id="orderType" name="orderType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="STAY">등록순</option>
+                    <option value="ABC">알파벳순</option>
+                    <option value="SUFF">무작위</option>
+                </select>
+            </div>
+
+            <div class="pt-6">
+                <button type="button" id="create-pdf-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    학습지 생성 및 다운로드
+                </button>
+            </div>
+        </form>
+    </div>
+</th:block>
+</html>
