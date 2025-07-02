@@ -3,7 +3,6 @@ package com.engjoy.control;
 import com.engjoy.Dto.MyInfoChangeDto;
 import com.engjoy.entity.Account;
 import com.engjoy.repository.AccountRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -14,15 +13,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Optional;
 
-@RequiredArgsConstructor
+
 @Controller
 public class MyPageController {
 
 
     private final PasswordEncoder passwordEncoder;
+    private final AccountRepository accountRepository;
 
-    public MyPageController(PasswordEncoder passwordEncoder) {
+    public MyPageController(PasswordEncoder passwordEncoder, AccountRepository accountRepository) {
         this.passwordEncoder = passwordEncoder;
+        this.accountRepository = accountRepository;
     }
 
     @GetMapping("/myPage")
@@ -33,8 +34,6 @@ public class MyPageController {
     public String passwordSearchPage(Model model){
         return "passwordSearch";
     }
-    @Autowired
-    private AccountRepository accountRepository;
 
     @PostMapping("/passwordSearch")
     public String passwordSearch(@RequestParam("email") String email, Model model){

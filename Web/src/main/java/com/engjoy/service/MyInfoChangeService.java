@@ -1,11 +1,9 @@
 package com.engjoy.service;
 
 import com.engjoy.repository.AccountRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class MyInfoChangeService {
     private final AccountRepository accountRepository;
 
