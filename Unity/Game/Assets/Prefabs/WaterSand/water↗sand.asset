@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 927c8776138864a409b4f0bc8826fb65, type: 3}
+  m_Name: "water\u2197sand"
+  m_EditorClassIdentifier: 
+  tilePrefab: {fileID: 6320742035241183050, guid: 86ed68ec94dbe594bb039df972cffdbe, type: 3}
+  weight: 0.5
+  sockets:
+    up:
+      leftPin: 2
+      rightPin: 1
+    right:
+      upPin: 1
+      downPin: 2
+    down:
+      leftPin: 2
+      rightPin: 2
+    left:
+      upPin: 2
+      downPin: 2
