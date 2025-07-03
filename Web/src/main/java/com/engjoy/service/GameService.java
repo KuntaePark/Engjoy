@@ -6,16 +6,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class GameService {
     private final UserGameDataRepository userGameDataRepository;
 
+    private final WebSocketService socketService;
+
     public UserGameDataDto getUserGameData(String email) {
         return UserGameDataDto.from(userGameDataRepository.findByAccount_Email(email));
     }
-
-    
 
 }

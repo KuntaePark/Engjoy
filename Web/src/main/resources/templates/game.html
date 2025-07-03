@@ -5,6 +5,11 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{fragment/default}">
 
+<head>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+
 <th:block layout:fragment="css">
     <link rel="shortcut icon" href="game/TemplateData/favicon.ico">
     <link rel="stylesheet" href="game/TemplateData/style.css">
