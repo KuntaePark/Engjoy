@@ -1,4 +1,4 @@
-package com.engjoy.Dto;
+package com.engjoy.dto;
 
 import lombok.Getter;
 import lombok.Setter;
