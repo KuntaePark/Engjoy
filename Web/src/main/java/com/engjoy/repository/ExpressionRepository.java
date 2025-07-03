@@ -2,6 +2,7 @@ package com.engjoy.repository;
 
 import com.engjoy.constant.CATEGORY;
 import com.engjoy.constant.EXPRTYPE;
+import com.engjoy.dto.ExpressionSearchDto;
 import com.engjoy.entity.ExprUsed;
 import com.engjoy.entity.Expression;
 import org.springframework.data.domain.Page;
@@ -16,21 +17,45 @@ import java.util.List;
 
 @Repository
 public interface ExpressionRepository extends JpaRepository<Expression, Long> {
-    Page<Expression> findByExprType(EXPRTYPE exprType, Pageable pageable);
-    Page<Expression> findByWordTextContainingIgnoreCase(String WordText, Pageable pageable);
-    Page<Expression> findByDifficulty(int difficulty, Pageable pageable);
+//    Page<Expression> findByExprType(EXPRTYPE exprType, Pageable pageable);
+//    Page<Expression> findByWordTextContainingIgnoreCase(String WordText, Pageable pageable);
+//    Page<Expression> findByDifficulty(int difficulty, Pageable pageable);
+
+    @Query(value = "SELECT e FROM Expression e " +
+            "WHERE EXISTS (SELECT 1 FROM ExprUsed eu WHERE eu.expression = e AND eu.account.id = :accountId " +
+            "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
+            "AND (:endDate IS NULL OR eu.usedTime < :endDate)) " +
+            "AND (:keyword IS NULL OR e.wordText LIKE %:keyword%) " +
+            "AND (:exprType IS NULL OR e.exprType = :exprType) " +
+            "AND (:difficulty = 0 OR e.difficulty = :difficulty)",
+            countQuery = "SELECT count(e) FROM Expression e " +
+                    "WHERE EXISTS (SELECT 1 FROM ExprUsed eu WHERE eu.expression = e AND eu.account.id = :accountId " +
+                    "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
+                    "AND (:endDate IS NULL OR eu.usedTime < :endDate)) " +
+                    "AND (:keyword IS NULL OR e.wordText LIKE %:keyword%) " +
+                    "AND (:exprType IS NULL OR e.exprType = :exprType) " +
+                    "AND (:difficulty = 0 OR e.difficulty = :difficulty)")
+    Page<Expression> findPageBySearchDto(
+            @Param("accountId") Long accountId,
+            @Param("keyword") String keyword,
+            @Param("exprType") EXPRTYPE exprType,
+            @Param("difficulty") int difficulty,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
 
     @Query("SELECT e.meaning FROM Expression e")
     List<String> findAllMeanings();
 
     @Query("SELECT DISTINCT e FROM ExprUsed eu JOIN eu.expression e LEFT JOIN FETCH e.wordInfo " +
             "WHERE eu.account.id = :accountId " +
-            "AND (:category IS NULL OR e.exprType = :category) " +
+            "AND (:exprType IS NULL OR e.exprType = :exprType) " +
             "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
             "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
     List<Expression> findWithFilters(
             @Param("accountId") Long accountId,
-            @Param("category") CATEGORY category,
+            @Param("exprType") EXPRTYPE exprType,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );

@@ -9,6 +9,7 @@ import com.engjoy.service.ExpressionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -44,6 +45,16 @@ public class ExpressionController {
         model.addAttribute("expressionPage", expressionPage);
         model.addAttribute("searchDto", searchDto);
         return "expressions";
+    }
+
+    @GetMapping("/api") // ✅ 최종 주소: /expressions/api
+    @ResponseBody
+    public Page<ExpressionDto> getExpressionsApi(
+            @ModelAttribute ExpressionSearchDto searchDto,
+            @PageableDefault(size = 12, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Long testAccountId = 1L; // 실제로는 로그인 정보에서 가져와야 함
+        return expressionService.getExpressions(testAccountId, searchDto, pageable);
     }
 
     @GetMapping("/detail/{exprId}")

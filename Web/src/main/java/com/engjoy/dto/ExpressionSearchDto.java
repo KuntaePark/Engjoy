@@ -16,8 +16,8 @@ public class ExpressionSearchDto {
     private boolean isFavorite;
     private boolean isUsed;
     private DATERANGE dateRange;
-    private LocalDate setStartDate;
-    private LocalDate setEndDate;
+    private LocalDate StartDate;
+    private LocalDate EndDate;
     private SORTTYPE sortType;
 
 }

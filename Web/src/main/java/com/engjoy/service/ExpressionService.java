@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,30 +32,52 @@ public class ExpressionService {
 
     // 사용자의 전체 단어장 페이지 조회 or 필터링된 카드 목록 페이징 반환
     public Page<ExpressionDto> getExpressions(Long accountId, ExpressionSearchDto expressionSearchDto, Pageable pageable){
-        Page<Expression> expressionPage;
+
 //        Account account = accountRepository.findById(accountId)
 //                .orElseThrow(() -> new IllegalArgumentException("계정이 존재하지 않습니다."));
         Account account = new Account();
         account.setId(accountId);
 
-        if(expressionSearchDto.getKeyword() != null && !expressionSearchDto.getKeyword().isEmpty()){
-           expressionPage = expressionRepository.findByWordTextContainingIgnoreCase(expressionSearchDto.getKeyword(),pageable);
-        }else if(expressionSearchDto.getExprType() != null){
-            expressionPage = expressionRepository.findByExprType(expressionSearchDto.getExprType(),pageable);
-        }else if(expressionSearchDto.getDifficulty() > 0){
-            expressionPage = expressionRepository.findByDifficulty(expressionSearchDto.getDifficulty(),pageable);
-        }else{
+        LocalDateTime startDateTime = (expressionSearchDto.getStartDate() != null) ? expressionSearchDto.getStartDate().atStartOfDay() : null;
+        LocalDateTime endDateTime = (expressionSearchDto.getEndDate() != null) ? expressionSearchDto.getEndDate().plusDays(1).atStartOfDay() : null;
+
+        //  모든 필터링을 한 번에 처리
+        Page<Expression> expressionPage = expressionRepository.findPageBySearchDto(
+                accountId,
+                expressionSearchDto.getKeyword(),
+                expressionSearchDto.getExprType(),
+                expressionSearchDto.getDifficulty(),
+                startDateTime,
+                endDateTime,
+                pageable
+        );
+
+        // --- 👇 테스트용 비상 플랜 추가 ---
+        // 2. 만약 위 쿼리 결과가 비어있다면, 학습 이력과 상관없이 전체 단어장에서 데이터를 가져오기
+        if (expressionPage.isEmpty()) {
+            System.out.println("⚠️ 테스트: 학습 이력이 없어 전체 단어장에서 데이터를 가져옵니다.");
+            // 필터 조건 없이 findAll로 모든 단어를 페이징해서 가져옴
             expressionPage = expressionRepository.findAll(pageable);
         }
+        // ---
+
+        // DTO 변환 로직은 그대로 유지 (N+1 문제 해결 버전)
+        List<Expression> expressions = expressionPage.getContent();
+        if (expressions.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        List<Long> exprIds = expressions.stream().map(Expression::getId).collect(Collectors.toList());
+        Set<Long> favoriteIds = exprFavoritesRepository.findFavoriteExpressionIdsByAccountAndExpressionIds(account, exprIds);
+        Set<Long> usedIds = exprUsedRepository.findUsedExpressionIdsByAccountAndExpressionIds(account, exprIds);
 
         return expressionPage.map(expression -> {
-//            boolean isUsed = exprUsedRepository.findRecentUsed(account,expression.getExprType(), PageRequest.of(0,1))
-//                    .stream()
-//                    .anyMatch(eu -> eu.getExpression().getId().equals(expression.getId()));
-            boolean isUsed = exprUsedRepository.existsByAccountAndExpression(account,expression);
-            boolean isFavorite = exprFavoritesRepository.findByAccountAndExpression(account,expression).isPresent();
+            boolean isFavorite = favoriteIds.contains(expression.getId());
+            boolean isUsed = usedIds.contains(expression.getId());
 
-            return ExpressionDto.from(expression,isFavorite,isUsed,null);
+            // 이 부분은 이제 필요 없으므로 삭제하거나, 다른 용도로 사용합니다.
+            // LocalDate date = ...
+
+            return ExpressionDto.from(expression, isFavorite, isUsed, null);
         });
     }
 

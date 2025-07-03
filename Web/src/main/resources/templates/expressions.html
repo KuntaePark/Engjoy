@@ -5,109 +5,405 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{fragment/default}">
 
+
 <th:block layout:fragment="css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         .favorite-icon.active{
             color: #FBBF24;
+        }
+        /* 드롭다운 메뉴 스타일 */
+        .dropdown-content { display: none; }
+        .dropdown-content.show { display: block; }
+
+         /* 카드 뒤집기 효과 */
+        .word-card-wrapper {
+            perspective: 1000px; /* 3D 효과를 위한 원근법 */
+            height: 250px; /* 카드의 고정 높이 */
+        }
+
+        .word-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d; /* 자식 요소의 3D 위치 유지를 위함 */
+        }
+
+        .word-card-wrapper.flipped .word-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .word-card-front, .word-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* 뒷면이 보이지 않도록 숨김 */
+            backface-visibility: hidden;
+            border-radius: 0.75rem; /* rounded-xl과 동일 */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm과 동일 */
+            padding: 1.5rem; /* p-6과 동일 */
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* 내용 배치를 위함 */
+        }
+
+        .word-card-back {
+            transform: rotateY(180deg); /* 뒷면은 기본적으로 뒤집혀 있음 */
+            justify-content: flex-start; /* 뒷면 내용은 위에서부터 시작 */
+        }
+
+        /* Popover 스타일 */
+        #detail-popover {
+            position: absolute; /* JavaScript로 위치 조정 */
+            min-width: 250px;
+        }
+        .close-popover-btn {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        /* 발음 아이콘 */
+        .pron-audio-icon {
+            cursor: pointer;
+            color: #6B7280; /* gray-500 */
+            transition: color 0.2s;
+        }
+        .pron-audio-icon:hover {
+            color: #1D4ED8; /* blue-700 */
         }
     </style>
 </th:block>
 
 <th:block layout:fragment="script">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ko.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // --- 자세히보기 모달 처리 ---
-            const detailModal = document.getElementById('detail-modal');
-            const modalContent = document.getElementById('modal-content');
-            const modalCloseBtn = document.getElementById('modal-close-btn');
+            // --- 요소 가져오기 ---
+            const searchForm = document.getElementById('search-form');
+            const expressionContainer = document.getElementById('expression-container');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const sortSelect = document.getElementById('sort-select');
+            const filterControls = document.getElementById('filter-controls');
+            const detailPopover = document.getElementById('detail-popover');
+            const closePopoverBtn = detailPopover.querySelector('.close-popover-btn');
 
-            // '자세히보기' 버튼들에 이벤트 리스너 추가
-            document.querySelectorAll('.detail-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    const exprId = button.dataset.exprId;
-                    modalContent.innerHTML = '<p class="text-sm text-gray-500">로딩 중...</p>';
-                    if (detailModal) detailModal.classList.remove('hidden');
 
-                    // 서버에 상세 정보 요청 (GET)
-                    fetch(`/expressions/detail/${exprId}`)
-                        .then(response => {
-                            if (!response.ok) throw new Error('Network response was not ok');
-                            return response.json();
-                        })
-                        .then(data => {
-                            // 받은 데이터로 모달 내용 채우기
-                            // WordInfoDto 구조에 맞춰서 HTML을 생성합니다.
-                            modalContent.innerHTML = `
-                                <div class="space-y-3">
-                                    <div>
-                                        <dt class="font-medium text-gray-900">단어/문장</dt>
-                                        <dd class="mt-1 text-gray-700">${data.wordText || 'N/A'}</dd>
-                                    </div>
-                                    <div>
-                                        <dt class="font-medium text-gray-900">뜻</dt>
-                                        <dd class="mt-1 text-gray-700">${data.meaning || 'N/A'}</dd>
-                                    </div>
-                                    <div>
-                                        <dt class="font-medium text-gray-900">예문</dt>
-                                        <dd class="mt-1 text-gray-700">${data.exampleSentence || 'N/A'}</dd>
-                                    </div>
-                                    <!-- 여기에 WordInfoDto의 다른 필드들도 추가할 수 있습니다. -->
-                                </div>
-                            `;
-                        })
-                        .catch(error => {
-                            console.error('Error fetching detail:', error);
-                            modalContent.innerHTML = '<p class="text-sm text-red-500">정보를 불러오는 데 실패했습니다.</p>';
-                        });
+            // --- 상태 관리 변수 ---
+            let currentPage = 0;
+            let isLastPage = false;
+            let isLoading = false;
+            let currentPlayingAudio = null; // 현재 재생 중인 오디오 객체
+
+            // ✅ N/A 문제 해결을 위한 추가 변수 및 로직 시작
+            let loadedWordInfo = {}; // wordInfo.json 데이터를 저장할 변수
+            let currentPopoverTargetButton = null; // Popover 토글을 위한 변수
+            let currentPopoverData = null;       // Popover 토글을 위한 변수
+
+            // 1. wordInfo.json 파일을 미리 로드
+            // 실제 경로에 맞게 수정해주세요. (예: '/data/wordInfo.json' 또는 백엔드에서 제공하는 경로)
+            fetch('/wordInfo/wordInfo.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // exprId를 키로 사용하여 빠른 조회를 위한 객체 생성
+                    // JSON 데이터의 exprId는 숫자이므로, 키도 숫자로 유지하는 것이 좋습니다.
+                    data.forEach(item => {
+                        loadedWordInfo[item.exprId] = item; // exprId를 키로 사용
+                    });
+                    console.log('wordInfo.json 로드 완료:', loadedWordInfo);
+                    // JSON 로드 후 초기 데이터 로드 (⭐ 중요: 이 호출을 여기에 넣어야 합니다)
+                    fetchAndRender(true);
+                })
+                .catch(error => {
+                    console.error("Error loading wordInfo.json:", error);
+                    // 에러 발생 시에도 페이지는 로드되어야 하므로 초기 데이터 로드 시도
+                    fetchAndRender(true);
                 });
-            });
+            // ✅ N/A 문제 해결을 위한 추가 변수 및 로직 끝
 
-            // 모달 닫기 버튼
-            if(modalCloseBtn) {
-                modalCloseBtn.addEventListener('click', () => {
-                    detailModal.classList.add('hidden');
-                });
-            }
 
-            // 모달 외부 클릭 시 닫기
-            window.addEventListener('click', (event) => {
-                if (event.target === detailModal) {
-                    detailModal.classList.add('hidden');
+            // --- 날짜 선택기 (flatpickr) 초기화 ---
+            const datePicker = flatpickr("#date-range-picker", {
+                mode: "range", dateFormat: "Y-m-d", locale: "ko",
+                onChange: function(selectedDates) {
+                    if (selectedDates.length === 2) {
+                        document.getElementById('start-date').value = selectedDates[0].toISOString();
+                        document.getElementById('end-date').value = selectedDates[1].toISOString();
+                    }
                 }
             });
 
+            // --- 핵심 함수: 데이터 요청 및 렌더링 ---
+            function fetchAndRender(isNewSearch = false) {
+                if (isLoading || (isLastPage && !isNewSearch)) return;
+                isLoading = true;
+                loadMoreBtn.innerText = '로딩 중...';
 
-            // --- 즐겨찾기 상태 변경 처리 ---
-            document.querySelectorAll('.favorite-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    const exprId = button.dataset.exprId;
-                    const icon = button.querySelector('.favorite-icon');
+                if (isNewSearch) {
+                    currentPage = 0;
+                    isLastPage = false;
+                    expressionContainer.innerHTML = '';
+                }
 
-                    // 서버에 즐겨찾기 상태 변경 요청 (POST)
-                    fetch(`/expressions/favorite/${exprId}`, {
-                        method: 'POST',
-                        headers: {
-                            // CSRF 토큰이 필요하다면 여기에 추가해야 합니다.
-                            // 'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
+                const formData = new FormData(searchForm);
+                const params = new URLSearchParams();
+                formData.forEach((value, key) => {
+                    if (value) params.append(key, value);
+                });
+                params.append('page', currentPage);
+                params.append('sort', sortSelect.value);
+
+                fetch(`/expressions/api?${params.toString()}`)
+                .then(response => response.json())
+                .then(pageData => {
+                    pageData.content.forEach(expr => {
+                        // ✅ API 응답 데이터와 wordInfo.json 데이터 병합
+                        const detailedWordInfo = loadedWordInfo[expr.exprId]; // expr.exprId 사용
+                        if (detailedWordInfo) {
+                            // Object.assign으로 expr 객체에 상세 정보 추가
+                            Object.assign(expr, detailedWordInfo);
+                        } else {
+                            console.warn(`No detailed info found in wordInfo.json for exprId: ${expr.exprId} (wordText: ${expr.wordText})`);
+                            // 필요한 경우 여기에 기본값이나 경고 처리를 추가
                         }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            if (response.status === 401) alert('로그인이 필요합니다.');
+
+                        const cardHtml = createExpressionCard(expr);
+                        expressionContainer.insertAdjacentHTML('beforeend', cardHtml);
+                    });
+                    isLastPage = pageData.last;
+                    loadMoreBtn.classList.toggle('hidden', isLastPage);
+                    currentPage++;
+                })
+                .catch(console.error)
+                .finally(() => {
+                    isLoading = false;
+                    loadMoreBtn.innerText = '더보기 (More)';
+                });
+            }
+
+            // --- 단어 카드 HTML 생성 함수 ---
+            function createExpressionCard(expr) {
+                const typeBadge = expr.exprType === 'WORD'
+                    ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">단어</span>`
+                    : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">문장</span>`;
+
+                const difficultyHtml = `
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-500 mr-2">난이도:</span>
+                        <span class="text-sm font-bold text-gray-800">${expr.difficulty || 'N/A'}</span>
+                    </div>
+                `;
+
+                // 발음 아이콘 (pronAudio가 있을 경우만 표시)
+                // expr.pronAudio는 /expressions/api 응답에도 이미 있습니다.
+                const audioIcon = expr.pronAudio ?
+                    `<button class="pron-audio-icon text-2xl" data-audio-src="${expr.pronAudio}">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>` : '';
+
+                // `data-word-info` 속성에 필요한 상세 정보를 JSON 문자열로 저장
+                // ✅ expr.exp_sentence, expr.exp_sentence_mean 등 병합된 데이터 사용
+                const wordInfoData = {
+                    part_of_speech: expr.part_of_speech || 'N/A', // wordInfo.json에서 올 것
+                    synonyms: expr.synonyms || 'N/A',             // wordInfo.json에서 올 것
+                    antonyms: expr.antonyms || 'N/A',             // wordInfo.json에서 올 것
+                    collocations: expr.collocations || 'N/A',     // wordInfo.json에서 올 것
+                };
+
+                return `
+                    <div class="word-card-wrapper">
+                        <div class="word-card-inner" data-expr-id="${expr.exprId}"> <div class="word-card-front flex flex-col justify-between items-center text-center p-6 cursor-pointer">
+                                <div class="w-full flex justify-between items-center mb-4">
+                                    <div class="flex-none"> ${audioIcon} </div>
+
+                                    <button data-expr-id="${expr.exprId}" class="favorite-button text-gray-400 hover:text-yellow-400 text-2xl flex-grow text-center">
+                                        <i class="fa-solid fa-star favorite-icon ${expr.favorite ? 'active' : ''}"></i> </button>
+
+                                    <div class="flex-none"> ${difficultyHtml} </div>
+                                </div>
+                                <h3 class="text-3xl font-bold text-gray-900 flex-grow flex items-center justify-center">${expr.wordText}</h3>
+                            </div>
+
+                            <div class="word-card-back flex flex-col justify-between p-6">
+                                <div>
+                                    <p class="text-gray-700 text-lg mb-2"><strong class="text-blue-600">뜻:</strong> ${expr.meaning}</p>
+                                    <p class="text-gray-600 text-md italic mb-1"><strong class="text-green-600">예문:</strong> ${expr.exp_sentence || 'N/A'}</p>
+                                    <p class="text-gray-500 text-sm"><strong class="text-green-600">예문 뜻:</strong> ${expr.exp_sentence_mean || 'N/A'}</p>
+                                </div>
+                                <div class="flex justify-end mt-4">
+                                    <button class="detail-popover-button text-sm font-medium text-blue-600 hover:text-blue-800"
+                                            data-word-info='${JSON.stringify(wordInfoData)}'>
+                                        자세히보기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            // --- 헬퍼 함수: 발음 재생 ---
+            function playAudio(src) {
+                if (currentPlayingAudio) {
+                    currentPlayingAudio.pause();
+                    currentPlayingAudio.currentTime = 0;
+                }
+                currentPlayingAudio = new Audio(src);
+                currentPlayingAudio.play().catch(e => console.error("Audio playback failed:", e));
+            }
+
+            // --- 헬퍼 함수: 자세히보기 Popover 열기/닫기 ---
+            function openDetailPopover(buttonElement, wordInfo) {
+                const popover = document.getElementById('detail-popover');
+
+                // Case 1: Popover가 이미 열려 있고, 현재 클릭한 버튼과 동일한 버튼이거나 동일한 정보일 경우 닫기
+                if (!popover.classList.contains('hidden') &&
+                    (buttonElement === currentPopoverTargetButton && JSON.stringify(wordInfo) === JSON.stringify(currentPopoverData))) {
+                    popover.classList.add('hidden');
+                    currentPopoverTargetButton = null;
+                    currentPopoverData = null;
+                    return;
+                }
+
+                // Popover 내용 업데이트
+                document.getElementById('popover-part-of-speech').innerText = wordInfo.part_of_speech;
+                document.getElementById('popover-synonyms').innerText = wordInfo.synonyms;
+                document.getElementById('popover-antonyms').innerText = wordInfo.antonyms;
+                document.getElementById('popover-collocations').innerText = wordInfo.collocations;
+
+                // Popover 위치 설정
+                const rect = buttonElement.getBoundingClientRect();
+                popover.style.top = `${window.scrollY + rect.bottom + 10}px`; // 버튼 아래 10px
+                popover.style.left = `${rect.left}px`;
+                popover.classList.remove('hidden'); // Popover 표시
+
+                // 현재 열린 Popover의 정보 저장
+                currentPopoverTargetButton = buttonElement;
+                currentPopoverData = wordInfo;
+            }
+
+            // --- 헬퍼 함수: 즐겨찾기 토글 ---
+            function toggleFavorite(buttonElement, exprId) {
+                const icon = buttonElement.querySelector('.favorite-icon');
+                const token = document.querySelector("meta[name='_csrf']")?.content;
+                const header = document.querySelector("meta[name='_csrf_header']")?.content;
+                const headers = { 'Content-Type': 'application/json' };
+
+                if(token && header) {
+                    headers[header] = token;
+                } else {
+                    console.error("CSRF token or header name not found in meta tags. Cannot toggle favorite.");
+                    // 사용자에게 피드백 제공 (예: alert('로그인 후 즐겨찾기를 사용할 수 있습니다.'))
+                    return; // 토큰이 없으면 요청 보내지 않음
+                }
+
+                fetch(`/expressions/favorite/${exprId}`, { method: 'POST', headers: headers })
+                    .then(res => {
+                        if (!res.ok) {
+                            if (res.status === 403) {
+                                console.error('Favorite toggle failed: Access Denied (Likely CSRF or not logged in)');
+                                // 로그인 필요 메시지 등을 띄울 수 있음
+                            } else {
+                                console.error(`Favorite toggle failed with status: ${res.status}`);
+                            }
                             throw new Error('Favorite toggle failed');
                         }
-                        return response.json();
+                        return res.json();
                     })
                     .then(isFavorite => {
-                        // 응답(true/false)에 따라 아이콘 스타일 변경
                         icon.classList.toggle('active', isFavorite);
                     })
                     .catch(error => {
-                        console.error('Error toggling favorite:', error);
+                        console.error("Error toggling favorite:", error);
+                        // alert('즐겨찾기 상태 변경에 실패했습니다.'); // 사용자 피드백
                     });
-                });
+            }
+
+            // --- 이벤트 리스너 ---
+            searchForm.addEventListener('submit', e => { e.preventDefault(); fetchAndRender(true); });
+            resetBtn.addEventListener('click', () => {
+                searchForm.reset();
+                datePicker.clear();
+                document.getElementById('start-date').value = '';
+                document.getElementById('end-date').value = '';
+                fetchAndRender(true);
             });
+            loadMoreBtn.addEventListener('click', () => fetchAndRender(false));
+            sortSelect.addEventListener('change', () => fetchAndRender(true));
+            filterControls.addEventListener('change', () => fetchAndRender(true));
+
+            // --- 이벤트 위임: 동적으로 생성된 카드들의 버튼 처리 ---
+            expressionContainer.addEventListener('click', (e) => {
+                const cardInner = e.target.closest('.word-card-inner');
+                const favoriteButton = e.target.closest('.favorite-button');
+                const pronAudioIcon = e.target.closest('.pron-audio-icon');
+                const detailPopoverButton = e.target.closest('.detail-popover-button');
+
+                // 발음 재생
+                if (pronAudioIcon) {
+                    e.stopPropagation(); // 카드 뒤집기 방지
+                    const audioSrc = pronAudioIcon.dataset.audioSrc;
+                    playAudio(audioSrc);
+                    return;
+                }
+
+                // 즐겨찾기 토글
+                if (favoriteButton) {
+                    e.stopPropagation();
+                    toggleFavorite(favoriteButton, favoriteButton.dataset.exprId);
+                    return;
+                }
+
+                // 자세히보기 Popover 열기
+                if (detailPopoverButton) {
+                    e.stopPropagation(); // 카드 뒤집기 방지
+                    openDetailPopover(detailPopoverButton, JSON.parse(detailPopoverButton.dataset.wordInfo));
+                    return;
+                }
+
+                // 카드 뒤집기 (버튼 클릭이 아닐 경우만)
+                if (cardInner) {
+                    // Popover가 열려있을 경우 닫고 카드 뒤집기 방지
+                    if (!detailPopover.classList.contains('hidden')) {
+                        detailPopover.classList.add('hidden');
+                        currentPopoverTargetButton = null;
+                        currentPopoverData = null;
+                        // 카드를 뒤집지 않고 여기서 리턴하거나, 뒤집기를 허용할 수 있음
+                        // e.stopPropagation(); // 만약 Popover 닫기만 하고 카드 뒤집는 것은 막고 싶다면 추가
+                        // return;
+                    }
+                    cardInner.parentNode.classList.toggle('flipped');
+                }
+            });
+
+            // Popover 닫기 버튼
+            closePopoverBtn.addEventListener('click', () => {
+                detailPopover.classList.add('hidden');
+                currentPopoverTargetButton = null;
+                currentPopoverData = null;
+            });
+
+            // Popover 외부 클릭 시 닫기
+            window.addEventListener('click', (event) => {
+                // Popover 자신이나 Popover 버튼을 클릭한 것이 아니라면 닫기
+                if (!detailPopover.contains(event.target) && !event.target.closest('.detail-popover-button')) {
+                    detailPopover.classList.add('hidden');
+                    currentPopoverTargetButton = null;
+                    currentPopoverData = null;
+                }
+            });
+
+            // 초기 데이터 로드는 wordInfo.json 로드 성공 후로 이동했으므로 이 줄은 제거합니다.
+            // fetchAndRender(true);
         });
     </script>
 
@@ -116,136 +412,61 @@
 
 <th:block layout:fragment="main">
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-
-        <!-- 페이지 헤더 -->
         <header class="mb-8">
             <h1 class="text-4xl font-bold text-gray-900">나의 단어장</h1>
             <p class="text-lg text-gray-600 mt-2">학습한 단어와 문장을 복습하고 관리하세요.</p>
-            <div class="mt-4">
-                <a th:href="@{/incorrect}" class="text-blue-600 hover:underline">오답 노트 바로가기 &rarr;</a>
-                <a th:href="@{/quizSetting}" class="btn btn-primary">복습 퀴즈</a>
-            </div>
         </header>
 
-        <!-- 검색 및 필터링 폼 -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-            <form th:action="@{/expressions}" method="get" th:object="${searchDto}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                <!-- 키워드 검색 -->
-                <div>
+            <form id="search-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div class="md:col-span-4">
                     <label for="keyword" class="block text-sm font-medium text-gray-700">키워드</label>
-                    <input type="text" id="keyword" th:field="*{keyword}" placeholder="단어 또는 문장 입력" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <input type="text" id="keyword" name="keyword" placeholder="단어 또는 문장 입력" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
-                <!-- 타입 선택 -->
-                <div>
-                    <label for="exprType" class="block text-sm font-medium text-gray-700">타입</label>
-                    <select id="exprType" th:field="*{exprType}" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                        <option value="">전체</option>
-                        <option value="WORD">단어</option>
-                        <option value="SENTENCE">문장</option>
-                    </select>
+                <div id="filter-controls" class="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="sort-select" class="block text-sm font-medium text-gray-700">정렬</label>
+                        <select id="sort-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="id,desc">최신순</option><option value="id,asc">과거순</option>
+                            <option value="difficulty,asc">난이도 오름차순</option><option value="difficulty,desc">난이도 내림차순</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="exprType" class="block text-sm font-medium text-gray-700">타입</label>
+                        <select id="exprType" name="exprType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="">전체</option><option value="WORD">단어</option><option value="SENTENCE">문장</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="date-range-picker" class="block text-sm font-medium text-gray-700">기간</label>
+                        <input type="text" id="date-range-picker" placeholder="기간 선택" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <input type="hidden" name="startDate" id="start-date"><input type="hidden" name="endDate" id="end-date">
+                    </div>
                 </div>
-                <!-- 난이도 선택 -->
-                <div>
-                    <label for="difficulty" class="block text-sm font-medium text-gray-700">난이도</label>
-                    <select id="difficulty" th:field="*{difficulty}" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                        <option value="0">전체</option>
-                        <option th:each="i : ${#numbers.sequence(1, 5)}" th:value="${i}" th:text="|Level ${i}|"></option>
-                    </select>
-                </div>
-                <!-- 검색 버튼 -->
                 <div class="flex space-x-2">
-                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <i class="fa-solid fa-search mr-2"></i> 검색
-                    </button>
-                    <a th:href="@{/expressions}" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                        초기화
-                    </a>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">검색</button>
+                    <button type="button" id="reset-btn" class="w-full flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 border">초기화</button>
                 </div>
             </form>
         </div>
 
-        <!-- 단어 카드 목록 -->
-        <div th:if="${expressionPage.empty}" class="text-center py-16">
-            <p class="text-gray-500 text-lg">표시할 단어가 없습니다.</p>
-        </div>
+        <div id="expression-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
-        <div th:unless="${expressionPage.empty}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div th:each="expr : ${expressionPage.content}" class="bg-white rounded-xl shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
-                <div class="p-6">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <span th:text="${expr.exprType == 'WORD' ? '단어' : '문장'}"
-                                  th:classappend="${expr.exprType == 'WORD' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}"
-                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                            </span>
-                        </div>
-                        <button th:data-expr-id="${expr.exprId}" class="favorite-button text-gray-400 hover:text-yellow-400 text-xl">
-                            <i class="fa-solid fa-star favorite-icon" th:classappend="${expr.isFavorite ? 'active' : ''}"></i>
-                        </button>
-                    </div>
-                    <h3 class="mt-4 text-xl font-semibold text-gray-900" th:text="${expr.wordText}"></h3>
-                    <p class="mt-2 text-gray-600" th:text="${expr.meaning}"></p>
-                    <div class="mt-4 flex items-center">
-                        <span class="text-sm text-gray-500 mr-2">난이도:</span>
-                        <div class="flex">
-                            <i th:each="i : ${#numbers.sequence(1, 5)}"
-                               class="fa-solid fa-star"
-                               th:classappend="${i <= expr.difficulty ? 'text-yellow-400' : 'text-gray-300'}"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-6 py-4 flex justify-end">
-                    <button th:data-expr-id="${expr.exprId}" class="detail-button text-sm font-medium text-blue-600 hover:text-blue-800">
-                        자세히보기
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 페이지네이션 -->
-        <nav th:if="${!expressionPage.empty}" class="mt-10 flex items-center justify-between border-t border-gray-200 px-4 sm:px-0">
-            <div class="flex-1 flex justify-start">
-                <a th:href="${expressionPage.first} ? '#' : @{/expressions(page=${expressionPage.number - 1}, keyword=${searchDto.keyword}, exprType=${searchDto.exprType}, difficulty=${searchDto.difficulty})}"
-                   th:classappend="${expressionPage.first} ? 'pointer-events-none text-gray-400' : 'text-gray-600 hover:text-gray-900'"
-                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md bg-white">
-                    이전
-                </a>
-            </div>
-            <div class="hidden md:flex">
-                <span th:each="i : ${#numbers.sequence(0, expressionPage.totalPages - 1)}"
-                      th:if="${expressionPage.totalPages > 1}">
-                    <a th:href="@{/expressions(page=${i}, keyword=${searchDto.keyword}, exprType=${searchDto.exprType}, difficulty=${searchDto.difficulty})}"
-                       th:text="${i + 1}"
-                       th:classappend="${i == expressionPage.number} ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
-                       class="relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                    </a>
-                </span>
-            </div>
-            <div class="flex-1 flex justify-end">
-                <a th:href="${expressionPage.last} ? '#' : @{/expressions(page=${expressionPage.number + 1}, keyword=${searchDto.keyword}, exprType=${searchDto.exprType}, difficulty=${searchDto.difficulty})}"
-                   th:classappend="${expressionPage.last} ? 'pointer-events-none text-gray-400' : 'text-gray-600 hover:text-gray-900'"
-                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md bg-white">
-                    다음
-                </a>
-            </div>
-        </nav>
-    </div>
-
-    <!-- 단어 상세 정보 모달 -->
-    <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">상세 정보</h3>
-                <div class="mt-2 px-7 py-3 text-left" id="modal-content">
-                    <!-- AJAX로 내용이 채워질 부분 -->
-                </div>
-                <div class="items-center px-4 py-3">
-                    <button id="modal-close-btn" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                        닫기
-                    </button>
-                </div>
-            </div>
+        <div class="text-center mt-8">
+            <button id="load-more-btn" class="bg-yellow-400 text-black font-bold py-3 px-8 rounded-full hidden">더보기 (More)</button>
         </div>
     </div>
+
+    <div id="detail-popover" class="absolute bg-white border border-gray-300 p-4 rounded-md shadow-lg hidden z-50">
+        <button class="close-popover-btn float-right text-gray-500 hover:text-gray-700">&times;</button>
+        <h4 class="font-bold mb-2">상세 정보</h4>
+        <dl class="space-y-2 text-sm">
+            <div><dt class="font-medium text-gray-600">품사</dt><dd id="popover-part-of-speech" class="mt-1"></dd></div>
+            <div><dt class="font-medium text-gray-600">동의어</dt><dd id="popover-synonyms" class="mt-1"></dd></div>
+            <div><dt class="font-medium text-gray-600">반의어</dt><dd id="popover-antonyms" class="mt-1"></dd></div>
+            <div><dt class="font-medium text-gray-600">연어</dt><dd id="popover-collocations" class="mt-1"></dd></div>
+        </dl>
+    </div>
+
 </th:block>
 </html>

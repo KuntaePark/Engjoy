@@ -1,5 +1,7 @@
 package com.engjoy.service;
 
+import com.engjoy.constant.CATEGORY;
+import com.engjoy.constant.EXPRTYPE;
 import com.engjoy.constant.ORDERTYPE;
 import com.engjoy.constant.PRINTFORM;
 import com.engjoy.dto.PrintContentDto;
@@ -19,6 +21,8 @@ import com.itextpdf.layout.properties.TextAlignment;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.weaver.ast.Expr;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -40,6 +44,17 @@ public class PrintService {
     public byte[] createPrintablePdf(PrintOptionDto printOptionDto, Long accountId) throws IOException {
         // 인쇄할 Expression 목록 조회
         List<Expression> expressionsToPrint = getExpressionsToPrint(printOptionDto, accountId);
+
+        // --- 👇 테스트용 비상 플랜 추가 ---
+        // 2. 만약 인쇄할 목록이 없다면, 전체 단어장에서 20개를 가져와서 테스트
+        if (expressionsToPrint.isEmpty()) {
+            System.out.println("⚠️ 테스트: 인쇄할 데이터가 없어 전체 단어장에서 20개를 가져옵니다.");
+            Pageable limit = PageRequest.of(0, 20); // 너무 많으면 느리니 20개로 제한
+            expressionsToPrint = expressionRepository.findRandomExpressions(limit);
+        }
+        // ---
+
+
         // 사용자가 선택한 정렬 적용
         List<Expression> sortedExpressions = applyOrderType(expressionsToPrint, printOptionDto.getPrintOptionDetailDto().getOrderType());
         // 인쇄 형태에 맞게 데이터 목록 생성
@@ -81,13 +96,20 @@ public class PrintService {
                 }
             }
 
-            // 레퍼지토리의 필터링 메서드 호출
+            EXPRTYPE exprType = null; // 기본값은 null (타입 전체)
+            if (filters.getCategory() != null && filters.getCategory() != CATEGORY.MIXED) {
+                // MIXED가 아니면, CATEGORY를 EXPRTYPE으로 변환
+                exprType = EXPRTYPE.valueOf(filters.getCategory().name());
+            }
+
+            // ✅ 항상 새로운 findWithFilters 메서드 하나만 호출
             return expressionRepository.findWithFilters(
                     accountId,
-                    filters.getCategory(),
+                    exprType, // MIXED일 경우 null이 전달됨
                     startDate,
                     endDate
             );
+
         } else {
             return expressionRepository.findAllById(printOptionDto.getExprIdsToPrint());
         }
@@ -176,24 +198,42 @@ public class PrintService {
 
     // 생성된 데이터 목록을 받아 최총 PDF 문서
     private byte[] createPdf(List<PrintContentDto> contents, PrintOptionDto printOptionDto) throws IOException {
+        // PDF를 메모리에 생성하기 위한 스트림
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfWriter writer = new PdfWriter(baos);
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
 
-        // 중요: 폰트 경로를 실제 환경에 맞게 수정해야 합니다.
+        // 1. 한글 폰트 설정 (프로젝트의 /resources/fonts/ 폴더에 폰트 파일이 있어야 함)
         ClassPathResource fontResource = new ClassPathResource("fonts/Pretendard-Regular.ttf");
         PdfFont font = PdfFontFactory.createFont(fontResource.getURL().toString(), "Identity-H");
-
         document.setFont(font);
 
-        document.add(new Paragraph("나의 단어/문장 학습지").setFontSize(20).setBold().setTextAlignment(TextAlignment.CENTER));
+        // 2. 문서 제목 추가
+        document.add(new Paragraph("나의 단어/문장 학습지")
+                .setFontSize(20)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(20)); // 제목 아래 여백 추가
 
+        // 3. 전달받은 콘텐츠 목록을 PDF에 추가
         for (int i = 0; i < contents.size(); i++) {
             PrintContentDto content = contents.get(i);
-            String line = (i + 1) + ". " + content.getWordText() + " : " + content.getMeaning();
+            String line;
+
+            // 4. 인쇄 형태에 따라 사용할 데이터 필드를 결정
+            if (printOptionDto.getPrintForm() == PRINTFORM.EXAM) {
+                // 시험지 형식일 경우: 문제(단어)만 표시
+                // content.getQuestion()은 이전에 makeTestSheet에서 wordText 값으로 채워졌습니다.
+                line = (i + 1) + ". " + content.getQuestion();
+            } else {
+                // 다른 형식일 경우: 단어와 뜻 모두 표시
+                line = (i + 1) + ". " + content.getWordText() + " : " + content.getMeaning();
+            }
+
             document.add(new Paragraph(line).setFontSize(12).setMarginTop(10));
 
+            // 6. 시험지 형식일 경우 객관식 보기를 추가
             if (printOptionDto.getPrintForm() == PRINTFORM.EXAM && content.getChoices() != null) {
                 for (int j = 0; j < content.getChoices().size(); j++) {
                     String choiceLine = "   " + (j + 1) + ") " + content.getChoices().get(j);
@@ -201,7 +241,11 @@ public class PrintService {
                 }
             }
         }
+
+        // 7. 문서 작업 완료
         document.close();
+
+        // 8. 생성된 PDF의 byte 배열 반환
         return baos.toByteArray();
     }
 

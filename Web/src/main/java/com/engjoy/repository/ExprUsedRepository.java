@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
@@ -23,6 +25,9 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
 //            Pageable pageable);
 
     boolean existsByAccountAndExpression(Account account, Expression expression);
+
+    @Query("SELECT eu.expression.id FROM ExprUsed eu WHERE eu.account = :account AND eu.expression.id IN :expressionIds")
+    Set<Long> findUsedExpressionIdsByAccountAndExpressionIds(@Param("account") Account account, @Param("expressionIds") List<Long> expressionIds);
 
     @Query("SELECT eu FROM ExprUsed eu JOIN FETCH eu.expression " +
             "WHERE eu.account = :account " +
