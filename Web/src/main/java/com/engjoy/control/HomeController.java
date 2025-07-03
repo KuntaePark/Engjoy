@@ -12,4 +12,9 @@ public class HomeController {
     public void home(){
         //log.info("홈페이지입니다.");
     }
+
+    @GetMapping("/login")
+    public String login(){
+        return "login";
+    }
 }
