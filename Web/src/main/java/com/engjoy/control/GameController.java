@@ -42,7 +42,8 @@ public class GameController {
     @PostMapping("/game/match/join")
     public ResponseEntity<String> matchJoin(Principal principal) {
         //매칭 큐에 해당 플레이어 추가, 인증되지 않은 유저라면 403 뜸
-        String id = principal.getName();
-        return ResponseEntity.ok(id);
+        String email = principal.getName();
+        Long id = gameService.allowMatch(email);
+        return ResponseEntity.ok(id.toString());
     }
 }

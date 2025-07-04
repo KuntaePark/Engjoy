@@ -1,5 +1,6 @@
 package com.engjoy.service;
 
+import com.engjoy.dto.WebSocketPacket;
 import jakarta.annotation.PostConstruct;
 import org.java_websocket.WebSocketAdapter;
 import org.java_websocket.client.WebSocketClient;
@@ -8,9 +9,12 @@ import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class WebSocketService extends WebSocketClient {
+
+    private final AtomicBoolean reconnecting = new AtomicBoolean(false);
 
     public WebSocketService() throws URISyntaxException {
 
@@ -24,7 +28,8 @@ public class WebSocketService extends WebSocketClient {
                 this.connectBlocking();
                 System.out.println("Connected to game server.");
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                System.out.println("Initial Conection interrupted.");
+                tryReconnect();
             }
         }).start();
     }
@@ -32,6 +37,11 @@ public class WebSocketService extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         System.out.println("WebSocket connection established.");
+        WebSocketPacket webSocketPacket = new WebSocketPacket("auth","WEBSERVER");
+        String packet = webSocketPacket.toJson();
+        if(packet != null) {
+            this.send(packet);
+        }
     }
 
     @Override
@@ -42,18 +52,47 @@ public class WebSocketService extends WebSocketClient {
     @Override
     public void onClose(int code, String reason, boolean remote) {
         System.out.println("WebSocket closed: " + reason);
-        // 자동 재연결 로직을 원한다면 여기에 재시도 추가 가능
+        tryReconnect();
     }
 
     @Override
     public void onError(Exception ex) {
-        System.err.println("WebSocket error:");
-        ex.printStackTrace();
+        System.err.println("WebSocket error: "+ ex.getMessage());
     }
 
-    public void requestPlayerMatch(String playerId) {
+    private void tryReconnect() {
+        if(reconnecting.getAndSet(true)) return;
+
+        new Thread(() -> {
+            try {
+                while (true) {
+                    System.out.println("Trying to reconnect...");
+
+                    try {
+                        this.reconnectBlocking(); // reconnect 시도
+                    } catch (Exception e) {
+                        System.err.println("Exception during reconnect: " + e.getMessage());
+                    }
+
+                    if (this.isOpen()) {
+                        System.out.println("Reconnected to game server.");
+                        break; // 연결 성공 → 루프 종료
+                    }
+
+                    System.err.println("Reconnect failed. Retrying in 5 seconds...");
+                    Thread.sleep(5000);
+                }
+            } catch (InterruptedException ignored) {
+            } finally {
+                reconnecting.set(false);
+            }
+        }).start();
+    }
+
+    public void requestPlayerMatch(Long playerId) {
+        WebSocketPacket wsPacket = new WebSocketPacket("auth_allow", playerId.toString());
         if (this.isOpen()) {
-            this.send(playerId);
+            this.send(wsPacket.toJson());
         } else {
             System.err.println("WebSocket not connected. Match info not sent.");
         }
