@@ -22,26 +22,18 @@ public interface ExpressionRepository extends JpaRepository<Expression, Long> {
 //    Page<Expression> findByDifficulty(int difficulty, Pageable pageable);
 
     @Query(value = "SELECT e FROM Expression e " +
-            "WHERE EXISTS (SELECT 1 FROM ExprUsed eu WHERE eu.expression = e AND eu.account.id = :accountId " +
-            "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
-            "AND (:endDate IS NULL OR eu.usedTime < :endDate)) " +
-            "AND (:keyword IS NULL OR e.wordText LIKE %:keyword%) " +
+            "WHERE (:keyword IS NULL OR e.wordText LIKE :keyword) " +
             "AND (:exprType IS NULL OR e.exprType = :exprType) " +
             "AND (:difficulty = 0 OR e.difficulty = :difficulty)",
             countQuery = "SELECT count(e) FROM Expression e " +
-                    "WHERE EXISTS (SELECT 1 FROM ExprUsed eu WHERE eu.expression = e AND eu.account.id = :accountId " +
-                    "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
-                    "AND (:endDate IS NULL OR eu.usedTime < :endDate)) " +
-                    "AND (:keyword IS NULL OR e.wordText LIKE %:keyword%) " +
+                    "WHERE (:keyword IS NULL OR e.wordText LIKE :keyword) " +
                     "AND (:exprType IS NULL OR e.exprType = :exprType) " +
                     "AND (:difficulty = 0 OR e.difficulty = :difficulty)")
     Page<Expression> findPageBySearchDto(
-            @Param("accountId") Long accountId,
+            // ✅ accountId, startDate, endDate 파라미터가 필요 없어짐
             @Param("keyword") String keyword,
             @Param("exprType") EXPRTYPE exprType,
             @Param("difficulty") int difficulty,
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate,
             Pageable pageable
     );
 

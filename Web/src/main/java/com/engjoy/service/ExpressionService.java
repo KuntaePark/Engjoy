@@ -41,14 +41,28 @@ public class ExpressionService {
         LocalDateTime startDateTime = (expressionSearchDto.getStartDate() != null) ? expressionSearchDto.getStartDate().atStartOfDay() : null;
         LocalDateTime endDateTime = (expressionSearchDto.getEndDate() != null) ? expressionSearchDto.getEndDate().plusDays(1).atStartOfDay() : null;
 
+        String keyword = expressionSearchDto.getKeyword();
+
+        if (keyword != null && keyword.trim().isEmpty()) {
+            keyword = null;
+        }
+
+        if(keyword != null ){
+            keyword = "%" + keyword + "%";
+        }
+
+        // --- 👇 디버깅을 위한 로그 추가 ---
+        System.out.println("--- Repository 호출 직전 파라미터 확인 ---");
+        System.out.println("keyword: " + keyword);
+        System.out.println("exprType: " + expressionSearchDto.getExprType());
+        System.out.println("difficulty: " + expressionSearchDto.getDifficulty());
+        System.out.println("-----------------------------------------");
+
         //  모든 필터링을 한 번에 처리
         Page<Expression> expressionPage = expressionRepository.findPageBySearchDto(
-                accountId,
-                expressionSearchDto.getKeyword(),
+                keyword,
                 expressionSearchDto.getExprType(),
                 expressionSearchDto.getDifficulty(),
-                startDateTime,
-                endDateTime,
                 pageable
         );
 
@@ -122,31 +136,47 @@ public class ExpressionService {
 
     // '오늘의 복습 추천' 단어/문장 조회
     @Transactional
-    public Optional<ExpressionDto> getDailyRecommendation(Long accountId){
-//        Account account = accountRepository.findById(accountId)
-//                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
+    public List<ExpressionDto> getDailyRecommendations(Long accountId) {
         Account account = new Account();
         account.setId(accountId);
-
         LocalDate today = LocalDate.now();
 
-        List<IncorrectExpr> recommendedList = incorrectExprRepository.findTopWordDaily(
-                account,5,today,PageRequest.of(0,1));
-        if(!recommendedList.isEmpty()){
-            IncorrectExpr recommendedExpr = recommendedList.get(0);
-            recommendedExpr.updateLastRecommendedDate();
-            incorrectExprRepository.save(recommendedExpr);
+        // 오답 횟수 기준 설정
+        int minIncorrectCount = 5;
+        // 최대 5개의 결과를 가져오도록 Pageable 설정
+        Pageable limit = PageRequest.of(0, 5);
+        // Repository 메서드 호출
+        List<IncorrectExpr> recommendations = incorrectExprRepository.findTopWordDaily(
+                account,
+                minIncorrectCount,
+                today,
+                limit
+        );
 
-            Expression expression = recommendedExpr.getExpression();
-
-            boolean isUsed = exprUsedRepository.existsByAccountAndExpression(account, expression);
-            boolean isFavorite = exprFavoritesRepository.findByAccountAndExpression(account,expression).isPresent();
-
-            return Optional.of(ExpressionDto.from(expression, isFavorite, isUsed,null));
-
+        // ✅ 2. [테스트용 코드] 만약 DB에서 가져온 결과가 비어있다면,
+        if (recommendations.isEmpty()) {
+            System.out.println("### DEBUG: No recommendations found in DB. Creating mock data. ###");
+            // 가짜 추천 단어 DTO 3개를 만들어서 반환합니다.
+            return List.of(
+                    new ExpressionDto("apple", "사과", "WORD", 1, false, false, null),
+                    new ExpressionDto("banana", "바나나", "WORD", 2, false, false, null),
+                    new ExpressionDto("certain", "확실한", "WORD", 3, false, false, null)
+            );
         }
-        return Optional.empty();
+
+        // 추천된 단어들의 '마지막 추천일'을 오늘로 업데이트
+        if (!recommendations.isEmpty()) {
+            recommendations.forEach(IncorrectExpr::updateLastRecommendedDate);
+            // incorrectExprRepository.saveAll(recommendations); // 필요 시 주석 해제
+        }
+        // DTO 리스트로 변환하여 반환
+        return recommendations.stream()
+                .map(IncorrectExpr::getExpression)
+                .map(expr -> ExpressionDto.from(expr, false, false, null))
+                .collect(Collectors.toList());
     }
+
+
 
     // 정답을 제외한 나머지 단어 뜻에서 지정된 개수만큼 무작위로 오답 보기 생성(퀴즈 및 인쇄)
     public List<String> generateChoices(String correctAnswer, List<String> allMeanings, int count) {

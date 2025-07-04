@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap/dist/cal-heatmap.css">
+
+    <style>
+        /* 연도 세로 정렬 */
+        .year-labels {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-right: 12px;
+            color: #4b5563; /* Tailwind gray-600 */
+            font-size: 14px;
+        }
+        .year-labels > div {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            margin-bottom: 20px;
+            user-select: none;
+        }
+
+        /* 요일 표시 */
+        .weekday-labels {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 12px;
+            color: #4b5563; /* Tailwind gray-600 */
+            margin-bottom: 6px;
+            user-select: none;
+        }
+
+        /* cal-heatmap 기본 폰트 크기 조절 */
+        #cal-heatmap .ch-month, #cal-heatmap .ch-day {
+            font-size: 10px;
+        }
+    </style>
+</th:block>
+<th:block layout:fragment="script">
+    <script type="text/javascript" src="https://d3js.org/d3.v7.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/cal-heatmap/dist/cal-heatmap.min.js"></script>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            const reportData = /*[[${report}]]*/ null;
+
+            if (reportData && reportData.dailyLearningCounts) {
+                const quizMap = reportData.dailyDidQuizMap || {};
+
+                const heatmapData = Object.entries(reportData.dailyLearningCounts).map(([dateStr, count]) => {
+                    const didQuiz = quizMap[dateStr];
+                    return {
+                        date: new Date(dateStr).getTime(),
+                        value: didQuiz ? 1 : 0
+                    };
+                });
+
+                const cal = new CalHeatmap();
+                cal.paint({
+                    data: {
+                        source: heatmapData,
+                        x: 'date',
+                        y: 'value'
+                    },
+                    date: { start: new Date(new Date().setMonth(new Date().getMonth() - 11)) },
+                    range: 12,
+                    scale: {
+                        color: {
+                            type: 'threshold',
+                            domain: [1],
+                            range: ['#eee', '#34d399']
+                        }
+                    },
+                    domain: { type: 'month' },
+                    subDomain: { type: 'ghDay', radius: 2, width: 11, height: 11 },
+                    itemSelector: '#cal-heatmap'
+                });
+
+                document.getElementById('weekly-review-count').innerText = reportData.weekReviews;
+                document.getElementById('incorrect-count').innerText = reportData.weekIncorrects;
+            }
+        });
+    </script>
+</th:block>
+
+
+
+<th:block layout:fragment="main">
+    <div class="container mx-auto p-6">
+        <h1 class="text-2xl font-bold mb-4">📘 학습 리포트</h1>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="p-4 bg-blue-100 rounded">
+                주간 복습 수<br><strong th:text="${report.weekReviews}">0</strong>
+            </div>
+            <div class="p-4 bg-red-100 rounded">
+                오답 수<br><strong th:text="${report.weekIncorrects}">0</strong>
+            </div>
+        </div>
+
+        <section class="mt-10">
+            <h2 class="text-xl font-semibold mb-4">📅 일별 학습 히트맵</h2>
+
+                <div style="display: flex; align-items: flex-start;">
+                    <!-- 연도 세로 표시 -->
+                    <div style="writing-mode: vertical-rl;transform: rotate(180deg);font-size: 30px;line-height: 11px; height: 77px; /* 11px * 7줄 */
+                    color: #4b5563; margin-right: 8px; user-select: none;">
+                        <span th:text="${currentYear}"></span>
+                    </div>
+
+                    <div>
+                        <!-- 요일 표시 -->
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 77px; /* 11px * 7줄 */
+                            font-size: 11px; color: #4b5563; margin-right: 8px; width: 14px; user-select: none; flex-shrink: 0; ">
+                            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                        </div>
+
+
+                    </div>
+
+                    <!-- 캘린더 히트맵 -->
+                    <div>
+                        <div id="cal-heatmap" style="margin-left:4px; flex-grow:1;"></div>
+                    </div>
+
+                </div>
+
+        </section>
+    </div>
+</th:block>
+</html>
