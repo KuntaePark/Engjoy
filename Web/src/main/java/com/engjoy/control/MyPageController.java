@@ -3,6 +3,7 @@ package com.engjoy.control;
 import com.engjoy.Dto.MyInfoChangeDto;
 import com.engjoy.entity.Account;
 import com.engjoy.repository.AccountRepository;
+import com.engjoy.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -11,25 +12,39 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.security.Principal;
 import java.util.Optional;
 
 
 @Controller
 public class MyPageController {
 
-
+    private final AccountService accountService;
     private final PasswordEncoder passwordEncoder;
     private final AccountRepository accountRepository;
 
-    public MyPageController(PasswordEncoder passwordEncoder, AccountRepository accountRepository) {
+    public MyPageController(PasswordEncoder passwordEncoder,
+                            AccountRepository accountRepository,
+                            AccountService accountService) {
         this.passwordEncoder = passwordEncoder;
         this.accountRepository = accountRepository;
+        this.accountService = accountService;
     }
 
     @GetMapping("/myPage")
-    public String myPage(Model model){
-        return "myPage";
+    public String myPage(Model model, Principal principal) {
+        if (principal != null) {
+            String email = principal.getName();
+            Account account = accountService.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("사용자 정보 없음"));
+            model.addAttribute("nickname", account.getNickname());
+            return "myPage";
+        } else {
+            // principal이 null이면 로그인 상태 아님 → login 페이지로
+            return "redirect:/login";
+        }
     }
+
     @GetMapping("/passwordSearch")
     public String passwordSearchPage(Model model){
         return "passwordSearch";

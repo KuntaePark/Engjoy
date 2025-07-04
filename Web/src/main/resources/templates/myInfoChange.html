@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" th:href="@{/css/myInfoChange.css}">
+</th:block>
+
+
+<th:block layout:fragment="script">
+    <script th:src="@{/js/myInfoChange.js}"></script>
+</th:block>
+
+
+<th:block layout:fragment="main">
+    <header class="navbar">
+        <div class="nav-left">
+            <a th:href="@{/mainPage}" class="logo">EngJoy</a>
+        </div>
+
+        <nav class="menu">
+            <a th:href="@{#}">게임</a>
+            <a th:href="@{#}">단어장</a>
+            <a th:href="@{/serviceInfo}">서비스 소개</a>
+            <a th:href="@{/gameInfo}">게임 소개</a>
+        </nav>
+
+        <div class="nav-right" sec:authorize="isAuthenticated()">
+            <span th:text="'닉네임: ' + ${nickname}"></span>
+            <a th:href="@{/myPage}">마이페이지</a>
+            <a th:href="@{/logout}">로그아웃</a>
+        </div>
+        <div class="nav-right" sec:authorize="isAnonymous()">
+            <a th:href="@{/login}">로그인</a>
+        </div>
+    </header>
+    <div id="wrapper">
+        <div id="box">
+            <div>
+                <h2>개인 정보 수정</h2>
+                <hr><br>
+            </div>
+            <div>
+                <label>내 닉네임</label>
+                <input type="text" id="nicknameInput">
+                <button class="btn" id="nicknameCheck">확인</button>
+                <span id="nicknameResult"></span>
+                <br><br>
+                <label>새 닉네임</label>
+                <input type="text" id="newNicknameInput">
+                <button class="btn" onclick="nicknameCheckBtn()">중복확인</button>
+                <span id="newNicknameResult"></span>
+            </div>
+            <br>
+            <div>
+                <label>내 이메일</label>
+                <input type="text" id="emailInput">
+                <button class="btn" onclick="existingEmail()">확인</button>
+                <span id="emailResult"></span>
+                <br><br>
+                <label>새 이메일</label>
+                <input type="email" id="newEmailInput">
+                <button class="btn" onclick="emailCheck()">중복확인</button>
+                <span id="newEmailResult"></span>
+            </div>
+            <br><br>
+            <a th:href="@{/passwordChange}">비밀번호 변경하기 이동</a>
+            <br><br>
+            <div id="submit">
+                <input type="button" value="저장" id="save">
+                <button type="button" id="cancel" onclick="location.href='myPage.html'">취소</button>
+            </div>
+        </div>
+
+    </div>
+</th:block>
+</html>

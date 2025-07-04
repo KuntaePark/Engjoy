@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" th:href="@{/css/gameInfo.css}">
+</th:block>
+<th:block layout:fragment="script"></th:block>
+
+
+<th:block layout:fragment="main">
+    <header class="navbar">
+        <div>
+            <a th:href="@{/mainPage}" class="logo">EngJoy</a>
+        </div>
+        <nav class="menu">
+            <a href="#">게임</a>
+            <a href="#">단어장</a>
+            <a th:href="@{/serviceInfo}">서비스 소개</a>
+            <a th:href="@{/gameInfo}">게임 소개</a>
+        </nav>
+
+        <div class="nav-right" sec:authorize="isAuthenticated()">
+            <span>닉네임:<span th:text="${nickname} ?: ''"></span></span>
+            <a th:href="@{/myPage}" class="moving">마이페이지</a>
+            <a th:href="@{/logout}" class="moving">로그아웃</a>
+        </div>
+
+    </header>
+    <div id="wrapper">
+        <div class="gameIntro">
+            <div>
+                <div>
+                    <img src="https://via.placeholder.com/150" alt="items">
+                </div>
+                <br>
+                <div>
+                    <span>첫째! 다양한 아이템 사서!</span>
+                </div>
+            </div>
+            <div>
+                <div>
+                    <img src="" alt="battle">
+                </div>
+                <br>
+                <div>
+                    <span>둘째! 유저들끼리 팀을 이뤄 배틀을 통해 영어 실력도 끌러올리고!</span>
+                </div>
+            </div>
+            <div>
+                <div>
+                    <img src="https://via.placeholder.com/150" alt="calendar">
+                </div>
+                <br>
+                <div>
+                    <span>셋째! 그날 배운 것 복습하는 기회까지!!</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</th:block>
+</html>

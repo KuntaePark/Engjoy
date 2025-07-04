@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
@@ -19,6 +20,7 @@ public class SignUpDto {
     private String nickname;
     @NotEmpty
     private String name;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birth;
 
     public String getEmail() { return email; }

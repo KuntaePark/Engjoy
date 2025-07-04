@@ -1,0 +1,84 @@
+
+
+    #container{
+        width: 25%;
+        margin: 0 auto;
+        padding : 20px;
+        background-color: whitesmoke;
+        border-radius: 10px;
+        justify-content: center;
+        display: flex;
+        flex-direction: column;
+        margin-top: 10%;
+    }
+
+    body{
+        background-color: black;
+        margin:0;
+    }
+
+    .btn{
+        display:flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        background-color: #00cc66;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        box-shadow: 3px 3px rgba(0,0,0,0.1);
+    }
+
+
+.navbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  background-color: #2f3e46;
+  height: 90px;
+  padding: 0 40px;
+}
+
+
+
+.menu {
+  display: flex;
+  gap: 80px;
+  justify-content:center;
+}
+
+.menu a {
+  text-decoration: none;
+  color: white;
+  font-size: 16px;
+  padding: 0 10px;
+}
+
+    .nav-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: white;
+      font-size: 16px;
+    }
+
+    .nav-right a {
+      color: white;
+      text-decoration: underline;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo {
+      color: #00cc66;
+      font-size: 32px;
+      font-weight: bold;
+      font-family: '맑은 고딕', sans-serif;
+      text-decoration: none;
+      line-height: 90px;
+      margin-right: 40px
+    }

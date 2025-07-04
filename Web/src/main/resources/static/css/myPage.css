@@ -1,0 +1,177 @@
+#container {
+    display: flex;
+    padding: 50px;
+    gap: 80px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* 왼쪽 프로필 */
+#profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 250px;
+}
+
+.char-img {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 10px;
+}
+
+.nickname {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.email {
+    color: gray;
+    margin: 5px 0 15px 0;
+}
+
+.edit-btn {
+    background-color: #0aaf4c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+}
+
+/* 오른쪽 정보 */
+#info {
+    flex: 1;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.line {
+    height: 4px;
+    background-color: #666;
+    margin-bottom: 20px;
+}
+
+#myranking {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.score-box {
+    background-color: #f0f0f0;
+    width: 200px;
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.achievement p {
+    margin: 8px 0;
+}
+
+.highlight {
+    color: #2980b9;
+    font-weight: bold;
+}
+
+#wrapper{
+    padding-top:90px;
+}
+
+
+
+.account-menu .login-button{
+  text-decoration: none;
+  color: white;
+  font-size: 16px;;
+  line-height: 90px;
+
+}
+
+.account-menu{
+  padding-right:90px;
+  text-decoration: underline;
+  text-align: right;
+}
+
+
+.account-menu a {
+  color: white;
+  text-decoration: underline;
+  margin-left: 10px;
+  font-size: 16px;
+}
+
+.login a{
+    color: white;
+    text-decoration:none;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2f3e46;
+  height: 90px;
+  padding: 0 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
+
+.menu {
+  display: flex;
+  gap: 80px;
+}
+
+.menu a {
+  text-decoration: none;
+  color: white;
+  font-size: 16px;
+  line-height: 90px;
+}
+
+.nav-right .login-button{
+  text-decoration: none;
+  color: white;
+  font-size: 16px;;
+  line-height: 90px;
+
+}
+
+.nav-right{
+  padding-right:90px;
+  text-decoration: underline;
+  text-align: right;
+}
+
+
+.nav-right a {
+  color: white;
+  text-decoration: underline;
+  margin-left: 10px;
+  font-size: 16px;
+}

@@ -47,5 +47,17 @@ public class Account {
     public void setBirth(LocalDate birth) {
         this.birth = birth;
     }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getNickname() {
+        return this.nickname;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
 }
 

@@ -1,0 +1,146 @@
+#box{
+        width: 25%;
+        margin: 0 auto;
+        padding : 20px;
+        background-color: whitesmoke;
+        border-radius: 10px;
+        justify-content: center;
+        display: flex;
+        flex-direction: column;
+        margin-top: 10%;
+   }
+
+.btn{
+    background-color: #00cc66;
+    color: white;
+    padding: 10px 20px;
+    border:none;
+    border-radius: 5px;
+    box-shadow: 3px 3px rgba(0,0,0,0.1);;
+}
+
+#save{
+    width: 90px;
+    height: 40px;
+    background-color: #00cc66;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 3px 3px rgba(0,0,0,0.1);;
+}
+
+#cancel{
+    width: 90px;
+    height: 40px;
+    background-color: white;
+    color: #00cc66;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 3px 3px rgba(0,0,0,0.1);
+}
+
+#submit{
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    gap: 10px;
+}
+
+
+
+
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
+
+
+
+.account-menu {
+  text-align: right;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.account-menu span{
+    color:white;
+    font-size:16px;
+}
+.account-menu a {
+  color: white;
+  text-decoration: underline;
+  font-size: 16px;
+}
+
+.login a{
+    color: white;
+    text-decoration:none;
+}
+
+#wrapper {
+  padding-top: 90px;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2f3e46;
+  height: 90px;
+  padding: 0 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
+
+.menu {
+  display: flex;
+  gap: 80px;
+}
+
+.menu a {
+  text-decoration: none;
+  color: white;
+  font-size: 16px;
+  line-height: 90px;
+}
+
+.nav-right .login-button{
+  text-decoration: none;
+  color: white;
+  font-size: 16px;;
+  line-height: 90px;
+
+}
+
+.nav-right{
+  padding-right:90px;
+  text-decoration: underline;
+  text-align: right;
+}
+
+
+.nav-right a {
+  color: white;
+  text-decoration: underline;
+  margin-left: 10px;
+  font-size: 16px;
+}
+

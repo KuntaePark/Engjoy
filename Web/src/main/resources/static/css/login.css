@@ -1,0 +1,127 @@
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: black;
+        }
+
+        #wrapper{
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            height:100vh;
+            flex-direction: column;
+        }
+        #link{
+            justify-content: center;
+            align-items: center;
+            display:flex;
+            margin-top:20px;
+            color: white;
+        }
+        h2{
+            text-align: center;
+            color: white
+        }
+
+    input[type="email"],
+    input[type="password"],
+    #btn input[type="submit"] {
+        width: 250px;
+        padding: 10px;
+        margin-top: 5px;
+        box-sizing: border-box; /* padding 포함한 너비 계산 */
+        font-size: 14px;
+    }
+    #btn input[type="submit"]{
+        background-color: #4cf54c /*찬양씨와 상의 후 색깔 넣기*/
+    }
+
+    #link a {
+    color: white;
+    text-decoration: none;
+    margin: 0 5px;
+    font-size: 14px;
+}
+
+
+
+    .logo{
+        color: #00cc66;
+        font-size:32px;
+        font-weight:bold;
+        text-align: center;
+        font-family: '맑은 고딕', sans-serif;
+        text-decoration: none;
+        position: fixed;
+        top: 20px;
+        left: 30px;
+        z-index: 9999;
+
+    }
+
+
+    #box{
+        border: 1px solid black;
+        border-radius:5px;
+        padding: 20px;
+        width:350px;
+        display:flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: whitesmoke;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #2f3e46;
+      height: 90px;
+      padding: 0 40px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+
+    .logo {
+      color: #00cc66;
+      font-size: 32px;
+      font-weight: bold;
+      font-family: '맑은 고딕', sans-serif;
+      text-decoration: none;
+      line-height: 90px;
+    }
+
+    .menu {
+      display: flex;
+      gap: 80px;
+    }
+
+    .menu a {
+      text-decoration: none;
+      color: white;
+      font-size: 16px;
+      line-height: 90px;
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: white;
+      font-size: 16px;
+    }
+
+    .nav-right a {
+      color: white;
+      text-decoration: underline;
+    }
+
+
+
+
+

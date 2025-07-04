@@ -1,0 +1,125 @@
+
+
+  .navbar .logo {
+      color: #00cc66;
+      font-size: 32px;
+      font-weight: bold;
+      font-family: '맑은 고딕', sans-serif;
+      text-decoration: none;
+      line-height: 90px;
+      margin-right: 40px;
+
+  }
+
+    #wrapper{
+        display:flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items:center;
+        height: 70vh;
+
+    }
+
+    #box{
+    border: 1px solid black;
+    border-radius: 10px;
+    padding: 20px;
+    background-color: whitesmoke;
+}
+
+#joinBtn{
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.button-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+h2{
+    color:white
+}
+
+body{
+    background-color: black;
+}
+
+.btn{
+    background-color: #00cc66;
+    color: white;
+    padding: 10px 20px;
+    border:none;
+    border-radius: 5px;
+    box-shadow: 3px 3px rgba(0,0,0,0.1);;
+}
+
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2f3e46;
+  height: 90px;
+  padding: 0 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
+
+.menu {
+  display: flex;
+  gap: 80px;
+}
+
+.menu a {
+  text-decoration: none;
+  color: white;
+  font-size: 16px;
+  line-height: 90px;
+}
+
+.nav-right .login-button{
+  text-decoration: none;
+  color: white;
+  font-size: 16px;;
+  line-height: 90px;
+
+}
+
+.nav-right{
+  padding-right:90px;
+  text-decoration: underline;
+  text-align: right;
+}
+
+
+.nav-right a {
+  color: white;
+  text-decoration: underline;
+  margin-left: 10px;
+  font-size: 16px;
+}
+
+
+
+
+.login a{
+    color: white;
+    text-decoration:none;
+}}
