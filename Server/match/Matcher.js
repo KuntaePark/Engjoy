@@ -37,6 +37,11 @@ class Matcher {
     findMatch(ws) {
         //플레이어를 매칭 큐에 추가.
         //임시 매칭으로 두명 차면 바로 세션 생성.
+
+        //중복 요청시 차단
+        for(const other in this.matchQueue) {
+            if(other.id === ws.id) return;
+        }
         
         if(this.matchQueue.length >= 1) {
             console.log('matching complete. requesting session create.');

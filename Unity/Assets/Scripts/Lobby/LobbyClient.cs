@@ -19,7 +19,7 @@ public class LobbyClient : WebSocketClient
 
     void Start()
     {
-        startConnection("ws://192.168.0.51:7777");
+        startConnection("ws://localhost:7777");
     }
 
     public override void handlePacket(string type, string payload)
