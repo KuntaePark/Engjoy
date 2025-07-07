@@ -25,8 +25,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.itextpdf:itext7-core:7.2.5'
-    implementation 'com.itextpdf:font-asian:7.2.5'
+    implementation 'com.itextpdf:kernel:8.0.4'
+    implementation 'com.itextpdf:layout:8.0.4'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'

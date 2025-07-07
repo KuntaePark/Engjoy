@@ -5,7 +5,13 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{fragment/default}">
 
+<head>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+</head>
+
 <th:block layout:fragment="css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* 선택된 답변 버튼 스타일 (단어 퀴즈용) */
         .answer-btn.selected {
@@ -39,12 +45,13 @@
             const nextBtn = document.getElementById('nextBtn');
             const skipBtn = document.getElementById('skipBtn');
             const resetBtn = document.getElementById('resetBtn');
+            let answerBoard = null; let wordBank = null;
 
             // --- 퀴즈 유형별 요소 가져오기 및 이벤트 리스너 설정 ---
             if (isSentenceQuiz) {
                 // 문장 퀴즈용 요소
-                const answerBoard = document.getElementById('answer-board');
-                const wordBank = document.getElementById('word-bank');
+                answerBoard = document.getElementById('answer-board');
+                wordBank = document.getElementById('word-bank');
 
                 if (answerBoard && wordBank) {
                     // 드래그앤드롭 기능 활성화
@@ -92,7 +99,7 @@
                         answeredDto = { exprId: question.exprId, submitSentence: submittedWords };
                     } else {
                         if (!selectedAnswer) { alert('답을 선택해주세요!'); return; }
-                        answeredDto = { exprId: question.exprId, submitWord: selectedAnswer };
+                        answeredDto = { exprId: question.exprId, submitWord: selectedAnswer.trim() };
                     }
                     disableAllAnswerButtons();
                     submitAnswer(answeredDto);
@@ -129,8 +136,10 @@
                     });
             }
 
+
+
             function showFeedback(gradedResult) {
-                if (gradedResult.isCorrect) {
+                if (gradedResult.correct) {
                     feedbackArea.innerHTML = `<p class="text-2xl font-bold text-green-600">정답입니다! ✅</p>`;
                 } else {
                     let correctAnswerText = '';

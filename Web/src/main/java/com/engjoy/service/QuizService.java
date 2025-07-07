@@ -68,7 +68,7 @@ public class QuizService {
                         Collections.shuffle(choices);
                     } else {
                         questionText = expr.getWordText();
-                        choices = generateChoicesFromPool(expr.getMeaning(), distractorPool);
+                        choices = generateChoicesFromPool(expr.getMeaning(), distractorPool, expr.getExprType());
                     }
 
                     return QuizQuestionDto.from(
@@ -101,7 +101,7 @@ public class QuizService {
                 expr.getId(),
                 isCorrect,
                 expr.getExprType() == EXPRTYPE.WORD ? expr.getMeaning() : null,
-                expr.getExprType() == EXPRTYPE.SENTENCE ? List.of(expr.getMeaning()) : null
+                expr.getExprType() == EXPRTYPE.SENTENCE ? List.of(expr.getWordText()) : null
         );
 
         // 세션에 채점 결과를 리스트 형태로 누적 저장
@@ -123,6 +123,7 @@ public class QuizService {
     public QuizResultDto calculateQuizResult(Long accountId, HttpSession session){
 
         List<QuizGradedDto> results = (List<QuizGradedDto>) session.getAttribute(QUIZ_GRADED_RESULTS_KEY);
+        QuizPageDto quizState = (QuizPageDto) session.getAttribute(QUIZ_PAGE_KEY); // 전체 문제 수
 
         if (results == null) {
             System.out.println("❌ [calculateQuizResult] 세션에서 결과를 찾을 수 없음 (null)!");
@@ -136,7 +137,7 @@ public class QuizService {
         Map<Long, Expression> exprMap = expressionRepository.findAllById(exprIds).stream()
                 .collect(Collectors.toMap(Expression::getId, e -> e));
 
-        int total = results.size();
+        int total = quizState.getQuestions().size();
         int correct = (int) results.stream().filter(QuizGradedDto::isCorrect).count();
 
         int gold = results.stream().mapToInt(r -> {
@@ -184,8 +185,13 @@ public class QuizService {
     }
 
 
-    private List<String> generateChoicesFromPool(String correctAnswer, List<String> distractorPool) {
+    private List<String> generateChoicesFromPool(String correctAnswer, List<String> distractorPool, EXPRTYPE exprType) {
         List<String> distractors = new ArrayList<>(distractorPool);
+
+        if(exprType == EXPRTYPE.WORD){
+            distractors.remove(correctAnswer); // 정답은 제외
+            Collections.shuffle(distractors); // 보기용 오답 섞기
+        }
         distractors.remove(correctAnswer);
         Collections.shuffle(distractors);
 
@@ -209,15 +215,30 @@ public class QuizService {
     }
 
     // 정답 확인 로직
+    // 마침표 앞뒤 공백 제거 + 소문자로 비교
     private boolean checkAnswer(Expression expression, QuizAnsweredDto answeredDto){
         if(expression.getExprType() == EXPRTYPE.WORD){
-            return expression.getMeaning().equalsIgnoreCase(answeredDto.getSubmitWord());
-        }else{
-            return answeredDto.getSubmitSentence() != null &&
-                    !answeredDto.getSubmitSentence().isEmpty() &&
-                    expression.getMeaning().equalsIgnoreCase(answeredDto.getSubmitSentence().get(0));
+            return normalizeSentence(expression.getMeaning())
+                    .equals(normalizeSentence(answeredDto.getSubmitWord()));
+        } else {
+            String submittedSentence = String.join(" ", answeredDto.getSubmitSentence());
+            String expected = normalizeSentence(expression.getWordText());
+            String submitted = normalizeSentence(submittedSentence);
+            return expected.equals(submitted);
         }
     }
+
+
+
+    // 공백, 마침표 정리하는 헬퍼 메서드 추가
+    private String normalizeSentence(String sentence) {
+        return sentence
+                .replaceAll("\\s+", " ")          // 여러 공백 → 하나로
+                .replaceAll("\\s+\\.", ".")       // 마침표 앞 공백 제거
+                .trim()
+                .toLowerCase();
+    }
+
 
     // 퀴즈용 Expression 목록 조회
     private List<Expression> getExpressionsForQuiz(Account account, QuizSettingDto quizSettingDto, int requestedCount) {

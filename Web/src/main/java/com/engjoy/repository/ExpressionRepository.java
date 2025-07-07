@@ -58,4 +58,9 @@ public interface ExpressionRepository extends JpaRepository<Expression, Long> {
     @Query(value = "SELECT e.meaning FROM expression e WHERE e.expr_id NOT IN :excludeIds ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<String> findRandomMeanings(@Param("excludeIds") List<Long> excludeIds, @Param("limit") int limit);
 
+    @Query("select e.wordText from Expression e")
+    List<String> findAllWordTexts();
+
+    @Query("SELECT e.wordText FROM Expression e WHERE e.exprType = :exprType")
+    List<String> findWordTextsByType(@Param("exprType") EXPRTYPE exprType);
 }

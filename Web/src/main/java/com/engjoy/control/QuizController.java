@@ -5,6 +5,7 @@ import com.engjoy.service.QuizService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,11 @@ public class QuizController {
         return "quizSetting";
     }
 
+    @ModelAttribute
+    public void addCsrfToken(Model model, CsrfToken token){
+        model.addAttribute("_csrf", token);
+    }
+
     // 퀴즈 생성 및 시작
     @PostMapping("/start")
     public String getQuiz(QuizSettingDto quizSettingDto,
@@ -37,6 +43,7 @@ public class QuizController {
 
         QuizPageDto quizState = quizService.createQuizQuestions(testAccountId,quizSettingDto);
         session.setAttribute("QUIZ_STATE", quizState);
+        session.setAttribute("QUIZ_PAGE_STATE", quizState);
         return "redirect:/quiz/take";
     }
 
@@ -48,7 +55,7 @@ public class QuizController {
         QuizPageDto quizState = (QuizPageDto) session.getAttribute(QUIZ_STATE);
 
         if(quizState == null ){
-            return "redirect:/quizSetting";
+            return "redirect:/quiz/setting";
         }
         List<QuizQuestionDto> allQuestions = quizState.getQuestions();
 

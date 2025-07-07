@@ -2,154 +2,298 @@
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{fragment/default}">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학습지 인쇄 설정</title>
+
+    <!-- CSRF 토큰 -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <th:block layout:fragment="css">
+        <style>
+            /* PDF 뷰어 컨테이너 */
+            #pdf-viewer {
+              max-height: 80vh;
+              overflow: auto;
+            }
+            /* 캔버스가 부모 너비를 넘지 않도록 */
+            #pdf-preview-canvas {
+              max-width: 100%;
+              height: auto;
+            }
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border-width: 0;
+            }
+        </style>
+    </th:block>
 </head>
 
-<th:block layout:fragment="css">
-    <style>
-        #pdf-viewer {
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-    </style>
-</th:block>
-
 <th:block layout:fragment="script">
+    <!-- PDF.js 모듈 로드 -->
     <script src="https://mozilla.github.io/pdf.js/build/pdf.mjs" type="module"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const createPdfBtn = document.getElementById('create-pdf-btn');
-            const pdfCanvas = document.getElementById('pdf-preview-canvas');
-            const viewerMessage = document.getElementById('viewer-message');
+            // --------------------------------
+            // 1. 요소(Element) 가져오기
+            // --------------------------------
+            const createPdfBtn    = document.getElementById('create-pdf-btn');
+            const downloadBtn     = document.getElementById('downloadBtn');
+            const printBtn        = document.getElementById('printBtn');
+            const pdfCanvas       = document.getElementById('pdf-preview-canvas');
+            const viewerMsg       = document.getElementById('viewer-message');
+            const printFormRadios = document.querySelectorAll('input[name="printForm"]');
 
-            if (!createPdfBtn) return;
+            // 인쇄용 숨겨진 iframe 생성
+            const printFrame = document.createElement('iframe');
+            printFrame.style.display = 'none';
+            document.body.appendChild(printFrame);
 
-            createPdfBtn.addEventListener('click', () => {
+            // CSRF 토큰
+            const token  = document.querySelector("meta[name='_csrf']").content;
+            const header = document.querySelector("meta[name='_csrf_header']").content;
+
+            // --------------------------------
+            // 2. 헬퍼(Helper) 함수 정의
+            // --------------------------------
+
+            /** 폼 데이터를 읽어 서버에 보낼 DTO 객체를 생성하는 함수 */
+            function createPrintDto() {
                 const form = document.getElementById('print-options-form');
-            const formData = new FormData(form);
+                const formData = new FormData(form);
+                const dateRange = formData.get('dateRange') || null;
 
-            let dateRangeValue = formData.get('dateRange');
-            if (dateRangeValue === "") {
-                dateRangeValue = null;
+                return {
+                    selectAll: formData.get('selectionType') === 'all',
+                    exprIdsToPrint: [],
+                    printForm: formData.get('printForm'),
+                    quizSettingDto: {
+                        category: formData.get('category'),
+                        dateRange: dateRange,
+                        startDate: dateRange === 'CUSTOM' ? formData.get('startDate') : null,
+                        endDate: dateRange === 'CUSTOM' ? formData.get('endDate') : null,
+                        quizcount: null
+                    },
+                    printOptionDetailDto: {
+                        // ▼▼▼ 수정된 부분 ▼▼▼
+                        printTitle: formData.get('printTitle'),
+                        userName: formData.has('userName'), // 체크박스는 .has()로 확인
+                        fontSize: formData.get('fontSize'),
+                        orderType: formData.get('orderType'),
+
+                    }
+                };
             }
 
-            // 서버로 보낼 PrintOptionDto JSON 객체 생성
-            const printOptionDto = {
-                selectAll: formData.get('selectionType') === 'all',
-                exprIdsToPrint: [],
-                printForm: formData.get('printForm'),
-                quizSettingDto: {
-                    dateRange: dateRangeValue,
-                    category: formData.get('category')
-                },
-                printOptionDetailDto: {
-                    orderType: formData.get('orderType')
-                }
-            };
+            /** 서버에 PDF 생성을 요청하고 Blob 결과를 반환하는 함수 */
+            function fetchPdfBlob() {
+                const dto = createPrintDto();
+                return fetch('/print/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', [header]: token },
+                    body: JSON.stringify(dto)
+                }).then(res => res.ok ? res.blob() : Promise.reject('PDF 생성에 실패했습니다.'));
+            }
 
-                // CSRF 토큰을 헤더에 추가
-                const token = document.querySelector("meta[name='_csrf']")?.content;
-                const header = document.querySelector("meta[name='_csrf_header']")?.content;
-                const headers = { 'Content-Type': 'application/json' };
-                if (token && header) {
-                    headers[header] = token; // 헤더에 CSRF 토큰 추가
-                }
+            // --------------------------------
+            // 3. 이벤트 리스너(Event Listeners) 등록
+            // --------------------------------
 
 
+            // '미리보기 생성' 버튼 클릭 시
+            createPdfBtn.addEventListener('click', () => {
+                const dto = createPrintDto();
+
+                // ... (미리보기 UI 처리 로직은 기존과 동일) ...
                 createPdfBtn.disabled = true;
                 createPdfBtn.innerText = '미리보기 생성 중...';
-                viewerMessage.innerText = 'PDF를 불러오는 중입니다...';
-                viewerMessage.style.display = 'block';
-                pdfCanvas.style.display = 'none';
-
                 fetch('/print/download', {
                     method: 'POST',
-                    headers: headers, // CSRF 토큰이 포함된 헤더 사용
-                    body: JSON.stringify(printOptionDto)
+                    headers: { 'Content-Type': 'application/json', [header]: token },
+                    body: JSON.stringify(dto)
                 })
-                .then(response => {
-                    if (response.ok) return response.blob();
-                    throw new Error('PDF 생성에 실패했습니다.');
+                .then(res => res.ok ? res.blob() : Promise.reject('PDF 생성 실패'))
+                .then(blob => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(new Uint8Array(reader.result));
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(blob);
+                }))
+                .then(data => {
+                    viewerMsg.style.display = 'none';
+                    pdfCanvas.classList.remove('hidden');
+                    const { pdfjsLib } = globalThis;
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.mjs';
+                    return pdfjsLib.getDocument({ data }).promise;
                 })
-                .then(blob => {
-                    const fileReader = new FileReader();
-                    fileReader.onload = function() {
-                        const typedarray = new Uint8Array(this.result);
-                        const { pdfjsLib } = globalThis;
-                        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://mozilla.github.io/pdf.js/build/pdf.worker.mjs`;
-
-                        pdfjsLib.getDocument(typedarray).promise.then(pdf => {
-                            viewerMessage.style.display = 'none';
-                            pdfCanvas.style.display = 'block';
-                            return pdf.getPage(1);
-                        }).then(page => {
-                            const viewport = page.getViewport({ scale: 1.0 });
-                            const context = pdfCanvas.getContext('2d');
-                            pdfCanvas.height = viewport.height;
-                            pdfCanvas.width = viewport.width;
-                            page.render({ canvasContext: context, viewport: viewport });
-                        });
-                    };
-                    fileReader.readAsArrayBuffer(blob);
+                .then(pdf => pdf.getPage(1))
+                .then(page => {
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    const ctx = pdfCanvas.getContext('2d');
+                    pdfCanvas.width  = viewport.width;
+                    pdfCanvas.height = viewport.height;
+                    return page.render({ canvasContext: ctx, viewport: viewport }).promise;
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    viewerMessage.innerText = '미리보기를 표시할 수 없습니다.';
-                    viewerMessage.style.display = 'block';
+                .catch(err => {
+                    console.error(err);
+                    viewerMsg.innerText = '미리보기를 표시할 수 없습니다.';
+                    viewerMsg.style.display = 'block';
                 })
                 .finally(() => {
                     createPdfBtn.disabled = false;
                     createPdfBtn.innerText = '학습지 미리보기 생성';
                 });
             });
+
+            // '다운로드' 버튼 클릭 시
+            downloadBtn.addEventListener('click', () => {
+                fetchPdfBlob()
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'my_word_list.pdf';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    })
+                    .catch(err => alert('다운로드 실패: ' + err));
+            });
+
+            // '인쇄하기' 버튼 클릭 시
+            printBtn.addEventListener('click', () => {
+                fetchPdfBlob()
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        printFrame.src = url;
+                        printFrame.onload = () => {
+                            try {
+                                printFrame.contentWindow.focus();
+                                printFrame.contentWindow.print();
+                            } catch (e) {
+                                alert("인쇄 팝업 표시에 실패했습니다. 팝업 차단 여부를 확인해 주세요.");
+                            } finally {
+                                URL.revokeObjectURL(url);
+                            }
+                        };
+                    })
+                    .catch(err => alert('인쇄 실패: ' + err));
+            });
+
         });
     </script>
 </th:block>
 
 <th:block layout:fragment="main">
-    <div class="container mx-auto p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        <form id="print-options-form" class="space-y-8 bg-white p-8 rounded-lg shadow-lg sticky top-8">
-            <h1 class="text-3xl font-bold">학습지 인쇄 설정</h1>
+    <div class="container mx-auto p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form id="print-options-form" class="space-y-6 bg-white p-6 rounded shadow sticky top-8">
+            <h2 class="text-2xl font-bold">인쇄 설정</h2>
+
+            <div>
+                <label for="title-input" class="block font-medium">제목</label>
+                <input type="text" id="title-input" name="printTitle" maxlength="50"
+                       class="w-full border rounded p-1" placeholder="학습지 제목 (최대 50자)" value="My Expression">
+            </div>
+            <div>
+                <label class="flex items-center">
+                    <input type="checkbox" name="userName" value="true" class="mr-2">
+                    <span>이름 박스 포함</span>
+                </label>
+            </div>
+            <div>
+                <label class="block font-medium">폰트 크기</label>
+                <div class="flex items-center space-x-4 border rounded p-1 justify-around">
+                    <label>
+                        <input type="radio" name="fontSize" value="LARGE" class="sr-only peer">
+                        <span class="cursor-pointer px-4 py-1 rounded peer-checked:bg-blue-600 peer-checked:text-white">크게</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="fontSize" value="MED" class="sr-only peer" checked>
+                        <span class="cursor-pointer px-4 py-1 rounded peer-checked:bg-blue-600 peer-checked:text-white">보통</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="fontSize" value="SMALL" class="sr-only peer">
+                        <span class="cursor-pointer px-4 py-1 rounded peer-checked:bg-blue-600 peer-checked:text-white">작게</span>
+                    </label>
+                </div>
+            </div>
+            <hr/> <fieldset>
+            <legend class="font-medium">1. 인쇄 대상</legend>
+            <label class="flex items-center"><input type="radio" name="selectionType" value="all" checked class="mr-2">전체</label>
+            <label class="flex items-center text-gray-400"><input type="radio" name="selectionType" value="partial" disabled class="mr-2">부분 (개발 중)</label>
+        </fieldset>
+
+            <div>
+                <label class="block">학습 타입</label>
+                <select name="category" class="w-full border rounded p-1">
+                    <option value="MIXED">전체</option>
+                    <option value="WORD">단어</option>
+                    <option value="SENTENCE">문장</option>
+                </select>
+            </div>
+            <div>
+                <label class="block">기간</label>
+                <select name="dateRange" class="w-full border rounded p-1">
+                    <option value="">전체</option>
+                    <option value="TODAY">오늘</option>
+                    <option value="LAST_WEEK">1주일</option>
+                    <option value="LAST_MONTH">1달</option>
+                    <option value="CUSTOM">직접</option>
+                </select>
+                <div class="mt-2 hidden" id="customDateRange">
+                    <input type="date" name="startDate" class="border rounded p-1 mr-2">
+                    <input type="date" name="endDate"   class="border rounded p-1">
+                </div>
+            </div>
+
             <fieldset>
-                <legend class="text-lg font-medium text-gray-900">1. 인쇄 대상</legend>
-                <div class="mt-2 space-y-2">
-                    <div class="flex items-center"><input id="select-all" name="selectionType" type="radio" value="all" class="h-4 w-4" checked><label for="select-all" class="ml-3 text-sm">전체 단어/문장 필터링</label></div>
-                    <div class="flex items-center"><input id="select-partial" name="selectionType" type="radio" value="partial" class="h-4 w-4" disabled><label for="select-partial" class="ml-3 text-sm text-gray-500">부분 선택 (개발 중)</label></div>
-                </div>
+                <legend class="font-medium">2. 출력 형태</legend>
+                <label class="flex items-center"><input type="radio" name="printForm" value="EXAM" checked class="mr-2">시험지</label>
+                <label class="flex items-center"><input type="radio" name="printForm" value="LIST" class="mr-2">리스트</label>
+                <label class="flex items-center"><input type="radio" name="printForm" value="WORKSHEET" class="mr-2">워크시트</label>
             </fieldset>
-            <div id="filter-options" class="space-y-4 border-t pt-4">
-                <label for="category" class="block text-sm font-medium">학습 타입</label>
-                <select id="category" name="category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"><option value="MIXED">전체</option><option value="WORD">단어</option><option value="SENTENCE">문장</option></select>
-                <label for="dateRange" class="block text-sm font-medium">학습 기간</label>
-                <select id="dateRange" name="dateRange" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"><option value="">전체 기간</option><option value="TODAY">오늘</option><option value="LAST_WEEK">최근 1주</option><option value="LAST_MONTH">최근 1달</option></select>
+
+            <div>
+                <label class="block">정렬</label>
+                <select name="orderType" class="w-full border rounded p-1">
+                    <option value="STAY">등록순</option>
+                    <option value="ABC">알파벳</option>
+                    <option value="SUFF">무작위</option> </select>
             </div>
-            <fieldset class="border-t pt-4">
-                <legend class="text-lg font-medium">2. 인쇄 형태</legend>
-                <div class="mt-2 grid grid-cols-1 gap-y-2 sm:grid-cols-3 sm:gap-x-2">
-                    <label class="border rounded-md p-3 flex items-center text-sm"><input type="radio" name="printForm" value="EXAM" class="h-4 w-4 mr-2" checked>시험지형</label>
-                    <label class="border rounded-md p-3 flex items-center text-sm"><input type="radio" name="printForm" value="LIST" class="h-4 w-4 mr-2">리스트형</label>
-                    <label class="border rounded-md p-3 flex items-center text-sm"><input type="radio" name="printForm" value="WORKSHEET" class="h-4 w-4 mr-2">워크시트형</label>
-                </div>
-            </fieldset>
-            <div class="border-t pt-4">
-                <label for="orderType" class="text-lg font-medium">3. 정렬 방식</label>
-                <select id="orderType" name="orderType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"><option value="STAY">등록순</option><option value="ABC">알파벳순</option><option value="SUFF">무작위</option></select>
-            </div>
-            <div class="pt-4">
-                <button type="button" id="create-pdf-btn" class="w-full flex justify-center py-3 px-4 rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700">
-                    학습지 미리보기 생성
+
+            <button type="button" id="create-pdf-btn"
+                    class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">
+                학습지 미리보기 생성
+            </button>
+            <div class="flex space-x-4">
+                <button type="button" id="downloadBtn"
+                        class="w-full bg-gray-600 text-white py-2 rounded hover:bg-gray-700">
+                    다운로드
+                </button>
+                <button type="button" id="printBtn"
+                        class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                    인쇄하기
                 </button>
             </div>
-        </form>
-        <div id="pdf-viewer" class="bg-gray-200 p-4 rounded-lg shadow-inner flex justify-center items-center">
-            <p id="viewer-message" class="text-center text-gray-500">옵션을 선택하고 버튼을 누르면 여기에 미리보기가 표시됩니다.</p>
-            <canvas id="pdf-preview-canvas" class="hidden"></canvas>
-        </div>
+        </form> <div id="pdf-viewer" class="bg-gray-100 p-4 rounded shadow flex justify-center items-center">
+        <p id="viewer-message" class="text-gray-500">“학습지 미리보기 생성” 버튼을 눌러주세요.</p>
+        <canvas id="pdf-preview-canvas" class="hidden"></canvas>
+    </div>
     </div>
 </th:block>
 </html>

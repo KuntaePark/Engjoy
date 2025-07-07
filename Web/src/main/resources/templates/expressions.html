@@ -212,6 +212,9 @@
                     // 카드 클릭 (뒤집기, 발음, 즐겨찾기, 상세)
                     expressionContainer?.addEventListener('click', handleCardClick);
 
+                    document.getElementById('wrong-answer-btn')?.addEventListener('click', openWrongAnswerModal);
+
+
                     // 모달 닫기
                     document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', closeAllModals));
                     detailModalOverlay?.addEventListener('click', e => { if(e.target===detailModalOverlay) closeAllModals(); });
@@ -474,7 +477,7 @@
                         <div class="word-card-back p-6 relative">
                             <div class="flex flex-col justify-center h-full text-center">
                                 <p class="text-gray-700 text-lg mb-3"><strong class="text-blue-600">뜻:</strong> ${expr.meaning}</p>
-                                <p class="text-gray-600 text-md italic"><strong class="text-green-600">예문:</strong> ${expr.exp_sentence || 'N/A'}</p>
+                                ${expr.exprType !== 'SENTENCE' ? `<p class="text-gray-600 text-md italic"><strong class="text-green-600">예문:</strong> ${expr.exp_sentence || 'N/A'}</p>` : '' }
                             </div>
                             ${detailButtonHtml}
                         </div>
@@ -749,7 +752,7 @@
                 <div><dt class="font-semibold text-gray-800 mb-1">연어</dt><dd id="modal-collocations" class="text-gray-600 bg-gray-50 p-2 rounded"></dd>
             </dl>
             <div class="mt-6 text-right">
-                <button class="close-modal-btn bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                <button class="close-modal-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
                     확인
                 </button>
             </div>
