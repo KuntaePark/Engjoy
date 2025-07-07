@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/expressions")
@@ -50,31 +51,45 @@ public class ExpressionController {
     }
 
     @GetMapping("/api")
-    public ResponseEntity<Page<ExpressionDto>> getExpressionPage(
+    public ResponseEntity<?> getExpressionPage(
+            @RequestParam(name = "view", defaultValue = "study_log") String view,
             ExpressionSearchDto searchDto,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "sort", defaultValue = "id,desc") String sort,
             Principal principal) {
 
-        // 1. 정렬 조건 파싱
-        String[] sortParams = sort.split(",");
-        String sortField = sortParams[0];
-        Sort.Direction direction = (sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc"))
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        // 테스트용 계정 ID
+        Long testAccountId = 1L;
 
-        // 2. Pageable 객체 생성
-        Pageable pageable = PageRequest.of(page, 12, Sort.by(direction, sortField)); // 한 페이지에 12개씩
+        if ("dictionary".equals(view)) {
+            // "사전" 보기 요청 시: 기존 로직을 그대로 실행하여 Page<ExpressionDto> 반환
 
-        // 3. 서비스 호출
-        // Long accountId = Long.parseLong(principal.getName()); // 실제 로그인 구현 시 사용
-        Long testAccountId = 1L; // 테스트용 계정 ID
+            // 1. 정렬 조건 파싱
+            String[] sortParams = sort.split(",");
+            String sortField = sortParams[0];
+            Sort.Direction direction = (sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc"))
+                    ? Sort.Direction.ASC : Sort.Direction.DESC;
 
-        Page<ExpressionDto> expressionPage = expressionService.getExpressions(testAccountId, searchDto, pageable);
+            // 2. Pageable 객체 생성
+            Pageable pageable = PageRequest.of(page, 12, Sort.by(direction, sortField));
 
-        return ResponseEntity.ok(expressionPage);
+            // 3. 서비스 호출
+            Page<ExpressionDto> expressionPage = expressionService.getExpressions(testAccountId, searchDto, pageable);
+
+            return ResponseEntity.ok(expressionPage);
+
+        } else {
+            // "학습 기록" 보기 요청 시 (기본값): 날짜별로 그룹화된 Map<String, List<ExpressionDto>> 반환
+
+            // 학습 기록에 맞는 Pageable 생성 및 새로운 서비스 메서드 호출
+            Pageable pageable = PageRequest.of(page, 5, Sort.by("usedTime").descending()); // 예: 한 페이지에 5일치 기록
+            Map<String, List<ExpressionDto>> studyLog = expressionService.getStudyLog(testAccountId, searchDto, pageable);
+
+            return ResponseEntity.ok(studyLog);
+        }
     }
 
-    // ✅ 오늘의 추천 단어를 제공하는 API 엔드포인트 추가
+    // 오늘의 추천 단어를 제공하는 API 엔드포인트 추가
     @GetMapping("/api/recommendations")
     public ResponseEntity<List<ExpressionDto>> getRecommendations(Principal principal) {
         // Long accountId = Long.parseLong(principal.getName()); // 실제 로그인 구현 시 사용
@@ -109,22 +124,15 @@ public class ExpressionController {
         return ResponseEntity.ok(isFavorite);
     }
 
-    @GetMapping("/incorrect")
-    public String getIncorrectList(Principal principal,
-                                   @PageableDefault(size = 10) Pageable pageable,
-                                   Model model) {
-        if (principal == null) {
-            return "redirect:/login";
-        }
-//        Account account = accountRepository.findByUsername(principal.getName())
+    @GetMapping("/api/wrong-answers")
+    public ResponseEntity<List<IncorrectExprDto>> getWrongAnswers(Principal principal) {
+        //        Account account = accountRepository.findByUsername(principal.getName())
 //                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        Account account = new Account();
-        account.setId(1L);
-        account.setName(principal.getName());
+        Long testAccountId = 1L;
 
-        Page<IncorrectExprDto> incorrectPage = expressionService.getIncorrectExpressions(account.getId(), pageable);
-        model.addAttribute("incorrectPage", incorrectPage);
-        return "incorrect";
+        List<IncorrectExprDto> incorrectExpressions = expressionService.getIncorrectExpressionsAsList(testAccountId);
+
+        return ResponseEntity.ok(incorrectExpressions);
     }
 
 

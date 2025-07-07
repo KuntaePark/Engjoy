@@ -20,6 +20,7 @@ public interface IncorrectExprRepository extends JpaRepository<IncorrectExpr,Lon
     Page<IncorrectExpr> findByAccount(Account account, Pageable pageable);
     Long countByAccountAndUsedTimeBetween(Account account, LocalDateTime startDate, LocalDateTime endDate);
     Optional<IncorrectExpr> findByAccountAndExpression(Account account, Expression expression);
+    List<IncorrectExpr> findByAccount(Account account);
 
     @Query("SELECT ie FROM IncorrectExpr ie " +
             "WHERE ie.account = :account " +

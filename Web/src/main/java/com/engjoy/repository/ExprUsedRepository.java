@@ -1,6 +1,7 @@
 package com.engjoy.repository;
 
 import com.engjoy.constant.EXPRTYPE;
+import com.engjoy.dto.ExpressionSearchDto;
 import com.engjoy.entity.Account;
 import com.engjoy.entity.ExprUsed;
 import com.engjoy.entity.Expression;
@@ -23,6 +24,8 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
 //            @Param("account")Account account,
 //            @Param("exprType")EXPRTYPE exprType,
 //            Pageable pageable);
+
+    Page<ExprUsed> findByAccount(Account account, Pageable pageable);
 
     boolean existsByAccountAndExpression(Account account, Expression expression);
 
@@ -62,4 +65,16 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
             @Param("endDate") LocalDateTime endDate);
 
 
+    @Query("SELECT eu FROM ExprUsed eu JOIN FETCH eu.expression e " +
+            "WHERE eu.account = :account " +
+            "AND (:keyword IS NULL OR e.wordText LIKE %:keyword%) " +
+            "AND (:exprType IS NULL OR e.exprType = :exprType) " +
+            "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
+            "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
+    Page<ExprUsed> findUsedBySearchDto(@Param("account") Account account,
+                                       @Param("keyword") String keyword,
+                                       @Param("exprType") EXPRTYPE exprType,
+                                       @Param("startDate") LocalDateTime startDate,
+                                       @Param("endDate") LocalDateTime endDate,
+                                       Pageable pageable);
 }

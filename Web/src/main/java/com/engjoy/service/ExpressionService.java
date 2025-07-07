@@ -1,5 +1,6 @@
 package com.engjoy.service;
 
+import com.engjoy.constant.EXPRTYPE;
 import com.engjoy.constant.SORTTYPE;
 import com.engjoy.dto.ExpressionDto;
 import com.engjoy.dto.ExpressionSearchDto;
@@ -51,17 +52,21 @@ public class ExpressionService {
             keyword = "%" + keyword + "%";
         }
 
-        // --- 👇 디버깅을 위한 로그 추가 ---
-        System.out.println("--- Repository 호출 직전 파라미터 확인 ---");
-        System.out.println("keyword: " + keyword);
-        System.out.println("exprType: " + expressionSearchDto.getExprType());
-        System.out.println("difficulty: " + expressionSearchDto.getDifficulty());
-        System.out.println("-----------------------------------------");
+        EXPRTYPE exprTypeEnum = null;
+        if (expressionSearchDto.getExprType() != null && !expressionSearchDto.getExprType().isEmpty()) {
+            try {
+                exprTypeEnum = EXPRTYPE.valueOf(expressionSearchDto.getExprType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // "WORD", "SENTENCE"가 아닌 다른 값이 들어올 경우를 대비한 방어 코드
+                System.out.println("Invalid exprType value in getExpressions: " + expressionSearchDto.getExprType());
+            }
+        }
+
 
         //  모든 필터링을 한 번에 처리
         Page<Expression> expressionPage = expressionRepository.findPageBySearchDto(
                 keyword,
-                expressionSearchDto.getExprType(),
+                exprTypeEnum,
                 expressionSearchDto.getDifficulty(),
                 pageable
         );
@@ -123,15 +128,20 @@ public class ExpressionService {
         }
     }
 
-    // 사용자의 오답 리스트를 페이징하여 조회
-    public Page<IncorrectExprDto> getIncorrectExpressions(Long accountId, Pageable pageable){
+    // 사용자의 오답 리스트 조회
+    public List<IncorrectExprDto> getIncorrectExpressionsAsList(Long accountId) {
+        // 1. accountId로 Account 엔티티를 조회합니다.
 //        Account account = accountRepository.findById(accountId)
-//                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
+//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + accountId));
         Account account = new Account();
         account.setId(accountId);
+        // 2. 위에서 추가한 메서드를 호출하여 해당 계정의 모든 오답 엔티티 목록을 가져옵니다.
+        List<IncorrectExpr> incorrectExprs = incorrectExprRepository.findByAccount(account);
 
-        Page<IncorrectExpr> incorrectExprs = incorrectExprRepository.findByAccount(account,pageable);
-        return incorrectExprs.map(IncorrectExprDto::from);
+        // 3. Stream API를 사용해 엔티티 목록(List<IncorrectExpr>)을 DTO 목록(List<IncorrectExprDto>)으로 변환합니다.
+        return incorrectExprs.stream()
+                .map(IncorrectExprDto::from) // DTO에 만들어둔 static 메서드 활용
+                .collect(Collectors.toList());
     }
 
     // '오늘의 복습 추천' 단어/문장 조회
@@ -236,6 +246,59 @@ public class ExpressionService {
             result.put(expr.getId(), choices);
         }
         return result;
+    }
+
+    public Map<String, List<ExpressionDto>> getStudyLog(Long accountId, ExpressionSearchDto searchDto,Pageable  pageable) {
+//        Account account = accountRepository.findById(accountId)
+//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + accountId));
+
+        Account account = new Account();
+        account.setId(accountId);
+
+        EXPRTYPE exprTypeEnum = null; // 기본값은 null
+        if (searchDto.getExprType() != null && !searchDto.getExprType().isEmpty()) {
+            try {
+                exprTypeEnum = EXPRTYPE.valueOf(searchDto.getExprType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // "ALL" 등 다른 값이 들어올 경우 무시하고 null 상태 유지
+                System.out.println("Invalid exprType value: " + searchDto.getExprType());
+            }
+        }
+
+        if (searchDto.getKeyword() != null && searchDto.getKeyword().trim().isEmpty()) {
+            searchDto.setKeyword(null);
+        }
+
+
+        LocalDateTime startDateTime = (searchDto.getStartDate() != null) ? searchDto.getStartDate().atStartOfDay() : null;
+        LocalDateTime endDateTime = (searchDto.getEndDate() != null) ? searchDto.getEndDate().plusDays(1).atStartOfDay() : null;
+
+        Page<ExprUsed> usedPage = exprUsedRepository.findUsedBySearchDto(account, searchDto.getKeyword(),
+                exprTypeEnum, startDateTime, endDateTime, pageable);
+        List<ExprUsed> usedList = usedPage.getContent();
+
+        if (usedList.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // isFavorite 상태를 확인하기 위해 exprId 리스트 추출
+        List<Long> exprIds = usedList.stream()
+                .map(used -> used.getExpression().getId())
+                .collect(Collectors.toList());
+
+        Set<Long> favoriteIds = exprFavoritesRepository.findFavoriteExpressionIdsByAccountAndExpressionIds(account, exprIds);
+
+        // DTO로 변환
+        List<ExpressionDto> dtos = usedList.stream()
+                .map(used -> {
+                    boolean isFavorite = favoriteIds.contains(used.getExpression().getId());
+                    return ExpressionDto.from(used.getExpression(), isFavorite, true, used.getUsedTime().toLocalDate());
+                })
+                .collect(Collectors.toList());
+
+        // 날짜를 key로, DTO 리스트를 value로 갖는 Map으로 그룹화하여 반환
+        return dtos.stream()
+                .collect(Collectors.groupingBy(dto -> dto.getDate().toString())); // ✅ getUsedDate() -> getDate()로 수정
     }
 
 
