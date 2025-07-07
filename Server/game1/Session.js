@@ -139,7 +139,7 @@ class Session {
     }
 
     close() {
-        console.log(`closing session ${id}`);
+        console.log(`closing session ${this.id}`);
         if(this.intervalId) clearInterval(this.intervalId);
         sessions.delete(this.id);
         
