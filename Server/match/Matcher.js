@@ -51,6 +51,11 @@ class Matcher {
         }
     }
 
+    cancelMatch(ws) {
+        const idx = this.matchQueue.findIndex((item) => item === ws);
+        if(idx >= 0) this.matchQueue.splice(idx, 1);
+    }
+
     requestSessionCreate(ws1, ws2) {
         this.game1ws.send(makePacket('create_session',{ids: [ws1.id, ws2.id]}));
         //해당 유저들에게 세션 생성이 요청되었음을 알림

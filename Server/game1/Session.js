@@ -71,19 +71,19 @@ class Session {
 
     //프레임 당 연산
     tick() {
-        let hasUpdate = false;
-
         //각 플레이어에 대해 input 체크 후 행동 수행
         for(const player of this.players) {
+            //먼저 초기화 필요한 애니메이션 플래그 초기황
+            player.clearAnimFlag();
+
             if(player.hasInput()) {
                 //행동 수행
                 player.doAction();
-                hasUpdate = true;
             }
         }
 
         //업데이트 존재 시 브로드캐스트
-        if(hasUpdate) this.broadcast(makePacket('gameState',this));
+        this.broadcast(makePacket('gameState',this));
 
         //게임 종료 체크
         this.checkGameEnd();

@@ -7,20 +7,32 @@ using DataForm;
 public class UIController : MonoBehaviour
 {
 
-    public Game1Manager game1Manager; //°ÔÀÓ ¸Å´ÏÀú ½ºÅ©¸³Æ® ÂüÁ¶
+    public Game1Manager game1Manager; //ê²Œì„ ë§¤ë‹ˆì € ìŠ¤í¬ë¦½íŠ¸ ì°¸ì¡°
 
-    public PlayerPanel[] playerPanels = new PlayerPanel[2]; //ÇÃ·¹ÀÌ¾î ÆĞ³Î ¹è¿­
-    public WordPanel wordPanel; //´Ü¾î ÆĞ³Î
+    public PlayerPanel[] playerPanels = new PlayerPanel[2]; //í”Œë ˆì´ì–´ íŒ¨ë„ ë°°ì—´
+    public WordPanel wordPanel; //ë‹¨ì–´ íŒ¨ë„
 
-    //½Ã°£
+    //ì‹œê°„
     public Slider TimeBar;
     public Text TimeText;
+
+    public GameObject gameOverPanel;
+    public Text gameOverText; //ê²Œì„ ì˜¤ë²„ í…ìŠ¤íŠ¸
+
+    //ê²Œì„ ì˜¤ë²„ ë²„íŠ¼
+    public Button lobbyButton;
 
     // Start is called before the first frame update
     void Start()
     {
-        TimeBar.maxValue = Game1Manager.timeLimit * 1000; //½½¶óÀÌ´õ ÃÖ´ë°ª ¼³Á¤
-        TimeBar.value = Game1Manager.timeLimit * 1000; //½½¶óÀÌ´õ ÃÊ±â°ª ¼³Á¤
+        gameOverPanel.SetActive(false); //ê²Œì„ ì˜¤ë²„ íŒ¨ë„ ë¹„í™œì„±í™”
+        TimeBar.maxValue = Game1Manager.timeLimit * 1000; //ìŠ¬ë¼ì´ë” ìµœëŒ€ê°’ ì„¤ì •
+        TimeBar.value = Game1Manager.timeLimit * 1000; //ìŠ¬ë¼ì´ë” ì´ˆê¸°ê°’ ì„¤ì •
+
+        lobbyButton.onClick.AddListener(() => 
+        {
+            SceneController.Instance.loadScene("lobbyScene");
+        });
     }
 
     // Update is called once per frame
@@ -35,21 +47,21 @@ public class UIController : MonoBehaviour
                 playerPanels[i].showPlayerInfo(players[i]);
                 if(i != game1Manager.myIdx)
                 {
-                    //»ó´ë¹æÀÇ ¾×¼Ç ¼±ÅÃÀº ¼­¹ö¿Í µ¿±âÈ­
+                    //ìƒëŒ€ë°©ì˜ ì•¡ì…˜ ì„ íƒì€ ì„œë²„ì™€ ë™ê¸°í™”
                     string action = players[i].currentAction;
                     switch(action)
                     {
                         case "ATTACK":
-                            playerPanels[i].selected = 0; //°ø°İ
+                            playerPanels[i].selected = 0; //ê³µê²©
                             break;
                         case "DEFENSE":
-                            playerPanels[i].selected = 1; //¹æ¾î
+                            playerPanels[i].selected = 1; //ë°©ì–´
                             break;
                         case "SPECIAL":
-                            playerPanels[i].selected = 2; //½ºÆä¼È
+                            playerPanels[i].selected = 2; //ìŠ¤í˜ì…œ
                             break;
                         default:
-                            playerPanels[i].selected = -1; //¼±ÅÃ ¾ÈÇÔ
+                            playerPanels[i].selected = -1; //ì„ íƒ ì•ˆí•¨
                             break;
                     }
                 }
@@ -58,7 +70,7 @@ public class UIController : MonoBehaviour
             TimeBar.value = game1Manager.getTimesLeft();
             TimeText.text = $"{game1Manager.getTimesLeft() / 1000}";
 
-            //´Ü¾î ¼±ÅÃ UI
+            //ë‹¨ì–´ ì„ íƒ UI
             var myInfo = players[game1Manager.myIdx];
             if(myInfo.isActionSelected)
             {
@@ -77,5 +89,22 @@ public class UIController : MonoBehaviour
     public void setAction(int selected)
     {
         playerPanels[game1Manager.myIdx].selected = selected;
+    }
+
+    public void showGameOver(int winnerIdx)
+    {
+        gameOverPanel.SetActive(true);
+        if (winnerIdx == game1Manager.myIdx)
+        {
+            gameOverText.text = "ìŠ¹ë¦¬!";
+        }
+        else if(winnerIdx == 2)
+        {
+            gameOverText.text = "ë¬´ìŠ¹ë¶€";
+        }
+        else
+        {
+            gameOverText.text = "íŒ¨ë°°!";
+        }
     }
 }

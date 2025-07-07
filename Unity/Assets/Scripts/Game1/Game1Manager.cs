@@ -23,6 +23,8 @@ public class Game1Manager : MonoBehaviour
 
     public const int timeLimit = 99; //게임 시간 제한(초)
 
+    public UIController uiController; //UI 컨트롤러 스크립트 참조
+
     // Start is called before the first frame update
     void Start()
     {
@@ -62,18 +64,7 @@ public class Game1Manager : MonoBehaviour
         Debug.Log("Game ended. Winner index: " + winnerIdx);
         gameState.startTime = 0;
         gameState.state = "end";
-        if (winnerIdx == myIdx)
-        {
-            Debug.Log("You win!");
-        }
-        else if(winnerIdx == 1 - myIdx)
-        {
-            Debug.Log("You lose!");
-        }
-        else
-        {
-            Debug.Log("It's a draw!");
-        }
+        uiController.showGameOver(winnerIdx);
 
     }
 }

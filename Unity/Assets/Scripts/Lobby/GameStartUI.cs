@@ -16,6 +16,8 @@ public class GameStartUI : MonoBehaviour
     public Text scoreText;
     public Text rankingText;
 
+    private bool inMatch = false;
+
     private void Awake()
     {
         browserRequest = new BrowserRequest();
@@ -27,23 +29,35 @@ public class GameStartUI : MonoBehaviour
     {
         gameStartButton.onClick.AddListener(() =>
         {
-            int requestId = browserRequest.StartRequest("POST", "/game/match/join");
-            StartCoroutine(browserRequest.waitForResponse(requestId, 5.0f, (response) =>
+            if(inMatch)
+            {                 //매칭 취소 요청
+                matchClient.Send("match_cancel", "");
+                inMatch = false;
+                gameStartButtonText.text = "게임 시작!";
+                return;
+            }
+            else
             {
-                if (response != null)
+                inMatch = true;
+                int requestId = browserRequest.StartRequest("POST", "/game/match/join");
+                StartCoroutine(browserRequest.waitForResponse(requestId, 5.0f, (response) =>
                 {
-                    long userId = JsonConvert.DeserializeObject<long>(response.body);
-                    //매칭 요청 인증이 완료되었으므로 매칭 서버 연결 시작
-                    //매칭 중 UI로 변경
-                    gameStartButtonText.text = "매칭 중...\n(여기를 눌러 취소)";
-                    DataManager.Instance.id = userId;
-                    matchClient.startConnection();
-                }
-                else
-                {
-                    Debug.Log("정보 조회에 실패했습니다.");
-                }
-            }));
+                    if (response != null)
+                    {
+                        long userId = JsonConvert.DeserializeObject<long>(response.body);
+                        //매칭 요청 인증이 완료되었으므로 매칭 서버 연결 시작
+                        //매칭 중 UI로 변경
+                        gameStartButtonText.text = "매칭 중...\n(여기를 눌러 취소)";
+                        DataManager.Instance.id = userId;
+                        matchClient.startConnection();
+                    }
+                    else
+                    {
+                        Debug.Log("정보 조회에 실패했습니다.");
+                        //실패 시 행동 여기에 추가
+                    }
+                }));
+            }
         });
     }
 
