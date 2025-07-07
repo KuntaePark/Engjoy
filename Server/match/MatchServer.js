@@ -83,10 +83,8 @@ const PacketHandler = {
             authByWebServer.add(payload); //해당 아이디를 허가 명단에 추가
         }
     },
-    'match_cancel' : () => {
-        /*
-            {type: 'match_cancel', payload: ""}
-         */
+    'match_cancel' : (ws, _) => {
+        matcher.cancelMatch(ws);
     }
 }
 

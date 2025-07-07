@@ -27,11 +27,15 @@ public class PlayerController : MonoBehaviour
 
     public string curState = "move";
 
+    private Animator animator;
+    private Rigidbody2D rb;
+
     // Start is called before the first frame update
     void Start()
     {
         lobbyClient = GameObject.Find("LobbyClient").GetComponent<LobbyClient>();
         moveTime = UnityEngine.Random.Range(0.1f, maxMoveTime);
+        animator = GetComponentInChildren<Animator>();
     }
 
     // Update is called once per frame
@@ -63,9 +67,27 @@ public class PlayerController : MonoBehaviour
 
             if (axisH != 0 || axisV != 0)
             {
-                lobbyClient.Send("inputMove", JsonConvert.SerializeObject(new Vector2Data(axisH, axisV)));
+                lobbyClient.Send("inputMove", JsonConvert.SerializeObject(new PlayerStateData(axisH, axisV)));
+            }
+
+            if (axisH != 0)
+            {
+                transform.localScale = new Vector3(Mathf.Sign(axisH), 1, 1);
+            }
+
+
+            if (axisH != 0.0f || axisV != 0.0f)
+            {
+                animator.SetBool("isRunning", true);
+            }
+            else
+            {
+                animator.SetBool("isRunning", false);
             }
         }
+
+        
+        
     }
 
     private void FixedUpdate()

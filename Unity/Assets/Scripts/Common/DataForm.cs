@@ -17,13 +17,15 @@ namespace DataForm
 
 
     [System.Serializable]
-    public class Vector2Data
+    public class PlayerStateData
     {
         //currently only used for player input, but can be used for other purposes as well
         public float x;
         public float y;
 
-        public Vector2Data(float x, float y)
+        public bool isRunning = false;
+
+        public PlayerStateData(float x, float y)
         {
             this.x = x;
             this.y = y;
@@ -73,26 +75,10 @@ namespace DataForm
         public wordData[] words = null;
         public int correctIdx = -1;
 
-        public override string ToString()
-        {
-            string wordString = "";
-            if(words != null && isActionSelected)
-            {
-                wordString += $"현재 단어: {words[correctIdx].word_text} \n";
-                for(int i = 0; i < words.Length; i++)
-                {
-                    wordString += $"뜻{i}: {words[i].meaning}\n";
-                }
-            }
-
-            return $"Player ID: {id}\n" +
-                $"HP: {hp}\nMP: {mp}\n" +
-                $"Strength Level: {strengthLevel}\n" +
-                $"{wordString}\n" +
-                $"Correct Index: {correctIdx}\n" +
-                $"Is Action Selected: {isActionSelected}";
-
-        }
+        //애니메이션 관련
+        public bool isCharging = false;
+        public bool isCasting = false;
+        public bool castEnd = false;
     }
 
     [System.Serializable]

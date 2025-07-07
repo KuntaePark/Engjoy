@@ -19,6 +19,16 @@ const exitQueue = [];
 const deltaTime = 0.016; //per frame time
 const speed = 5.0; //character speed
 
+class PlayerStateData {
+    constructor(x,y) {
+        this.x = x;
+        this.y = y;
+
+        this.isRunning = false;
+    }
+}
+
+
 wss.on('connection', function connection(ws) {
    console.log('connection established.');
    
@@ -82,6 +92,7 @@ wss.on('connection', function connection(ws) {
 wss.on('listening',()=>{
    console.log('listening on 7777')
 })
+
 
 //for each frame, 60fps
 setInterval(() => {
@@ -181,17 +192,18 @@ function calculatePositions(players) {
    //position update
    for (let id in players) {
       const p = players[id];
-      const newX = p.x + p.inputH * deltaTime * speed;
-      const newY = p.y + p.inputV * deltaTime * speed;
+      const dX = p.inputH * deltaTime * speed;
+      const dY = p.inputV * deltaTime * speed;
 
       //check collision
       let colliding = false;
+      let isRunning = false;
 
       for(let others in players) {
          if(others === id) continue;
          
          const o = players[others];
-         const myLoc = new Physics.Vector2(newX, newY);
+         const myLoc = new Physics.Vector2(p.x + dX, p.y + dY);
          const otherLoc = new Physics.Vector2(o.x, o.y);
          
          if(Physics.checkCollision(myLoc, otherLoc)) {
@@ -203,8 +215,11 @@ function calculatePositions(players) {
       if(!colliding)
       {
          //update only when not colliding
-         p.x = newX;
-         p.y = newY;
+         p.x += dX;
+         p.y += dY;
+         if(dX !== 0 || dY !== 0) {
+            isRunning = true;
+         }
       }
 
       //out of boundary
@@ -222,7 +237,7 @@ function calculatePositions(players) {
       }
 
       // console.log(p.x, p.y)
-      updatedPositions[id] = { x: p.x, y: p.y };
+      updatedPositions[id] = new PlayerStateData(p.x, p.y);
       p.inputH = 0; p.inputV = 0;
    }
 

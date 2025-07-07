@@ -33,6 +33,11 @@ class Player {
         this.words = [];                //단어 선택지, 4개 중 하나의 단어를 표시, 나머지는 뜻 옵션
         this.correctIdx = -1;           //정답 인덱스
 
+        //애니메이션 관련
+        this.isCharging = false;
+        this.isCasting = false;
+        this.castEnd = false;
+
         //특수 플래그
         this.shieldRate = 0.0;          //방어 데미지 감소율, 한턴 유효
     }
@@ -78,6 +83,13 @@ class Player {
         this.isActionSelected = false;
         this.resetWords();
         this.strengthLevel = 0;
+        this.isCasting = false; //애니메이션 플래그
+    }
+
+    clearAnimFlag() {
+        //단발성 트리거의 경우 매 프레임 초기화
+        this.isCharging = false;
+        this.castEnd = false;
     }
 
     toJSON() {
@@ -90,7 +102,11 @@ class Player {
             isActionSelected: this.isActionSelected,
             currentAction: this.currentAction,
             words: this.words,
-            correctIdx: this.correctIdx     
+            correctIdx: this.correctIdx,
+            
+            isCharging: this.isCharging,
+            isCasting: this.isCasting,
+            castEnd: this.castEnd,
         }
     }
 }
@@ -103,6 +119,8 @@ const inputActions = {
         if(user.isActionSelected) return;
         user.mp = Math.min(user.mp + deltaTime * user.unitMana,10);
         console.log(`user ${user.id} charged mana : ${user.mp}`)
+        
+        user.isCharging = true; //애니메이션 플래그
     },
     'actionSelect': (user) => {
         //행동 선택, 단어 맞추기 페이즈로
@@ -119,6 +137,8 @@ const inputActions = {
         user.currentAction = action;
         user.isActionSelected = true;
         user.loadWords();
+
+        user.isCasting = true; //애니메이션 플래그
 
     },
     'actionConfirm': (user) => {
@@ -140,6 +160,7 @@ const inputActions = {
         console.log(`user ${user.id} do actionCancel`);
         user.isActionSelected = false;
         user.resetWords();
+        user.isCasting = false; //애니메이션 플래그
     },
     'wordSelect': (user) => {
         //단어 맞추기 단계, 틀릴 시 즉시 효과 발동 체크

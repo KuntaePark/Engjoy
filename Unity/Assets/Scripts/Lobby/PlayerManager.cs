@@ -9,11 +9,12 @@ using DataForm;
 public class PlayerManager : MonoBehaviour
 {
     private Dictionary<string, GameObject> players = new Dictionary<string, GameObject>(); // Dictionary to hold player objects by their ID
-    private Dictionary<string, Vector2Data> serverPositions = new Dictionary<string, Vector2Data>(); // Dictionary to hold player positions from the server
+    private Dictionary<string, PlayerStateData> serverPositions = new Dictionary<string, PlayerStateData>(); // Dictionary to hold player positions from the server
     private Queue<string> playerExitQueue = new Queue<string>(); // Queue to handle player exits
 
-
     public GameObject playerPrefab; // Prefab for player objects
+
+    public LobbyClient lobbyClient;
 
     public float smoothFactor = 10.0f;
     // Start is called before the first frame update
@@ -41,6 +42,7 @@ public class PlayerManager : MonoBehaviour
         foreach (var kv in serverPositions)
         {
             string playerId = kv.Key;
+            
             Vector3 position = new Vector3(kv.Value.x, kv.Value.y, 0);
             if (!players.ContainsKey(playerId))
             {
@@ -53,19 +55,52 @@ public class PlayerManager : MonoBehaviour
             }
             else
             {
-                //update existing player position
-                players[playerId].transform.position = Vector2.Lerp(
-                    players[playerId].transform.position,
-                    position,
-                    Time.deltaTime * smoothFactor
-                );
+                
+                // update existing player position
+                Vector2 oldPos = players[playerId].transform.position;
+                Vector3 targetPos = position;
+
+                float distanceSqr = (oldPos - (Vector2)targetPos).sqrMagnitude;
+
+                
+                Animator animator = players[playerId].GetComponentInChildren<Animator>();
+                bool isRunning = false;
+
+                if (distanceSqr > 0.001f)
+                {
+                    Vector2 newPos = Vector2.Lerp(
+                        oldPos,
+                        targetPos,
+                        Time.fixedDeltaTime * smoothFactor // 또는 Time.fixedDeltaTime * smoothFactor
+                    );
+
+                    players[playerId].transform.position = newPos;
+                    isRunning = true;
+
+                    if(playerId != lobbyClient.PlayerId)
+                    {
+                        // Only flip the player if it's not the local player
+                        if (newPos.x < oldPos.x)
+                            players[playerId].transform.localScale = new Vector3(-1, 1, 1); // Flip left
+                        else if (newPos.x > oldPos.x)
+                            players[playerId].transform.localScale = new Vector3(1, 1, 1); // Flip right
+                    }
+                }
+
+               
+               if(animator != null)
+                {
+                    animator.SetBool("isRunning", isRunning);
+                }
+                
+
             }
         }
     }
 
     public void updatePlayers(string JSONData)
     {
-        serverPositions = JsonConvert.DeserializeObject<Dictionary<string, Vector2Data>>(JSONData);
+        serverPositions = JsonConvert.DeserializeObject<Dictionary<string, PlayerStateData>>(JSONData);
 
     }
 
