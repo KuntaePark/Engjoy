@@ -15,7 +15,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.authorizeHttpRequests(
                 authorizeRequests -> authorizeRequests
+                        .requestMatchers("/match/**","/game/**").authenticated()
                         .anyRequest().permitAll()
+        ).formLogin(
+                form -> form
+                        .loginPage("/login")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .defaultSuccessUrl("/")
+                        .permitAll()
         );
 
         return http.build();

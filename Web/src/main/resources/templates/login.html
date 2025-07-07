@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css"></th:block>
+<th:block layout:fragment="script"></th:block>
+
+
+<th:block layout:fragment="main">
+    <div>
+        <form method="POST" th:action="@{/login}">
+            <label for="email">이메일</label>
+            <input type="email" id="email" name="email" placeholder="이메일 입력">
+            <label for="password">비밀번호</label>
+            <input type="password" id="password" name="password" placeholder="비밀번호 입력">
+            <p th:if="${loginErrorMsg}" th:text="${loginErrorMsg}"></p>
+            <button>로그인</button>
+        </form>
+    </div>
+</th:block>
+</html>
