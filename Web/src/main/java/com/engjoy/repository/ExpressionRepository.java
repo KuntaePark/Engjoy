@@ -40,17 +40,6 @@ public interface ExpressionRepository extends JpaRepository<Expression, Long> {
     @Query("SELECT e.meaning FROM Expression e")
     List<String> findAllMeanings();
 
-    @Query("SELECT DISTINCT e FROM ExprUsed eu JOIN eu.expression e LEFT JOIN FETCH e.wordInfo " +
-            "WHERE eu.account.id = :accountId " +
-            "AND (:exprType IS NULL OR e.exprType = :exprType) " +
-            "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
-            "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
-    List<Expression> findWithFilters(
-            @Param("accountId") Long accountId,
-            @Param("exprType") EXPRTYPE exprType,
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate
-    );
 
     @Query("SELECT e FROM Expression e LEFT JOIN FETCH e.wordInfo ORDER BY function('RAND')")
     List<Expression> findRandomExpressions(Pageable pageable);

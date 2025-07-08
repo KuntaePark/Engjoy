@@ -65,16 +65,38 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
             @Param("endDate") LocalDateTime endDate);
 
 
-    @Query("SELECT eu FROM ExprUsed eu JOIN FETCH eu.expression e " +
-            "WHERE eu.account = :account " +
+    @Query(value = "SELECT eu FROM ExprUsed eu JOIN eu.expression e WHERE eu.account = :account " +
             "AND (:keyword IS NULL OR e.wordText LIKE %:keyword%) " +
             "AND (:exprType IS NULL OR e.exprType = :exprType) " +
             "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
-            "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
+            "AND (:endDate IS NULL OR eu.usedTime < :endDate)",
+            countQuery = "SELECT COUNT(eu) FROM ExprUsed eu WHERE eu.account = :account " +
+                    "AND (:keyword IS NULL OR eu.expression.wordText LIKE %:keyword%) " +
+                    "AND (:exprType IS NULL OR eu.expression.exprType = :exprType) " +
+                    "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
+                    "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
     Page<ExprUsed> findUsedBySearchDto(@Param("account") Account account,
                                        @Param("keyword") String keyword,
                                        @Param("exprType") EXPRTYPE exprType,
                                        @Param("startDate") LocalDateTime startDate,
                                        @Param("endDate") LocalDateTime endDate,
                                        Pageable pageable);
+
+
+    @Query("SELECT DISTINCT e FROM ExprUsed eu JOIN eu.expression e LEFT JOIN FETCH e.wordInfo " +
+            "WHERE eu.account.id = :accountId " +
+            "AND (:exprType IS NULL OR e.exprType = :exprType) " +
+            "AND (:startDate IS NULL OR eu.usedTime >= :startDate) " +
+            "AND (:endDate IS NULL OR eu.usedTime < :endDate)")
+    List<Expression> findWithFilters(
+            @Param("accountId") Long accountId,
+            @Param("exprType") EXPRTYPE exprType,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query("SELECT eu FROM ExprUsed eu WHERE eu.account = :account")
+    Page<ExprUsed> findByAccountOrderByUsedTime(@Param("account") Account account, Pageable pageable);
+
+
 }

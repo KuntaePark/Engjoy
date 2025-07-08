@@ -62,29 +62,12 @@ public class ExpressionController {
         Long testAccountId = 1L;
 
         if ("dictionary".equals(view)) {
-            // "사전" 보기 요청 시: 기존 로직을 그대로 실행하여 Page<ExpressionDto> 반환
-
-            // 1. 정렬 조건 파싱
-            String[] sortParams = sort.split(",");
-            String sortField = sortParams[0];
-            Sort.Direction direction = (sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc"))
-                    ? Sort.Direction.ASC : Sort.Direction.DESC;
-
-            // 2. Pageable 객체 생성
-            Pageable pageable = PageRequest.of(page, 12, Sort.by(direction, sortField));
-
-            // 3. 서비스 호출
+            Pageable pageable = PageRequest.of(page, 12, Sort.by("id").descending());
             Page<ExpressionDto> expressionPage = expressionService.getExpressions(testAccountId, searchDto, pageable);
-
             return ResponseEntity.ok(expressionPage);
-
         } else {
-            // "학습 기록" 보기 요청 시 (기본값): 날짜별로 그룹화된 Map<String, List<ExpressionDto>> 반환
-
-            // 학습 기록에 맞는 Pageable 생성 및 새로운 서비스 메서드 호출
-            Pageable pageable = PageRequest.of(page, 5, Sort.by("usedTime").descending()); // 예: 한 페이지에 5일치 기록
+            Pageable pageable = PageRequest.of(page, 5, Sort.by("usedTime").descending()); // usedTime으로 정렬
             Map<String, List<ExpressionDto>> studyLog = expressionService.getStudyLog(testAccountId, searchDto, pageable);
-
             return ResponseEntity.ok(studyLog);
         }
     }
