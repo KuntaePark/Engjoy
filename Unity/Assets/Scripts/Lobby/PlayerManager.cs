@@ -8,16 +8,28 @@ using DataForm;
 //manages player objects in the game
 public class PlayerManager : MonoBehaviour
 {
-    private Dictionary<string, GameObject> players = new Dictionary<string, GameObject>(); // Dictionary to hold player objects by their ID
-    private Dictionary<string, PlayerStateData> serverPositions = new Dictionary<string, PlayerStateData>(); // Dictionary to hold player positions from the server
-    private Queue<string> playerExitQueue = new Queue<string>(); // Queue to handle player exits
+    private Dictionary<long, GameObject> players = new Dictionary<long, GameObject>(); // Dictionary to hold player objects by their ID
+    private Dictionary<long, PlayerStateData> serverPositions = new Dictionary<long, PlayerStateData>(); // Dictionary to hold player positions from the server
+    private Queue<long> playerExitQueue = new Queue<long>(); // Queue to handle player exits
 
     public GameObject playerPrefab; // Prefab for player objects
 
-    public LobbyClient lobbyClient;
-
     public float smoothFactor = 10.0f;
     // Start is called before the first frame update
+    
+    private void Awake()
+    {
+        var lobbyClient = GameObject.Find("LobbyClient").GetComponent<LobbyClient>();
+        if (lobbyClient == null)
+        {
+            Debug.LogError("LobbyClient not found in the scene.");
+            return;
+        }
+        else
+        {
+            lobbyClient.playerManager = this; // Set the PlayerManager reference in LobbyClient
+        }
+    }
     void Start()
     {
 
@@ -29,7 +41,7 @@ public class PlayerManager : MonoBehaviour
         //remove players that are queued for exit
         while (playerExitQueue.Count > 0)
         {
-            string playerId = playerExitQueue.Dequeue();
+            long playerId = playerExitQueue.Dequeue();
             if (players.ContainsKey(playerId))
             {
                 Debug.Log("Removing player: " + playerId);
@@ -41,7 +53,7 @@ public class PlayerManager : MonoBehaviour
         //compare player positions and update them if necessary. if a player is not in the dictionary, create a new player object
         foreach (var kv in serverPositions)
         {
-            string playerId = kv.Key;
+            long playerId = kv.Key;
             
             Vector3 position = new Vector3(kv.Value.x, kv.Value.y, 0);
             if (!players.ContainsKey(playerId))
@@ -77,7 +89,7 @@ public class PlayerManager : MonoBehaviour
                     players[playerId].transform.position = newPos;
                     isRunning = true;
 
-                    if(playerId != lobbyClient.PlayerId)
+                    if(playerId != DataManager.Instance.id)
                     {
                         // Only flip the player if it's not the local player
                         if (newPos.x < oldPos.x)
@@ -100,11 +112,10 @@ public class PlayerManager : MonoBehaviour
 
     public void updatePlayers(string JSONData)
     {
-        serverPositions = JsonConvert.DeserializeObject<Dictionary<string, PlayerStateData>>(JSONData);
-
+        serverPositions = JsonConvert.DeserializeObject<Dictionary<long, PlayerStateData>>(JSONData);
     }
 
-    public void exitPlayer(string playerId)
+    public void exitPlayer(long playerId)
     {
         playerExitQueue.Enqueue(playerId);
     }

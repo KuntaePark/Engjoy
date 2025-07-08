@@ -8,8 +8,8 @@ public class PlayerController : MonoBehaviour
 {
     public LobbyClient lobbyClient;
 
-    private string id; 
-    public string Id { get; set; }
+    private long id; 
+    public long Id { get { return id; } set { id = value; } }
 
     private float axisH;
     private float axisV;
@@ -42,7 +42,7 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         //send input to server, only if this player object is controlled by the local player
-        if(Id == lobbyClient.PlayerId)
+        if (Id == DataManager.Instance.id)
         {
             if(Input.GetKeyDown("space"))
             {
@@ -67,7 +67,7 @@ public class PlayerController : MonoBehaviour
 
             if (axisH != 0 || axisV != 0)
             {
-                lobbyClient.Send("inputMove", JsonConvert.SerializeObject(new PlayerStateData(axisH, axisV)));
+                lobbyClient.Send("input_move", JsonConvert.SerializeObject(new PlayerStateData(axisH, axisV)));
             }
 
             if (axisH != 0)

@@ -46,4 +46,11 @@ public class GameController {
         Long id = gameService.allowMatch(email);
         return ResponseEntity.ok(id.toString());
     }
+
+    @PostMapping("/game/lobby/join")
+    public ResponseEntity<String> lobbyJoin(Principal principal) {
+        String email = principal.getName();
+        Long id = gameService.allowLobby(email);
+        return ResponseEntity.ok(id.toString());
+    }
 }

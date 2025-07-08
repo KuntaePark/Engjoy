@@ -64,7 +64,7 @@ public class Game1InputController : MonoBehaviour
         if (!isActionSelected)
         {
             //행동 미선택 상태에서의 입력 처리
-            if (Input.GetButton("Fire2"))
+            if (Input.GetKey(KeyCode.X))
             {
                 //마나 충전
                 gameClient.Send("input", JsonConvert.SerializeObject(new { type = "chargeMana" }));
@@ -90,7 +90,7 @@ public class Game1InputController : MonoBehaviour
                 }
             }
             //액션 결정
-            if (Input.GetButtonDown("Fire1"))
+            if (Input.GetKeyDown(KeyCode.Z))
             {
                 Debug.Log("Action selected: " + actionType.ToString());
                 gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionSelect", action = actionType.ToString() }));
@@ -101,7 +101,7 @@ public class Game1InputController : MonoBehaviour
         else
         {
             //행동 선택 상태에서의 입력 처리
-            if (Input.GetButtonDown("Fire1"))
+            if (Input.GetKeyDown(KeyCode.Z))
             {
 
                 //행동 시전
@@ -111,7 +111,7 @@ public class Game1InputController : MonoBehaviour
             }
 
             //행동 취소
-            if (Input.GetButtonDown("Fire2"))
+            if (Input.GetKeyDown(KeyCode.X))
             {
                 Debug.Log("Action cancelled");
                 gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionCancel" }));

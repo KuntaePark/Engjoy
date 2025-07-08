@@ -6,6 +6,7 @@ import lombok.Setter;
 
 @Getter@Setter
 public class UserGameDataDto {
+    private String nickname;
     private int game1Score;
     private int game2Score;
     private int gold;
@@ -14,6 +15,7 @@ public class UserGameDataDto {
 
     public static UserGameDataDto from(UserGameData userGameData) {
         UserGameDataDto dto = new UserGameDataDto();
+        dto.nickname = userGameData.getAccount().getNickname();
         dto.game1Score = userGameData.getGame1Score();
         dto.game2Score = userGameData.getGame2Score();
         dto.gold = userGameData.getGold();

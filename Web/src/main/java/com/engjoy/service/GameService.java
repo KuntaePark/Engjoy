@@ -3,21 +3,31 @@ package com.engjoy.service;
 import com.engjoy.dto.UserGameDataDto;
 import com.engjoy.repository.AccountRepository;
 import com.engjoy.repository.UserGameDataRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.net.URISyntaxException;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class GameService {
+public class GameService{
     private final UserGameDataRepository userGameDataRepository;
     private final AccountRepository accountRepository;
 
-    private final WebSocketService socketService;
+    private ServerSocket lobbyServerSocket;
+    private ServerSocket matchServerSocket;
+
+    @PostConstruct
+    public void init() throws URISyntaxException {
+        lobbyServerSocket = new ServerSocket("ws://localhost:7777");
+        matchServerSocket = new ServerSocket("ws://localhost:7779");
+
+        lobbyServerSocket.init();
+        matchServerSocket.init();
+    }
 
     public UserGameDataDto getUserGameData(String email) {
         return UserGameDataDto.from(userGameDataRepository.findByAccount_Email(email));
@@ -25,9 +35,13 @@ public class GameService {
 
     public Long allowMatch(String email) {
         Long id = accountRepository.findByEmail(email).getId();
-
-        socketService.requestPlayerMatch(id);
+        matchServerSocket.allowPlayer(id);
         return id;
     }
 
+    public Long allowLobby(String email) {
+        Long id = accountRepository.findByEmail(email).getId();
+        lobbyServerSocket.allowPlayer(id);
+        return id;
+    }
 }

@@ -9,36 +9,51 @@ using HybridWebSocket;
 
 public class LobbyClient : WebSocketClient
 {
-    // Start is called before the first frame update
-    private WebSocket ws;
-    private string playerId;
-    public string PlayerId{ get; set; }
-    private int lobbyId;
+    private string lobbyServerUrl = "ws://localhost:7777"; // URL of the lobby server
 
     public PlayerManager playerManager;
 
-    void Start()
+    private void Awake()
     {
-        startConnection("ws://localhost:7777");
+        startConnection(lobbyServerUrl);
+    }
+
+    public override void handleOpen()
+    {
+        //send authentication information
+        string message = JsonConvert.SerializeObject(DataManager.Instance.id);
+        Send("auth", message);
     }
 
     public override void handlePacket(string type, string payload)
     {
         switch (type)
         {
-            case "lobbyEnterSuccess":
-                //receive assigned player ID
-                Dictionary<string, string> idInfo = JsonConvert.DeserializeObject<Dictionary<string, string>>(payload);
-                Debug.Log("Assigned Player ID: " + idInfo["playerId"] + ", lobbyId: " + idInfo["lobbyId"]);
-                PlayerId = idInfo["playerId"];
-                lobbyId = int.Parse(idInfo["lobbyId"]);
+            case "lobby_enter_success":
+                //로비 씬 로드
+                Debug.Log("Lobby enter success, loading lobby scene.");
+                if(playerManager == null)
+                {
+                    Debug.LogError("PlayerManager not found in the scene.");
+                    return;
+                }
                 break;
-            case "playerUpdate":
+            case "player_update":
                 //handle player update
+                if(playerManager == null)
+                {
+                    Debug.LogError("PlayerManager is not initialized.");
+                    return;
+                }
                 playerManager.updatePlayers(payload);
                 break;
-            case "playerExit":
-                playerManager.exitPlayer(payload);
+            case "player_exit":
+                if(playerManager == null)
+                {
+                    Debug.LogError("PlayerManager is not initialized.");
+                    return;
+                }
+                playerManager.exitPlayer(long.Parse(payload));
                 break;
             default:
                 Debug.LogWarning("Unknown packet type: " + type);

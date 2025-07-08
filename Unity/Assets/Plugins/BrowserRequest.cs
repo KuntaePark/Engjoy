@@ -51,8 +51,9 @@ public class BrowserRequest
         SendRequest(method, baseUrl + url, bodyJson, requestId, callbackPtr);
         return requestId;
 #else
-        Debug.Log("Not running on webGL");
-        return -1;
+        Debug.LogError("BrowserRequest is only supported in WebGL builds.");
+        return -1; // Return an invalid request ID for non-WebGL builds
+
 #endif
     }
 

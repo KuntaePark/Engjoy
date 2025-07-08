@@ -25,7 +25,7 @@ public class EffectController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        foreach(var player in game1Manager.gameState.players)
+        foreach (var player in game1Manager.gameState.players)
         {
             //charge effect
             if (player.isCharging && ChargeEffects[player.idx] == null)
@@ -59,8 +59,9 @@ public class EffectController : MonoBehaviour
                 // Ensure charge effect is not null if player is not charging
                 if (MagicEffects[player.idx] != null)
                 {
-                    float strengthLevel = player.strengthLevel;
-                    MagicEffects[player.idx].transform.localScale = new Vector3(1.0f, 1.0f, 1.0f) * (strengthLevel * 0.5f + 0.5f);
+                    //강도에 따라 이펙트 크기 조정
+                    MagicEffectController magicEffectController = MagicEffects[player.idx].GetComponent<MagicEffectController>();
+                    magicEffectController.strengthLevel = player.strengthLevel;
                 }
             }
 

@@ -12,6 +12,8 @@ public class UIController : MonoBehaviour
     public PlayerPanel[] playerPanels = new PlayerPanel[2]; //플레이어 패널 배열
     public WordPanel wordPanel; //단어 패널
 
+    private BrowserRequest browserRequest = new BrowserRequest();
+
     //시간
     public Slider TimeBar;
     public Text TimeText;
@@ -31,7 +33,21 @@ public class UIController : MonoBehaviour
 
         lobbyButton.onClick.AddListener(() => 
         {
-            SceneController.Instance.loadScene("lobbyScene");
+            int requestId = browserRequest.StartRequest("POST", "/game/lobby/join", "");
+            StartCoroutine(browserRequest.waitForResponse(requestId, 10.0f, (response) =>
+            {
+                if (response != null && response.status == 200)
+                {
+                    Debug.Log("Lobby enter successful: " + response.body);
+                    //로비 요청 승인 완료, 로비 접속 시도
+                    SceneController.Instance.loadScene("LobbyScene");
+                }
+                else
+                {
+                    Debug.LogError("Lobby enter failed: " + (response != null ? response.body : "No response received."));
+                }
+            }));
+
         });
     }
 

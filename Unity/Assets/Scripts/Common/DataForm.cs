@@ -84,6 +84,7 @@ namespace DataForm
     [System.Serializable]
     public class UserGameData
     {
+        public string nickname;
         public int game1Score;
         public int game2Score;
         public int gold;
