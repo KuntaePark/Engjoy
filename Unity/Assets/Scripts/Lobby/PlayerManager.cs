@@ -100,7 +100,7 @@ public class PlayerManager : MonoBehaviour
                 }
 
                
-               if(animator != null)
+               if(animator != null && playerId != DataManager.Instance.id)
                 {
                     animator.SetBool("isRunning", isRunning);
                 }

@@ -61,28 +61,20 @@ public class GameStartUI : MonoBehaviour
         });
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void loadGameStartUI()
     {
         //서버에게 해당 유저의 정보 요청, 5초까지 기다림
-        int requestId = browserRequest.StartRequest("GET", "/game/test");
-        StartCoroutine(browserRequest.waitForResponse(requestId, 5.0f, (response) =>
+        StartCoroutine(DataManager.Instance.getUserData((userGameData) =>
         {
-            if (response != null)
+            if (userGameData != null)
             {
-                var userGameData = JsonConvert.DeserializeObject<UserGameData>(response.body);
+                //유저의 게임 시작 UI 설정
                 setGameStartUI(userGameData.game1Score, userGameData.ranking);
             }
             else
             {
-                Debug.Log("정보 조회에 실패했습니다.");
+                Debug.Log("유저 정보 로드 실패");
             }
-
         }));
     }
 

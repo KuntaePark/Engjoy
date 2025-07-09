@@ -8,6 +8,8 @@ const wss = new WebSocket.Server({ port: 7777 },()=>{
     console.log('LOBBY SERVER START')
 })
 
+const TEST = true;
+
 const authorizedMap = new Map();
 //웹 서버에서 인증받은 아이디들
 const authByWebServer = new Set();
@@ -44,7 +46,7 @@ wss.on('connection', function connection(ws) {
       const {type, payload} = JSON.parse(data);
       
       const now = new Date(Date.now());
-      console.log("[" + now.toUTCString()+"]" + " incoming message, type: ", type);
+      // console.log("[" + now.toUTCString()+"]" + " incoming message, type: ", type);
       
       (PacketHandler[type] || (()=> console.log("unknown packet type.")))(ws,payload);
    })
@@ -88,7 +90,9 @@ const PacketHandler = {
          console.log(`user with id ${id} authenticated for lobby.`)
          authorizedMap.set(ws, true);
          //인증 완료됐으므로 웹 인증 목록에서 제거
-         authByWebServer.delete(id);
+         if(!(TEST && id === '0')) {
+            authByWebServer.delete(id);
+         }
          ws['id'] = id;
          const lobbyId = enterLobby(ws, id);
          ws['lobbyId'] = lobbyId;
@@ -253,4 +257,8 @@ function calculatePositions(players) {
       p.inputH = 0; p.inputV = 0;
    }
    return updatedPositions;
+}
+
+if(TEST) {
+   authByWebServer.add('0');
 }

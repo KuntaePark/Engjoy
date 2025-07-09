@@ -8,6 +8,19 @@ public class PlayerController : MonoBehaviour
 {
     public LobbyClient lobbyClient;
 
+    [SerializeField]
+    private GameObject weaponPlacer;
+    private Animator weaponAnimator;
+
+    //임시로 직접 지정
+    [SerializeField]
+    private GameObject weaponPrefab;
+
+    private GameObject weaponObject;
+
+    //임시로 위치 강제 지정
+    Vector3 weaponPosition = new Vector3(0.407f, 0.3f, 0.0f);
+
     private long id; 
     public long Id { get { return id; } set { id = value; } }
 
@@ -27,7 +40,8 @@ public class PlayerController : MonoBehaviour
 
     public string curState = "move";
 
-    private Animator animator;
+    [SerializeField]
+    private Animator playerAnimator;
     private Rigidbody2D rb;
 
     // Start is called before the first frame update
@@ -35,7 +49,10 @@ public class PlayerController : MonoBehaviour
     {
         lobbyClient = GameObject.Find("LobbyClient").GetComponent<LobbyClient>();
         moveTime = UnityEngine.Random.Range(0.1f, maxMoveTime);
-        animator = GetComponentInChildren<Animator>();
+        weaponObject = Instantiate(weaponPrefab, weaponPlacer.transform.position, Quaternion.identity);
+        weaponObject.transform.SetParent(weaponPlacer.transform, false);
+        weaponObject.transform.localPosition = weaponPosition;
+        weaponAnimator = weaponObject.GetComponent<Animator>();
     }
 
     // Update is called once per frame
@@ -53,6 +70,7 @@ public class PlayerController : MonoBehaviour
             {
                 //interact request
                 Debug.Log("interact");
+                weaponAnimator.SetTrigger("Swing");
             }
 
             if(!isTestDummy)
@@ -78,11 +96,11 @@ public class PlayerController : MonoBehaviour
 
             if (axisH != 0.0f || axisV != 0.0f)
             {
-                animator.SetBool("isRunning", true);
+                playerAnimator.SetBool("isRunning", true);
             }
             else
             {
-                animator.SetBool("isRunning", false);
+                playerAnimator.SetBool("isRunning", false);
             }
         }
 

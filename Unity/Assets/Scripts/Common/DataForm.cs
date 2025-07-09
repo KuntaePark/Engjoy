@@ -19,11 +19,11 @@ namespace DataForm
     [System.Serializable]
     public class PlayerStateData
     {
-        //currently only used for player input, but can be used for other purposes as well
         public float x;
         public float y;
 
         public bool isRunning = false;
+        public bool isAttacking = false;
 
         public PlayerStateData(float x, float y)
         {

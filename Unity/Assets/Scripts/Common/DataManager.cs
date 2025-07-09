@@ -1,7 +1,9 @@
 using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
+using DataForm;
 
 public class DataManager : MonoBehaviour
 {
@@ -13,6 +15,13 @@ public class DataManager : MonoBehaviour
 
     public long id = -1;
 
+    private BrowserRequest browserRequest = new BrowserRequest();
+
+    private UserGameData userGameData = null;
+    //마지막 로드로부터 지난 시간
+    private float lastLoadTime = 0.0f;
+    private float loadInterval = 300.0f; // 5 minutes in seconds
+
     public static DataManager Instance { get; private set; }
 
     //inventory data of user
@@ -23,6 +32,9 @@ public class DataManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+#if UNITY_EDITOR
+            id = 0; // Set a default ID for testing in the editor
+#endif
             DontDestroyOnLoad(gameObject); // Keep this instance across scenes
         }
         else
@@ -43,6 +55,35 @@ public class DataManager : MonoBehaviour
     {
         
     }
+
+
+    public IEnumerator getUserData(Action<UserGameData> OnResult)
+    {
+        if(Instance.userGameData == null || (Time.time - lastLoadTime) > loadInterval)
+        {
+            int requestId = Instance.browserRequest.StartRequest("GET", "/game/user/data");
+            yield return StartCoroutine(Instance.browserRequest.waitForResponse(requestId, 5.0f, (response) => {
+                if(response != null)
+                {
+                    Instance.userGameData = JsonConvert.DeserializeObject<UserGameData>(response.body);
+                    Debug.Log($"User data loaded: {Instance.userGameData.nickname}");
+                    lastLoadTime = Time.time; // Update last load time
+                    OnResult?.Invoke(Instance.userGameData);
+                }
+                else
+                {
+                    Debug.LogError("Failed to load user data.");
+                    OnResult?.Invoke(null); // Return null if failed
+                }
+            }));
+
+        }
+        else
+        {
+            OnResult?.Invoke(Instance.userGameData); // Return cached data if available
+        }
+    }
+
 
     //load inventory data of user
     public void loadInventory()

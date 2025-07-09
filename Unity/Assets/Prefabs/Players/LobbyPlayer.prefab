@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6447723665496606315}
   - component: {fileID: 7486447885272757906}
   - component: {fileID: 6574911374527340254}
+  - component: {fileID: 1636279126470035799}
   m_Layer: 0
   m_Name: LobbyPlayer
   m_TagString: Player
@@ -33,6 +34,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3157363246667629419}
+  - {fileID: 4228925635759869514}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6447723665496606315
@@ -48,6 +50,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lobbyClient: {fileID: 0}
+  weaponPlacer: {fileID: 6353583182771919788}
+  weaponPrefab: {fileID: 8747290656672628280, guid: 594d1ecee8662634aabb51083d210f32, type: 3}
   speed: 5
   isTestDummy: 0
   maxMoveTime: 0.5
@@ -55,6 +59,7 @@ MonoBehaviour:
   breakTime: 1
   currentTime: 0
   curState: move
+  playerAnimator: {fileID: 183912510337464163}
 --- !u!58 &7486447885272757906
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -87,9 +92,9 @@ CircleCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.006331086, y: -0.072806686}
+  m_Offset: {x: -0.006331086, y: 0.36680833}
   serializedVersion: 2
-  m_Radius: 0.43035886
+  m_Radius: 0.39578232
 --- !u!50 &6574911374527340254
 Rigidbody2D:
   serializedVersion: 4
@@ -117,6 +122,49 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!210 &1636279126470035799
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 15458930818107774}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+--- !u!1 &6353583182771919788
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4228925635759869514}
+  m_Layer: 0
+  m_Name: WeaponPlacer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4228925635759869514
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6353583182771919788}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.164, y: 0.217, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3138330307236062444}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7220087164073278955
 GameObject:
   m_ObjectHideFlags: 0
@@ -201,7 +249,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
-  m_SpriteSortPoint: 0
+  m_SpriteSortPoint: 1
 --- !u!95 &183912510337464163
 Animator:
   serializedVersion: 5

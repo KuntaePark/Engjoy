@@ -23,7 +23,7 @@ public class GameController {
         return "game";
     }
 
-    @GetMapping("/game/test")
+    @GetMapping("/game/user/data")
     @ResponseBody
     public ResponseEntity<UserGameDataDto> getUserGameData(Principal principal) {
         String email = principal.getName();
