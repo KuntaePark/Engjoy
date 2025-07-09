@@ -27,12 +27,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const typeSelect = document.getElementById('exprType');
             const activeFiltersContainer = document.getElementById('active-filters');
             const resetBtn = document.getElementById('reset-btn');
+            const alphaCheckbox = document.getElementById('alpha-sort-checkbox');
+            const keywordInput = document.getElementById('keyword');
 
             // --- 2. 상태 관리 변수 ---
             let currentPage = 0, isLastPage = false, isLoading = false;
             let currentPlayingAudio = null;
             let wordInfoData = {};
             let wrongAnswerData = [];
+            let currentView = 'study_log';
+
+            document.getElementById('home-btn')?.addEventListener('click', () => {
+              currentView = 'study_log';
+              fetchAndRender({ isNewSearch: true, view: currentView });
+            });
+
+            // 이벤트: 알파벳순 체크박스 (사전 모드일 때만)
+              alphaCheckbox?.addEventListener('change', () => {
+                if (alphaCheckbox.checked) {
+                  sortInput.value = 'wordText,asc';
+                } else {
+                  sortInput.value = 'id,desc';
+                }
+                // 사전 모드인지 확인
+                if (expressionContainer.classList.contains('grid')) {
+                  applyFiltersToCurrentView();
+                }
+              });
+
 
 
              // 필터/정렬 적용 함수
@@ -49,7 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
             function initializePage() {
                 const flatpickrInstance = initializeFlatpickr();
                 setupEventListeners(flatpickrInstance);
-                fetchWordInfoAndRender();
+                fetchWordInfo();
+                fetchAndRender({ isNewSearch: true, view: 'study_log' });
+                fetchAndShowRecommendations();
             }
 
                 function setupEventListeners(flatpickrInstance) {
@@ -229,67 +253,111 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
+            function renderDictionary(data) {
+              expressionContainer.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6';
+
+              // 사전 모드 응답이 { content: […] } 형태가 맞다면
+              const items = Array.isArray(data.content) ? data.content : [];
+              items.forEach(expr => {
+                const merged = { ...expr, ...(wordInfoData[expr.exprId] || {}) };
+                expressionContainer.insertAdjacentHTML('beforeend', createExpressionCard(merged));
+              });
+            }
+
+            function renderStudyLog(data) {
+              expressionContainer.className = 'space-y-8';
+
+              Object.entries(data).forEach(([date, list]) => {
+                let datePanel = expressionContainer.querySelector(`.date-panel[data-date="${date}"]`);
+                if (!datePanel) {
+                  datePanel = document.createElement('div');
+                  datePanel.className = 'date-panel';
+                  datePanel.dataset.date = date;
+                  datePanel.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                      <i class="fa-regular fa-calendar-check text-green-700"></i>
+                      <h3 class="text-lg font-semibold text-gray-700">${date}</h3>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+                  `;
+                  expressionContainer.appendChild(datePanel);
+                }
+                const grid = datePanel.querySelector('div.grid');
+                list.forEach(expr => {
+                  const merged = { ...expr, ...(wordInfoData[expr.exprId] || {}) };
+                  grid.insertAdjacentHTML('beforeend', createExpressionCard(merged));
+                });
+              });
+            }
+
+
+
             function fetchAndRender({ isNewSearch = false, view = 'study_log' } = {}) {
-                if (isLoading || (!isNewSearch && isLastPage)) return;
+              // --- 1) 뷰 모드에 따라 UI 토글 ---
+              const sortBtnContainer    = sortBtn?.parentElement;
+              const filterBtnContainer  = filterBtn?.parentElement;
+              const typeSelectContainer = typeSelect?.parentElement;
+              const alphaContainer = document.getElementById('alpha-container');
+
+
+              if (view === 'dictionary') {
+                if (sortBtnContainer)    sortBtnContainer.style.display    = 'none';
+                if (filterBtnContainer)  filterBtnContainer.style.display  = 'none';
+                if (alphaContainer)      alphaContainer.style.display      = 'flex';
+
+                expressionContainer.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6';
+              } else {
+                if (sortBtnContainer)    sortBtnContainer.style.display    = '';
+                if (filterBtnContainer)  filterBtnContainer.style.display  = '';
+                if (alphaContainer)      alphaContainer.style.display      = 'none';
+
+                expressionContainer.className = 'space-y-8';
+              }
+
+              if (isLoading || (!isNewSearch && isLastPage)) return;
                 isLoading = true;
-                if (loadMoreBtn) loadMoreBtn.innerText = '로딩 중...';
+                loadMoreBtn && (loadMoreBtn.innerText = '로딩 중...');
 
                 if (isNewSearch) {
-                    currentPage = 0;
-                    isLastPage = false;
-                    expressionContainer.innerHTML = '';
-                    expressionContainer.className = view === 'dictionary'
-                        ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6'
-                        : 'space-y-8';
+                  currentPage = 0;
+                  isLastPage  = false;
+                  expressionContainer.innerHTML = '';
                 }
 
                 const params = new URLSearchParams({ view, page: currentPage });
-
-                   // 날짜 & 타입 필터는 '학습 기록'에도, '사전'에도 공통으로 적용
-                   params.set('exprType', typeInput.value);
-                   params.set('startDate', startDateInput.value);
-                   params.set('endDate', endDateInput.value);
-
-                    // 검색어 모든 뷰에 공통 적용
-                    params.set('keyword', document.getElementById('keyword').value);
-
-
-                if (view === 'dictionary') {
-                    params.set('sort', sortInput.value);
-                } else {
-                    params.set('sort', 'usedTime,desc');
-                }
-
-
+                params.set('exprType',  typeInput.value);
+                params.set('startDate', startDateInput.value);
+                params.set('endDate',   endDateInput.value);
+                params.set('keyword',   keywordInput.value);
+                params.set('sort',      sortInput.value);
 
                 fetch(`/expressions/api?${params.toString()}`)
-                    .then(res => res.ok ? res.json() : promise.reject('데이터 로드 실패'))
-                    .then(data => {
-                        // 1) 화면에 렌더
-                        renderData(view, data);
+                  .then(res => res.ok ? res.json() : Promise.reject('로드 실패'))
+                  .then(rawData => {
+                    if (view === 'dictionary') {
+                      renderDictionary(rawData);
+                      isLastPage = !!rawData.last;
+                    } else {
+                      renderStudyLog(rawData);
+                      // 날짜 그룹이 하나도 없으면 마지막
+                      isLastPage = Object.keys(rawData).length === 0;
+                    }
+                    if (!isLastPage) {
+                      currentPage++;
+                      loadMoreBtn?.classList.remove('hidden');
+                    } else {
+                      loadMoreBtn?.classList.add('hidden');
+                    }
+                  })
+                  .catch(console.error)
+                  .finally(() => {
+                    isLoading = false;
+                    loadMoreBtn && (loadMoreBtn.innerText = '더보기');
+                  });
+              }
 
-                        // 2) isLastPage 판정
-                        if (view === 'dictionary') {
-                          isLastPage = data.last;
-                        } else {
-                          // study_log 에는 빈 객체면 마지막 페이지로 간주
-                          isLastPage = Object.keys(data).length === 0;
-                        }
 
-                        // 3) 다음 페이지가 있으면 currentPage 증가
-                        if (!isLastPage) currentPage++;
 
-                        // 4) 더보기 버튼 보이기/숨기기
-                        if (loadMoreBtn) {
-                          loadMoreBtn.classList.toggle('hidden', isLastPage);
-                        }
-                    })
-                    .catch(console.error)
-                    .finally(() => {
-                        isLoading = false;
-                        if(loadMoreBtn) loadMoreBtn.innerText = '더보기';
-                    });
-            }
 
             function renderData(view, data) {
 
@@ -301,32 +369,42 @@ document.addEventListener('DOMContentLoaded', () => {
                   const merged = { ...expr, ...(wordInfoData[expr.exprId] || {}) };
                   expressionContainer.insertAdjacentHTML('beforeend', createExpressionCard(merged));
                 });
+                return;
+              }
 
-              } else {
-                // 학습 기록 뷰: 날짜별 스페이스 레이아웃
+                // 학습 기록 뷰: 날짜별 패널 + 그리드
                 expressionContainer.className = 'space-y-8';
+
                 Object.entries(data).forEach(([date, list]) => {
-                  const datePanel = document.createElement('div');
-                  datePanel.className = 'date-panel';
-                  datePanel.innerHTML = `
-                    <div class="flex items-center gap-2 mb-2">
-                      <i class="fa-regular fa-calendar-check text-green-700"></i>
-                      <h3 class="text-lg font-semibold text-gray-700">${date}</h3>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-                  `;
+                  // 1) 동일 날짜 패널이 이미 있나 검사
+                  let datePanel = expressionContainer.querySelector(`.date-panel[data-date="${date}"]`);
+
+                  // 2) 없으면 새로 생성
+                  if (!datePanel) {
+                    datePanel = document.createElement('div');
+                    datePanel.className = 'date-panel';
+                    datePanel.dataset.date = date;  // ← 고유 식별자
+                    datePanel.innerHTML = `
+                      <div class="flex items-center gap-2 mb-2">
+                        <i class="fa-regular fa-calendar-check text-green-700"></i>
+                        <h3 class="text-lg font-semibold text-gray-700">${date}</h3>
+                      </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+                    `;
+                    expressionContainer.appendChild(datePanel);
+                  }
+
+                  // 3) 해당 패널의 그리드에 카드 추가
                   const grid = datePanel.querySelector('div.grid');
                   list.forEach(expr => {
                     const merged = { ...expr, ...(wordInfoData[expr.exprId] || {}) };
                     grid.insertAdjacentHTML('beforeend', createExpressionCard(merged));
                   });
-                  expressionContainer.appendChild(datePanel);
                 });
               }
-            }
 
 
-            function fetchWordInfoAndRender() {
+            function fetchWordInfo() {
                  fetch('/wordinfo/wordinfo.json')
                     .then(res => res.ok ? res.json() : Promise.reject('wordinfo 로드 실패'))
                     .then(data => {
@@ -336,10 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }, {});
                     })
                     .catch(console.error)
-                    .finally(() => {
-                        fetchAndRender({ isNewSearch: true, view: 'study_log' });
-                        fetchAndShowRecommendations();
-                    });
+
             }
 
             async function openWrongAnswerModal() {

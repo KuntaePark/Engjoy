@@ -273,8 +273,13 @@ public class ExpressionService {
         LocalDateTime startDateTime = (searchDto.getStartDate() != null) ? searchDto.getStartDate().atStartOfDay() : null;
         LocalDateTime endDateTime = (searchDto.getEndDate() != null) ? searchDto.getEndDate().plusDays(1).atStartOfDay() : null;
 
+        Sort existingSort = pageable.getSort();
+        Sort newSort = existingSort.and(Sort.by(Sort.Direction.DESC, "id"));
+        Pageable newPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), newSort);
+
         Page<ExprUsed> usedPage = exprUsedRepository.findUsedBySearchDto(account, searchDto.getKeyword(),
                 exprTypeEnum, startDateTime, endDateTime, pageable);
+
         List<ExprUsed> usedList = usedPage.getContent();
 
         if (usedList.isEmpty()) {
@@ -298,8 +303,11 @@ public class ExpressionService {
 
         // 날짜를 key로, DTO 리스트를 value로 갖는 Map으로 그룹화하여 반환
         return dtos.stream()
-                .collect(Collectors.groupingBy(dto -> dto.getDate().toString())); // ✅ getUsedDate() -> getDate()로 수정
+                .collect(Collectors.groupingBy(
+                        dto -> dto.getDate().toString(), // 날짜를 기준으로 그룹화
+                        LinkedHashMap::new,             // 순서가 보장되는 LinkedHashMap 사용
+                        Collectors.toList()             // 그룹화된 항목들은 List로 묶음
+                ));
     }
-
 
 }

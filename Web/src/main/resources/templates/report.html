@@ -6,6 +6,7 @@
       layout:decorate="~{fragment/default}">
 
 <th:block layout:fragment="css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap/dist/cal-heatmap.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
@@ -56,8 +57,10 @@
 
                 const heatmapData = Object.entries(reportData.dailyLearningCounts).map(([dateStr, count]) => {
                     const didQuiz = quizMap[dateStr];
+                    const date = new Date(dateStr);
+                    const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000);
                     return {
-                        date: new Date(dateStr).getTime(),
+                        date: utcTimestamp,
                         value: didQuiz ? 1 : 0
                     };
                 });
@@ -97,10 +100,10 @@
         <h1 class="text-2xl font-bold mb-4">📘 학습 리포트</h1>
 
         <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="p-4 bg-blue-100 rounded">
+            <div id="weekly-review-count" class="p-4 bg-blue-100 rounded">
                 주간 복습 수<br><strong th:text="${report.weekReviews}">0</strong>
             </div>
-            <div class="p-4 bg-red-100 rounded">
+            <div id="incorrect-count" class="p-4 bg-red-100 rounded">
                 오답 수<br><strong th:text="${report.weekIncorrects}">0</strong>
             </div>
         </div>
@@ -111,14 +114,14 @@
                 <div style="display: flex; align-items: flex-start;">
                     <!-- 연도 세로 표시 -->
                     <div style="writing-mode: vertical-rl;transform: rotate(180deg);font-size: 30px;line-height: 11px; height: 77px; /* 11px * 7줄 */
-                    color: #4b5563; margin-right: 8px; user-select: none;">
+                    color: #4b5563; margin-right: 20px; user-select: none;">
                         <span th:text="${currentYear}"></span>
                     </div>
 
                     <div>
                         <!-- 요일 표시 -->
                         <div style="display: flex; flex-direction: column; justify-content: space-between; height: 77px; /* 11px * 7줄 */
-                            font-size: 11px; color: #4b5563; margin-right: 8px; width: 14px; user-select: none; flex-shrink: 0; ">
+                            font-size: 9px; color: #4b5563; margin-right: 8px; width: 14px; user-select: none; flex-shrink: 0; ">
                             <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
                         </div>
 
@@ -127,7 +130,7 @@
 
                     <!-- 캘린더 히트맵 -->
                     <div>
-                        <div id="cal-heatmap" style="margin-left:4px; flex-grow:1;"></div>
+                        <div id="cal-heatmap" style="margin-left:2px; flex-grow:1;"></div>
                     </div>
 
                 </div>

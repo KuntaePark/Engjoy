@@ -328,6 +328,10 @@ public class PrintService {
                 new Rectangle[]{ leftCol, rightCol }
         ));
 
+
+
+
+
         // 5) 본문: 시험지(EXAM) vs 리스트/워크시트
         if (opt.getPrintForm() == PRINTFORM.EXAM) {
             // ─── 시험지: 두 컬럼에 자동 배치 ───

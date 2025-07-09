@@ -44,33 +44,59 @@ public class ExpressionController {
 //        account.setName(principal.getName());
 
         Long testAccountId = 1L;
-        Page<ExpressionDto> expressionPage = expressionService.getExpressions(testAccountId, searchDto, pageable);
-        model.addAttribute("expressionPage", expressionPage);
+
+        Sort stableSort = Sort.by(Sort.Direction.DESC, "usedTime").and(Sort.by(Sort.Direction.DESC, "id"));
+        Pageable initialPageable = PageRequest.of(0, 20, stableSort);
+
+        Map<String, List<ExpressionDto>> studyLogData = expressionService.getStudyLog(testAccountId, searchDto, initialPageable);
+
+        model.addAttribute("studyLogData", studyLogData);
         model.addAttribute("searchDto", searchDto);
         return "expressions";
     }
-
     @GetMapping("/api")
     public ResponseEntity<?> getExpressionPage(
             @RequestParam(name = "view", defaultValue = "study_log") String view,
             ExpressionSearchDto searchDto,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "sort", defaultValue = "id,desc") String sort,
+            // ⭐️ 기본값을 usedTime,desc로 변경
+            @RequestParam(value = "sort", defaultValue = "usedTime,desc") String sort,
             Principal principal) {
 
-        // 테스트용 계정 ID
         Long testAccountId = 1L;
 
         if ("dictionary".equals(view)) {
-            Pageable pageable = PageRequest.of(page, 12, Sort.by("id").descending());
+            String[] sortParams = sort.split(",");
+            Sort dictionarySort = Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]);
+            Pageable pageable = PageRequest.of(page, 12, dictionarySort);
             Page<ExpressionDto> expressionPage = expressionService.getExpressions(testAccountId, searchDto, pageable);
             return ResponseEntity.ok(expressionPage);
-        } else {
-            Pageable pageable = PageRequest.of(page, 5, Sort.by("usedTime").descending()); // usedTime으로 정렬
+
+        } else { //study_log 뷰
+            // 프론트에서 받은 sort 문자열(예: "difficulty,desc")을 분리합니다.
+            String[] sortParams = sort.split(",");
+            String property = sortParams[0]; // 정렬 기준 필드 (예: "difficulty")
+            Sort.Direction direction = Sort.Direction.fromString(sortParams[1]); // 정렬 방향 (예: "desc")
+
+            if ("difficulty".equals(property)) {
+                property = "expression.difficulty";
+            }
+
+            // ⭐️ 2. 분리된 값으로 Sort 객체를 만듭니다.
+            Sort requestedSort = Sort.by(direction, property);
+
+            // ⭐️ 3. 날짜 정렬 시에는 안정성을 위해 id를 2차 정렬 기준으로 추가합니다.
+            if ("usedTime".equals(property)) {
+                requestedSort = requestedSort.and(Sort.by(Sort.Direction.DESC, "id"));
+            }
+
+            // 최종적으로 만들어진 정렬 기준을 사용
+            Pageable pageable = PageRequest.of(page, 20, requestedSort);
             Map<String, List<ExpressionDto>> studyLog = expressionService.getStudyLog(testAccountId, searchDto, pageable);
             return ResponseEntity.ok(studyLog);
         }
     }
+
 
     // 오늘의 추천 단어를 제공하는 API 엔드포인트 추가
     @GetMapping("/api/recommendations")
