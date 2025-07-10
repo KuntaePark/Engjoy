@@ -50,20 +50,55 @@
             font-size: 12px;
         }
 
-        #cal-heatmap rect.ch-subdomain-bg[data-date$="-01"] {
-          stroke: #4b5563 !important;
-          stroke-width: 1px !important;
+        #cal-heatmap rect.ch-subdomain-bg{
+          stroke: #ccc;
+          stroke-width: 0.5px;
+          shape-rendering: crispEdges;
         }
+
+                #cal-heatmap svg {
+          overflow: visible !important;
+        }
+
+
+        /* 전체 화면을 덮는 오버레이 */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.hidden {
+  display: none !important;
+}
+
+/* 모달 콘텐츠 박스 */
+.modal-overlay .modal-content {
+  background: #fff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+
 
 
     </style>
 </th:block>
 <th:block layout:fragment="script">
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/wa0x6e/cal-heatmap/dist/cal-heatmap.min.js"></script>
+    <script type="text/javascript" src="https://d3js.org/d3.v7.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/cal-heatmap/dist/cal-heatmap.min.js"></script>
     <script src="https://unpkg.com/@popperjs/core@2"></script>
-    <script src="https://cdn.jsdelivr.net/gh/wa0x6e/cal-heatmap/dist/plugins/Tooltip.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/cal-heatmap/dist/plugins/Tooltip.min.js"></script>
+
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', () => {
@@ -78,7 +113,7 @@
                 });
 
                 const cal = new CalHeatmap();
-                cal.paint({
+                    cal.paint({
                     data: {
                         source: heatmapData,
                         x: 'date',
@@ -94,7 +129,7 @@
                         }
                     },
                     domain: { type: 'month' },
-                    subDomain: { type: 'ghDay', radius: 2, width: 11, height: 11 },
+                    subDomain: { type: 'day', radius: 2, width: 11, height: 11 },  // 여기만 바꿈
                     itemSelector: '#cal-heatmap'
                 },
                 [
@@ -106,6 +141,94 @@
                 ]);
             }
 
+            // 전역에 선언
+            let wrongItems = [];
+
+            function renderWrongList(items) {
+              const tbody = document.getElementById('wrong-answer-list');
+              tbody.innerHTML = '';  // 기존 행 삭제
+
+              items.forEach(item => {
+                // DTO 구조에 맞춰 직접 꺼내기
+                const word    = item.wordText;
+                const meaning = item.meaning;
+                const count   = item.incorrectCount;
+                const last    = item.lastReviewDate;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                  <td class="px-6 py-4 break-words">${word}</td>
+                  <td class="px-6 py-4 break-words">${meaning}</td>
+                  <td class="px-6 py-4">${count}</td>
+                  <td class="px-6 py-4">${last}</td>
+                `;
+                tbody.append(tr);
+              });
+            }
+
+            // 모달 열기 & 데이터 로드
+            const wrongBtn    = document.getElementById('wrong-answer-btn');
+            const wrongModal  = document.getElementById('wrong-answer-modal');
+            const closeBtns   = wrongModal.querySelectorAll('.close-modal-btn');
+            const sortButtons = wrongModal.querySelectorAll('.wrong-sort-btn');
+
+            wrongBtn.addEventListener('click', async () => {
+              const res = await fetch('/report/wrong');
+              if (!res.ok) return console.error(res.statusText);
+
+              wrongItems = await res.json();
+              wrongItems.sort((a,b) => new Date(b.lastReviewDate) - new Date(a.lastReviewDate));
+              renderWrongList(wrongItems);
+
+              sortButtons.forEach(btn => {
+                if (btn.dataset.sort === 'recent'){
+                    btn.classList.add('text-blue-600');
+                    btn.classList.remove('text-gray-500');
+                } else {
+                    btn.classList.add('text-gray-500');
+                    btn.classList.remove('text-blue-600');
+                }
+              });
+                wrongModal.classList.remove('hidden');
+            });
+
+
+            // 모달 닫기
+            closeBtns.forEach(btn =>
+              btn.addEventListener('click', () => {
+                wrongModal.classList.add('hidden');
+              })
+            );
+
+
+            // 정렬 처리
+            sortButtons.forEach(btn =>
+              btn.addEventListener('click', () => {
+                sortButtons.forEach(buttonToReset => {
+                    buttonToReset.classList.remove('text-blue-600');
+                    buttonToReset.classList.add('text-gray-500');
+                });
+
+                btn.classList.remove('text-gray-500');
+                btn.classList.add('text-blue-600');
+
+                const type = btn.dataset.sort;       // "recent" or "frequency"
+                const sorted = [...wrongItems];      // 원본 훼손 방지 복사
+
+                if (type === 'recent') {
+                  sorted.sort((a, b) =>
+                    new Date(b.lastReviewDate) - new Date(a.lastReviewDate)
+                  );
+                } else {
+                  sorted.sort((a, b) =>
+                    b.incorrectCount - a.incorrectCount
+                  );
+                }
+
+                renderWrongList(sorted);
+              })
+            );
+
         });
     </script>
 </th:block>
@@ -116,10 +239,13 @@
 
         <div class="grid grid-cols-3 gap-4 mb-6">
             <div class="p-4 bg-blue-100 rounded">
-                주간 복습 수<br><strong id="weekly-review-count" th:text="${report.weekReviews}">0</strong>
+                주간 학습 수<br><strong id="weekly-review-count" th:text="${report.weekReviews}">0</strong>
             </div>
             <div class="p-4 bg-red-100 rounded">
-                오답 수<br><strong id="incorrect-count" th:text="${report.weekIncorrects}">0</strong>
+                주간 오답 수<br><strong id="incorrect-count" th:text="${report.weekIncorrect}">0</strong>
+                <button type="button" id="wrong-answer-btn" class="bg-white hover:bg-white text-gray-700 font-semibold px-4 py-2 rounded-md text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> 오답
+                </button>
             </div>
         </div>
 
@@ -142,6 +268,39 @@
                 <div id="cal-heatmap" style="margin-left:2px; flex-grow:1;"></div>
             </div>
         </section>
+
+        <div id="wrong-answer-modal" class="modal-overlay hidden">
+            <div class="modal-content bg-white rounded-lg p-6 shadow-lg max-w-3xl w-full overflow-y-auto">
+                <div class="modal-header relative flex items-center justify-center mb-4 pb-2 border-b bg-[#8CCE47]">
+                    <h4 class="font-bold text-lg text-gray-800">오답 노트</h4>
+                    <button class="close-modal-btn absolute right-4 text-gray-400 hover:text-gray-700 text-2xl transition-colors">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="mb-4 text-right space-x-2">
+                    <button data-sort="recent" class="wrong-sort-btn text-sm font-semibold text-blue-600">최근순</button>
+                    <button data-sort="frequency" class="wrong-sort-btn text-sm text-gray-500">빈도순</button>
+                </div>
+
+                <div class="max-h-96 overflow-y-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">단어</th>
+                            <th scope="col" class="px-6 py-3">뜻</th>
+                            <th scope="col" class="px-6 py-3">오답 횟수</th>
+                            <th scope="col" class="px-6 py-3">마지막 복습일</th>
+                        </tr>
+                        </thead>
+                        <tbody id="wrong-answer-list">
+                        <!-- JS로 채워짐 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 </th:block>
 </html>

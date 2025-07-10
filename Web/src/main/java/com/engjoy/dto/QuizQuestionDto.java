@@ -13,21 +13,24 @@ public class QuizQuestionDto {
     private Long exprId;
     private EXPRTYPE exprType;
     private String questionText;
-    private List<String> choices;
+    private List<String> multipleChoices;
+    private List<String> sentenceWords;
     private boolean isFavorite;
     private String pronAudio;
 
     public static QuizQuestionDto from(Long exprId,
                                        EXPRTYPE exprType,
                                        String questionText,
-                                       List<String> choices,
+                                       List<String> multipleChoices,
+                                       List<String> sentenceWords,
                                        boolean isFavorite,
                                        String pronAudio) {
         QuizQuestionDto dto = new QuizQuestionDto();
         dto.setExprId(exprId);
         dto.setExprType(exprType);
         dto.setQuestionText(questionText);
-        dto.setChoices(choices);
+        dto.setMultipleChoices(multipleChoices);
+        dto.setSentenceWords(sentenceWords);
         dto.setFavorite(isFavorite);
         dto.setPronAudio(pronAudio);
         return dto;

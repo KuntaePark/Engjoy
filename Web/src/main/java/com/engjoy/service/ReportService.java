@@ -1,5 +1,6 @@
 package com.engjoy.service;
 
+import com.engjoy.dto.IncorrectExprDto;
 import com.engjoy.dto.ReportDataDto;
 import com.engjoy.entity.Account;
 import com.engjoy.repository.ExprUsedRepository;
@@ -34,6 +35,7 @@ public class ReportService {
         Map<String, Integer> reviewMap = initializeDateMap(today);
         Map<String, Integer> incorrectMap = initializeDateMap(today);
 
+        System.out.println("▶ reviews raw data:");
         for (Object[] row : reviews) {
             String day = (String) row[0];
             reviewMap.put(day, ((Number) row[1]).intValue());
@@ -68,5 +70,13 @@ public class ReportService {
             cursor = cursor.plusDays(1);
         }
         return map;
+    }
+
+    public List<IncorrectExprDto> getWrongList(Long accountId){
+        Account account = new Account();
+        account.setId(accountId);
+        return incorrectExprRepository.findByAccount(account).stream()
+                .map(IncorrectExprDto::from)
+                .collect(Collectors.toList());
     }
 }

@@ -6,6 +6,7 @@ import com.engjoy.dto.IncorrectExprDto;
 import com.engjoy.dto.WordInfoDto;
 import com.engjoy.entity.Account;
 import com.engjoy.service.ExpressionService;
+import com.engjoy.service.QuizService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -59,7 +60,7 @@ public class ExpressionController {
             @RequestParam(name = "view", defaultValue = "study_log") String view,
             ExpressionSearchDto searchDto,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            // ⭐️ 기본값을 usedTime,desc로 변경
+            // 기본값을 usedTime,desc로 변경
             @RequestParam(value = "sort", defaultValue = "usedTime,desc") String sort,
             Principal principal) {
 
@@ -82,10 +83,10 @@ public class ExpressionController {
                 property = "expression.difficulty";
             }
 
-            // ⭐️ 2. 분리된 값으로 Sort 객체를 만듭니다.
+            // 2. 분리된 값으로 Sort 객체를 만듭니다.
             Sort requestedSort = Sort.by(direction, property);
 
-            // ⭐️ 3. 날짜 정렬 시에는 안정성을 위해 id를 2차 정렬 기준으로 추가합니다.
+            // 3. 날짜 정렬 시에는 안정성을 위해 id를 2차 정렬 기준으로 추가합니다.
             if ("usedTime".equals(property)) {
                 requestedSort = requestedSort.and(Sort.by(Sort.Direction.DESC, "id"));
             }
@@ -107,6 +108,15 @@ public class ExpressionController {
         List<ExpressionDto> recommendations = expressionService.getDailyRecommendations(testAccountId);
 
         return ResponseEntity.ok(recommendations);
+    }
+
+    @PostMapping("/recommendations/{expressionId}/hide")
+    public ResponseEntity<Void> hideRecommendation(@PathVariable Long expressionId, Principal principal) {
+        // 실제 로그인된 사용자 ID를 가져오는 로직
+        Long accountId = 1L; // 예시 ID
+
+        expressionService.hideRecommendationForToday(accountId, expressionId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/detail/{exprId}")

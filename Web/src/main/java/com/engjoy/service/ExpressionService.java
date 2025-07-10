@@ -145,17 +145,18 @@ public class ExpressionService {
     }
 
     // '오늘의 복습 추천' 단어/문장 조회
-    @Transactional
+    // QuizService.java
+
+    // '오늘의 복습 추천' 단어/문장 조회 (수정된 버전)
+    @Transactional(readOnly = true) // 데이터를 수정하지 않으므로 readOnly = true로 최적화
     public List<ExpressionDto> getDailyRecommendations(Long accountId) {
         Account account = new Account();
         account.setId(accountId);
         LocalDate today = LocalDate.now();
 
-        // 오답 횟수 기준 설정
         int minIncorrectCount = 5;
-        // 최대 5개의 결과를 가져오도록 Pageable 설정
         Pageable limit = PageRequest.of(0, 5);
-        // Repository 메서드 호출
+
         List<IncorrectExpr> recommendations = incorrectExprRepository.findTopWordDaily(
                 account,
                 minIncorrectCount,
@@ -163,10 +164,9 @@ public class ExpressionService {
                 limit
         );
 
-        // ✅ 2. [테스트용 코드] 만약 DB에서 가져온 결과가 비어있다면,
+        // [테스트용 코드]는 그대로 유지하셔도 좋습니다.
         if (recommendations.isEmpty()) {
             System.out.println("### DEBUG: No recommendations found in DB. Creating mock data. ###");
-            // 가짜 추천 단어 DTO 3개를 만들어서 반환합니다.
             return List.of(
                     new ExpressionDto("apple", "사과", "WORD", 1, false, false, null),
                     new ExpressionDto("banana", "바나나", "WORD", 2, false, false, null),
@@ -174,16 +174,41 @@ public class ExpressionService {
             );
         }
 
-        // 추천된 단어들의 '마지막 추천일'을 오늘로 업데이트
-        if (!recommendations.isEmpty()) {
-            recommendations.forEach(IncorrectExpr::updateLastRecommendedDate);
-            // incorrectExprRepository.saveAll(recommendations); // 필요 시 주석 해제
-        }
+        // ▼▼▼ [핵심] 날짜를 업데이트하는 로직을 여기서 완전히 제거합니다. ▼▼▼
+    /*
+    if (!recommendations.isEmpty()) {
+        recommendations.forEach(IncorrectExpr::updateLastRecommendedDate);
+    }
+    */
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
         // DTO 리스트로 변환하여 반환
         return recommendations.stream()
                 .map(IncorrectExpr::getExpression)
                 .map(expr -> ExpressionDto.from(expr, false, false, null))
                 .collect(Collectors.toList());
+    }
+
+    //'하루 보지 않기'를 처리하는 메서드
+
+
+    @Transactional
+    public void hideRecommendationForToday(Long accountId, Long expressionId) {
+        Account account = new Account();
+        account.setId(accountId);
+
+        Expression expression = new Expression();
+        expression.setId(expressionId);
+
+        // 오답 노트에서 해당 항목을 찾아서
+        IncorrectExpr incorrectExpr = incorrectExprRepository.findByAccountAndExpression(account, expression)
+                .orElseThrow(() -> new IllegalArgumentException("해당 오답 노트를 찾을 수 없습니다."));
+
+        // 마지막 추천일을 오늘 날짜로 업데이트합니다.
+        incorrectExpr.setLastRecommendedDate(LocalDate.now());
+        incorrectExprRepository.save(incorrectExpr); // 명시적으로 저장
+
+        System.out.printf("✅ [추천 숨김] 문제 ID: %d의 마지막 추천일이 오늘로 업데이트되었습니다.%n", expressionId);
     }
 
 

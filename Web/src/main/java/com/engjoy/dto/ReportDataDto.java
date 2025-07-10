@@ -9,14 +9,14 @@ import java.util.Map;
 @Getter @Setter
 public class ReportDataDto {
     private int weekReviews;
-    private int weekIncorrects;
+    private int weekIncorrect;
     private Map<String,Integer> dailyLearningCounts;
     private Map<String, Integer> dailyIncorrectCounts;
     private Map<String,Boolean> dailyDidQuizMap;
 
     public static ReportDataDto from(
             int weekReviews,
-            int weekIncorrects,
+            int weekIncorrect,
             Map<String, Integer> dailyReviewCounts,
             Map<String,Integer> dailyIncorrectCounts,
             Map<String,Boolean> dailyDidQuizMap
@@ -24,7 +24,7 @@ public class ReportDataDto {
     ) {
         ReportDataDto dto = new ReportDataDto();
         dto.setWeekReviews(weekReviews);
-        dto.setWeekIncorrects(weekIncorrects);
+        dto.setWeekIncorrect(weekIncorrect);
         dto.setDailyLearningCounts(dailyReviewCounts);
         dto.setDailyIncorrectCounts(dailyIncorrectCounts);
         dto.setDailyDidQuizMap(dailyDidQuizMap);

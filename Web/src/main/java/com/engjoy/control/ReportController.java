@@ -1,5 +1,6 @@
 package com.engjoy.control;
 
+import com.engjoy.dto.IncorrectExprDto;
 import com.engjoy.dto.ReportDataDto;
 import com.engjoy.entity.Account;
 import com.engjoy.service.ReportService;
@@ -8,9 +9,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.security.Principal;
 import java.time.Year;
+import java.util.List;
 
 @Controller
 @RequestMapping("/report")
@@ -35,5 +38,12 @@ public class ReportController {
         model.addAttribute("report",report);
         model.addAttribute("currentYear", currentYear);
         return "report";
+    }
+
+    @GetMapping("/wrong")
+    @ResponseBody
+    public List<IncorrectExprDto> getWrongAnswers(Principal principal){
+        Long testAccountId = 1L;
+        return reportService.getWrongList(testAccountId);
     }
 }

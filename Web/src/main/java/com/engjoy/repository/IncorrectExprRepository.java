@@ -51,4 +51,6 @@ public interface IncorrectExprRepository extends JpaRepository<IncorrectExpr,Lon
             @Param("end")       LocalDateTime end
     );
 
+    List<IncorrectExpr> findByAccount_IdAndExpression_IdIn(Long accountId, List<Long> expressionIds);
+
 }

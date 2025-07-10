@@ -30,7 +30,6 @@ public interface ExpressionRepository extends JpaRepository<Expression, Long> {
                     "AND (:exprType IS NULL OR e.exprType = :exprType) " +
                     "AND (:difficulty = 0 OR e.difficulty = :difficulty)")
     Page<Expression> findPageBySearchDto(
-            // ✅ accountId, startDate, endDate 파라미터가 필요 없어짐
             @Param("keyword") String keyword,
             @Param("exprType") EXPRTYPE exprType,
             @Param("difficulty") int difficulty,
@@ -44,8 +43,10 @@ public interface ExpressionRepository extends JpaRepository<Expression, Long> {
     @Query("SELECT e FROM Expression e LEFT JOIN FETCH e.wordInfo ORDER BY function('RAND')")
     List<Expression> findRandomExpressions(Pageable pageable);
 
-    @Query(value = "SELECT e.meaning FROM expression e WHERE e.expr_id NOT IN :excludeIds ORDER BY RAND() LIMIT :limit", nativeQuery = true)
-    List<String> findRandomMeanings(@Param("excludeIds") List<Long> excludeIds, @Param("limit") int limit);
+    @Query("SELECT e.meaning FROM Expression e " +
+            "WHERE e.exprType = 'WORD' " +
+            "AND e.id NOT IN :excludeIds ORDER BY RAND()")
+    List<String> findRandomMeanings(@Param("excludeIds") List<Long> excludeIds, Pageable pageable);
 
     @Query("select e.wordText from Expression e")
     List<String> findAllWordTexts();

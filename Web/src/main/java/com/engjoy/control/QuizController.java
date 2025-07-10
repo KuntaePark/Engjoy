@@ -9,6 +9,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
 import java.util.List;
@@ -35,15 +36,30 @@ public class QuizController {
     @PostMapping("/start")
     public String getQuiz(QuizSettingDto quizSettingDto,
                           Principal principal,
-                          HttpSession session){
+                          HttpSession session,
+                          RedirectAttributes redirectAttributes){
+        System.out.println("[Controller] 폼에서 받은 카테고리: " + quizSettingDto.getCategory());
 
 //        Account account = accountRepository.findByUsername(principal.getName())
 //                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         Long testAccountId = 1L;
 
         QuizPageDto quizState = quizService.createQuizQuestions(testAccountId,quizSettingDto);
+
+        if (quizState.getQuestions().isEmpty()) {
+            // 3. 문제가 없으면, 알림 메시지를 담아서 설정 페이지로 "돌려보냄"
+            redirectAttributes.addFlashAttribute("notifyMsg", quizState.getNotifyMsg());
+            return "redirect:/quiz/setting";
+        }
+
         session.setAttribute("QUIZ_STATE", quizState);
-        session.setAttribute("QUIZ_PAGE_STATE", quizState);
+
+        if (quizState.getNotifyMsg() != null ) {
+            redirectAttributes.addFlashAttribute("notifyMsg", quizState.getNotifyMsg());
+        }
+
+
+
         return "redirect:/quiz/take";
     }
 
@@ -54,7 +70,7 @@ public class QuizController {
             HttpSession session,Model model){
         QuizPageDto quizState = (QuizPageDto) session.getAttribute(QUIZ_STATE);
 
-        if(quizState == null ){
+        if (quizState == null || quizState.getQuestions().isEmpty()) {
             return "redirect:/quiz/setting";
         }
         List<QuizQuestionDto> allQuestions = quizState.getQuestions();
@@ -105,6 +121,7 @@ public class QuizController {
     @GetMapping("/exit")
     public String exitQuiz(HttpSession session){
         session.removeAttribute(QUIZ_STATE);
+        session.removeAttribute("QUIZ_GRADED_RESULTS");
         return "redirect:/expressions";
     }
 

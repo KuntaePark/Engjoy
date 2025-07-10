@@ -35,7 +35,8 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
     @Query("SELECT eu FROM ExprUsed eu JOIN FETCH eu.expression " +
             "WHERE eu.account = :account " +
             "AND eu.expression.exprType = :exprType " +
-            "AND eu.usedTime BETWEEN :start AND :end")
+            "AND (:start IS NULL OR eu.usedTime >= :start) " +
+            "AND (:end IS NULL OR eu.usedTime < :end)")
     Page<ExprUsed> findUsedByDateRangeFetchExpr(
             @Param("account") Account account,
             @Param("exprType") EXPRTYPE exprType,
@@ -116,4 +117,5 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
             @Param("end")       LocalDateTime end
     );
 
+    List<ExprUsed> findByAccount_IdAndExpression_IdIn(Long accountId, List<Long> expressionIds);
 }
