@@ -54,15 +54,18 @@ public class PlayerManager : MonoBehaviour
         foreach (var kv in serverPositions)
         {
             long playerId = kv.Key;
-            
-            Vector3 position = new Vector3(kv.Value.x, kv.Value.y, 0);
+            var data = kv.Value;
+            Vector3 position = new Vector3(data.x, data.y, 0);
             if (!players.ContainsKey(playerId))
             {
                 // Create a new player object if it doesn't exist
                 Debug.Log("Creating new player: " + playerId + " at position: " + position);
                 GameObject newPlayer = Instantiate(playerPrefab, position, Quaternion.identity);
                 PlayerController playerController = newPlayer.GetComponent<PlayerController>();
+                CharacterRenderer characterRenderer = newPlayer.GetComponentInChildren<CharacterRenderer>();
                 playerController.Id = playerId; // Set the player ID
+                characterRenderer.SetBody(data.bodyTypeIndex);
+                characterRenderer.SetWeapon(data.weaponTypeIndex);
                 players.Add(playerId, newPlayer);
             }
             else
@@ -74,8 +77,8 @@ public class PlayerManager : MonoBehaviour
 
                 float distanceSqr = (oldPos - (Vector2)targetPos).sqrMagnitude;
 
-                
-                Animator animator = players[playerId].GetComponentInChildren<Animator>();
+                PlayerController playerController = players[playerId].GetComponent<PlayerController>();
+                CharacterRenderer characterRenderer = playerController.characterRenderer;
                 bool isRunning = false;
 
                 if (distanceSqr > 0.001f)
@@ -100,12 +103,31 @@ public class PlayerManager : MonoBehaviour
                 }
 
                
-               if(animator != null && playerId != DataManager.Instance.id)
+                if (characterRenderer != null)
                 {
-                    animator.SetBool("isRunning", isRunning);
+                    if (playerId != DataManager.Instance.id)
+                    {
+                        characterRenderer.bodyAnimator.SetBool("isRunning", isRunning);
+                        if(data.isAttacking)
+                        {
+                            characterRenderer.weaponAnimator.SetTrigger("Swing");
+                        }
+                    }
+                    //커스터마이징 정보에 변경이 있을 경우 업데이트
+                    if (characterRenderer.bodyTypeIndex != data.bodyTypeIndex)
+                    {
+                        characterRenderer.SetBody(data.bodyTypeIndex);
+                    }
+                    if (characterRenderer.weaponTypeIndex != data.weaponTypeIndex)
+                    {
+                        characterRenderer.SetWeapon(data.weaponTypeIndex);
+                    }
+                }
+                else
+                {
+                    Debug.LogError("CharacterRenderer not found for player: " + playerId);
                 }
                 
-
             }
         }
     }

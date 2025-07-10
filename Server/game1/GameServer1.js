@@ -54,7 +54,8 @@ function createSession(id1, id2) {
 //수신 패킷 처리
 const PacketHandler = {
     'auth': (ws, payload) => {
-        const id = JSON.parse(payload);
+        const data = JSON.parse(payload);
+        const id = data.id;
         if(matchServerId === id) {
             console.log('match server connected.');
             ws['id'] = matchServerId;
@@ -69,7 +70,7 @@ const PacketHandler = {
             session.setPlayerConnection(id, ws);
         } else {
             console.log(`auth rejected of ${id}`);
-            ws.send('auth_reject','auth_unauthorized');
+            ws.send(makePacket('auth_reject','auth_unauthorized'));
             ws.close();
         }
     },

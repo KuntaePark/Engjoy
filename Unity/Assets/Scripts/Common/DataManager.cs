@@ -18,6 +18,7 @@ public class DataManager : MonoBehaviour
     private BrowserRequest browserRequest = new BrowserRequest();
 
     private UserGameData userGameData = null;
+
     //마지막 로드로부터 지난 시간
     private float lastLoadTime = 0.0f;
     private float loadInterval = 300.0f; // 5 minutes in seconds
@@ -56,14 +57,14 @@ public class DataManager : MonoBehaviour
         
     }
 
-
+    //유저 데이터 로드 후 callback 실행
     public IEnumerator getUserData(Action<UserGameData> OnResult)
     {
         if(Instance.userGameData == null || (Time.time - lastLoadTime) > loadInterval)
         {
             int requestId = Instance.browserRequest.StartRequest("GET", "/game/user/data");
             yield return StartCoroutine(Instance.browserRequest.waitForResponse(requestId, 5.0f, (response) => {
-                if(response != null)
+                if(response != null && response.status == 200)
                 {
                     Instance.userGameData = JsonConvert.DeserializeObject<UserGameData>(response.body);
                     Debug.Log($"User data loaded: {Instance.userGameData.nickname}");
@@ -80,10 +81,36 @@ public class DataManager : MonoBehaviour
         }
         else
         {
+            Debug.Log("Using cached user data.");
             OnResult?.Invoke(Instance.userGameData); // Return cached data if available
         }
     }
 
+    //서버에 커스터마이징 수정 정보 저장 요청. 성공 시 해당 값으로 UserGameData 업데이트
+    public IEnumerator saveCustomization(int bodyTypeIndex, int weaponTypeIndex, Action<UserGameData> OnResult)
+    {
+        var customizationData = new
+        {
+            bodyTypeIndex = bodyTypeIndex,
+            weaponTypeIndex = weaponTypeIndex
+        };
+        int requestId = Instance.browserRequest.StartRequest("POST", "/game/user/customization", JsonConvert.SerializeObject(customizationData));
+        yield return StartCoroutine(Instance.browserRequest.waitForResponse(requestId, 5.0f, (response) => {
+            if(response != null && response.status == 200)
+            {
+                Debug.Log("Customization saved successfully.");
+                Instance.userGameData = JsonConvert.DeserializeObject<UserGameData>(response.body);
+                Instance.lastLoadTime = Time.time; // Update last load time
+                OnResult?.Invoke(Instance.userGameData); // Return updated user data
+
+            }
+            else
+            {
+                Debug.LogError("Failed to save customization.");
+                OnResult?.Invoke(null); // Return null if failed
+            }
+        }));
+    }
 
     //load inventory data of user
     public void loadInventory()

@@ -32,7 +32,7 @@ public class GameClient1 : WebSocketClient
 
     public override void handleOpen()
     {
-        Send("auth",JsonConvert.SerializeObject(DataManager.Instance.id));
+        Send("auth",JsonConvert.SerializeObject(new { id = DataManager.Instance.id }));
     }
 
     public override void handlePacket(string type, string payload)
@@ -54,6 +54,10 @@ public class GameClient1 : WebSocketClient
                 Debug.Log("Game ended: " + payload);
                 int winnerIdx = JsonConvert.DeserializeObject<int>(payload);
                 game1Manager.endGame(winnerIdx);
+                break;
+            case "auth_unauthorized":
+                //인증 실패 메시지를 받았을 때
+                Debug.LogError("Authentication failed. Please check your credentials.");
                 break;
             default:
                 Debug.LogWarning("Unknown packet type: " + type);

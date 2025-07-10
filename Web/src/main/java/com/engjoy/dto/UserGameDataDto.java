@@ -12,6 +12,8 @@ public class UserGameDataDto {
     private int gold;
     private Long ranking;
     private float rankingPercent;
+    private int bodyTypeIndex;
+    private int weaponTypeIndex;
 
     public static UserGameDataDto from(UserGameData userGameData) {
         UserGameDataDto dto = new UserGameDataDto();
@@ -21,6 +23,8 @@ public class UserGameDataDto {
         dto.gold = userGameData.getGold();
         dto.ranking = userGameData.getRanking();
         dto.rankingPercent = userGameData.getRankingPercent();
+        dto.bodyTypeIndex = userGameData.getBodyTypeIndex();
+        dto.weaponTypeIndex = userGameData.getWeaponTypeIndex();
 
         return dto;
 

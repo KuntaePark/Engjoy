@@ -16,7 +16,7 @@ class Matcher {
 
         game1ws.on('open',() => {
             console.log('connection to game 1 server successful.');
-            game1ws.send(makePacket('auth',matchServerId));
+            game1ws.send(makePacket('auth',{id: matchServerId}));
         });
 
         game1ws.on('message',(message) => {

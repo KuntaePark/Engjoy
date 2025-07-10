@@ -9,7 +9,7 @@ using HybridWebSocket;
 
 public class LobbyClient : WebSocketClient
 {
-    private string lobbyServerUrl = "ws://localhost:7777"; // URL of the lobby server
+    private string lobbyServerUrl = "ws://192.168.0.51:7777"; // URL of the lobby server
 
     public PlayerManager playerManager;
 
@@ -21,7 +21,7 @@ public class LobbyClient : WebSocketClient
     public override void handleOpen()
     {
         //send authentication information
-        string message = JsonConvert.SerializeObject(DataManager.Instance.id);
+        string message = JsonConvert.SerializeObject(new { id = DataManager.Instance.id });
         Send("auth", message);
     }
 
@@ -53,7 +53,7 @@ public class LobbyClient : WebSocketClient
                     Debug.LogError("PlayerManager is not initialized.");
                     return;
                 }
-                playerManager.exitPlayer(long.Parse(payload));
+                playerManager.exitPlayer(long.Parse(JsonConvert.DeserializeObject<string>(payload)));
                 break;
             default:
                 Debug.LogWarning("Unknown packet type: " + type);

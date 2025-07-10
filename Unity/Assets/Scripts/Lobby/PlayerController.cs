@@ -8,18 +8,7 @@ public class PlayerController : MonoBehaviour
 {
     public LobbyClient lobbyClient;
 
-    [SerializeField]
-    private GameObject weaponPlacer;
-    private Animator weaponAnimator;
-
-    //임시로 직접 지정
-    [SerializeField]
-    private GameObject weaponPrefab;
-
-    private GameObject weaponObject;
-
-    //임시로 위치 강제 지정
-    Vector3 weaponPosition = new Vector3(0.407f, 0.3f, 0.0f);
+    public CharacterRenderer characterRenderer;
 
     private long id; 
     public long Id { get { return id; } set { id = value; } }
@@ -40,19 +29,30 @@ public class PlayerController : MonoBehaviour
 
     public string curState = "move";
 
-    [SerializeField]
-    private Animator playerAnimator;
-    private Rigidbody2D rb;
-
     // Start is called before the first frame update
     void Start()
     {
         lobbyClient = GameObject.Find("LobbyClient").GetComponent<LobbyClient>();
         moveTime = UnityEngine.Random.Range(0.1f, maxMoveTime);
-        weaponObject = Instantiate(weaponPrefab, weaponPlacer.transform.position, Quaternion.identity);
-        weaponObject.transform.SetParent(weaponPlacer.transform, false);
-        weaponObject.transform.localPosition = weaponPosition;
-        weaponAnimator = weaponObject.GetComponent<Animator>();
+        if (Id == DataManager.Instance.id)
+        {
+            //해당 플레이어의 정보 요청
+            StartCoroutine(DataManager.Instance.getUserData((UserGameData data) =>
+            {
+                if (data != null)
+                {
+                    Debug.Log("loading mine.");
+                    //유저 데이터에서 바디 타입과 무기 타입을 가져옴
+                    characterRenderer.SetBody(data.bodyTypeIndex);
+                    characterRenderer.SetWeapon(data.weaponTypeIndex);
+                }
+                else
+                {
+                    Debug.LogError("Failed to load user data for customization.");
+                }
+            }));
+        }
+
     }
 
     // Update is called once per frame
@@ -70,7 +70,8 @@ public class PlayerController : MonoBehaviour
             {
                 //interact request
                 Debug.Log("interact");
-                weaponAnimator.SetTrigger("Swing");
+                characterRenderer.weaponAnimator.SetTrigger("Swing");
+                lobbyClient.Send("input_interact", "");
             }
 
             if(!isTestDummy)
@@ -96,11 +97,11 @@ public class PlayerController : MonoBehaviour
 
             if (axisH != 0.0f || axisV != 0.0f)
             {
-                playerAnimator.SetBool("isRunning", true);
+                characterRenderer.bodyAnimator.SetBool("isRunning", true);
             }
             else
             {
-                playerAnimator.SetBool("isRunning", false);
+                characterRenderer.bodyAnimator.SetBool("isRunning", false);
             }
         }
 

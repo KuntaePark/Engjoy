@@ -12,7 +12,7 @@ public class WebSocketPacket {
     private String type;
     private String payload;
 
-    public String toJson(){
+    public String toJson() {
         ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.writeValueAsString(this);

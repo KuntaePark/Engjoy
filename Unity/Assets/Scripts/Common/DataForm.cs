@@ -16,14 +16,18 @@ namespace DataForm
     }
 
 
+    //로비에서 플레이어의 상태를 나타내는 데이터
     [System.Serializable]
     public class PlayerStateData
     {
         public float x;
         public float y;
 
-        public bool isRunning = false;
         public bool isAttacking = false;
+
+        public int bodyTypeIndex = 0; //몸통 타입 인덱스
+        public int weaponTypeIndex = 0; //무기 타입 인덱스
+
 
         public PlayerStateData(float x, float y)
         {
@@ -90,6 +94,11 @@ namespace DataForm
         public int gold;
         public long ranking;
         public float rankingPercent;
+        
+        //커스터마이징 정보
+        public int bodyTypeIndex;
+        public int weaponTypeIndex;
+
     }
 }
 

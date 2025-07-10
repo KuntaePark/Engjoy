@@ -51,9 +51,12 @@ wss.on('connection', function connection(ws) {
 const PacketHandler = {
     'auth': (ws, payload) => {
         /*
-            {type: 'auth', payload: [id]
+            {type: 'auth', payload: {id: [id]}
          */
-        const id = payload;
+        const authData = JSON.parse(payload);
+        console.log(authData);
+        const id = authData.id;
+        console.log(`id type ${typeof id}`)
         if(webServerId === id) {
             //웹 서버 인증
             ws.send(makePacket('auth_success_server',''));
@@ -79,8 +82,9 @@ const PacketHandler = {
     'auth_allow': (ws, payload) => {
         if(ws['id'] !== webServerId) return; //웹 서버가 아닐 경우 차단
         else {
+            const data = JSON.parse(payload);
             console.log(`user with id ${payload} allowed to match.`)
-            authByWebServer.add(payload); //해당 아이디를 허가 명단에 추가
+            authByWebServer.add(data.id); //해당 아이디를 허가 명단에 추가
         }
     },
     'match_cancel' : (ws, _) => {

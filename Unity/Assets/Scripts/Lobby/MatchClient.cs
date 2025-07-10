@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 public class MatchClient : WebSocketClient
 {
-    private const string matchServerUrl = "ws://localhost:7779";
+    private const string matchServerUrl = "ws://192.168.0.51:7779";
 
     public long id { get; set; }
     // Start is called before the first frame update
@@ -19,7 +19,7 @@ public class MatchClient : WebSocketClient
     public override void handleOpen()
     {
         //인증 정보 전송
-        string message = JsonConvert.SerializeObject(DataManager.Instance.id);
+        string message = JsonConvert.SerializeObject(new { id = DataManager.Instance.id });
         Send("auth", message);
     }
 

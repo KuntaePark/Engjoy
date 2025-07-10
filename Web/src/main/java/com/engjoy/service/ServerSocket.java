@@ -1,11 +1,14 @@
 package com.engjoy.service;
 
 import com.engjoy.dto.WebSocketPacket;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -32,10 +35,14 @@ public class ServerSocket extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         System.out.println("WebSocket connection established.");
-        WebSocketPacket webSocketPacket = new WebSocketPacket("auth","WEBSERVER");
-        String packet = webSocketPacket.toJson();
-        if(packet != null) {
-            this.send(packet);
+        HashMap<String, String> obj = new HashMap<>();
+        obj.put("id", "WEBSERVER");
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String payloadJson = mapper.writeValueAsString(obj);
+            sendPacket("auth", payloadJson);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -84,12 +91,12 @@ public class ServerSocket extends WebSocketClient {
         }).start();
     }
 
-    public void allowPlayer(Long playerId) {
-        WebSocketPacket wsPacket = new WebSocketPacket("auth_allow", playerId.toString());
+    public void sendPacket(String type, String payloadJson) {
+        WebSocketPacket wsPacket = new WebSocketPacket(type, payloadJson);
         if (this.isOpen()) {
             this.send(wsPacket.toJson());
         } else {
-            System.err.println("WebSocket not connected. Match info not sent.");
+            System.err.println("WebSocket not connected. Info not sent.");
         }
     }
 }
