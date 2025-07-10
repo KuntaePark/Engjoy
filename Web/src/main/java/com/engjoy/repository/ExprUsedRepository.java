@@ -98,5 +98,22 @@ public interface ExprUsedRepository extends JpaRepository<ExprUsed,Long> {
     @Query("SELECT eu FROM ExprUsed eu WHERE eu.account = :account")
     Page<ExprUsed> findByAccountOrderByUsedTime(@Param("account") Account account, Pageable pageable);
 
+    @Query(
+            value = """
+        SELECT DATE_FORMAT(e.used_time, '%Y-%m-%d') AS day,
+               COUNT(*) AS cnt
+          FROM expr_used e
+         WHERE e.account_id = :accountId
+           AND e.used_time BETWEEN :start AND :end
+         GROUP BY day
+         ORDER BY day
+      """,
+            nativeQuery = true
+    )
+    List<Object[]> countPerDayNative(
+            @Param("accountId") Long accountId,
+            @Param("start")     LocalDateTime start,
+            @Param("end")       LocalDateTime end
+    );
 
 }

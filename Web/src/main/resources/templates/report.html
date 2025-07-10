@@ -8,8 +8,6 @@
 <th:block layout:fragment="css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap/dist/cal-heatmap.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
     <style>
         /* 연도 세로 정렬 */
         .year-labels {
@@ -42,26 +40,40 @@
         #cal-heatmap .ch-month, #cal-heatmap .ch-day {
             font-size: 10px;
         }
+
+        /* Tooltip 스타일 (선택 사항) */
+        .ch-tooltip {
+            padding: 4px 8px;
+            background-color: #333;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        #cal-heatmap rect.ch-subdomain-bg[data-date$="-01"] {
+          stroke: #4b5563 !important;
+          stroke-width: 1px !important;
+        }
+
+
     </style>
 </th:block>
 <th:block layout:fragment="script">
-    <script type="text/javascript" src="https://d3js.org/d3.v7.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/cal-heatmap/dist/cal-heatmap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/wa0x6e/cal-heatmap/dist/cal-heatmap.min.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://cdn.jsdelivr.net/gh/wa0x6e/cal-heatmap/dist/plugins/Tooltip.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', () => {
             const reportData = /*[[${report}]]*/ null;
 
             if (reportData && reportData.dailyLearningCounts) {
-                const quizMap = reportData.dailyDidQuizMap || {};
-
                 const heatmapData = Object.entries(reportData.dailyLearningCounts).map(([dateStr, count]) => {
-                    const didQuiz = quizMap[dateStr];
-                    const date = new Date(dateStr);
-                    const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000);
                     return {
-                        date: utcTimestamp,
-                        value: didQuiz ? 1 : 0
+                        date: dateStr,
+                        value: count > 0 ? 1 : 0
                     };
                 });
 
@@ -84,57 +96,51 @@
                     domain: { type: 'month' },
                     subDomain: { type: 'ghDay', radius: 2, width: 11, height: 11 },
                     itemSelector: '#cal-heatmap'
-                });
-
-                document.getElementById('weekly-review-count').innerText = reportData.weekReviews;
-                document.getElementById('incorrect-count').innerText = reportData.weekIncorrects;
+                },
+                [
+                    [Tooltip, {
+                        text: function (date, value, dayjsDate) {
+                            return dayjsDate.format('YYYY-MM-DD');
+                        }
+                    }]
+                ]);
             }
+
         });
     </script>
 </th:block>
-
-
 
 <th:block layout:fragment="main">
     <div class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-4">📘 학습 리포트</h1>
 
         <div class="grid grid-cols-3 gap-4 mb-6">
-            <div id="weekly-review-count" class="p-4 bg-blue-100 rounded">
-                주간 복습 수<br><strong th:text="${report.weekReviews}">0</strong>
+            <div class="p-4 bg-blue-100 rounded">
+                주간 복습 수<br><strong id="weekly-review-count" th:text="${report.weekReviews}">0</strong>
             </div>
-            <div id="incorrect-count" class="p-4 bg-red-100 rounded">
-                오답 수<br><strong th:text="${report.weekIncorrects}">0</strong>
+            <div class="p-4 bg-red-100 rounded">
+                오답 수<br><strong id="incorrect-count" th:text="${report.weekIncorrects}">0</strong>
             </div>
         </div>
 
         <section class="mt-10">
             <h2 class="text-xl font-semibold mb-4">📅 일별 학습 히트맵</h2>
 
-                <div style="display: flex; align-items: flex-start;">
-                    <!-- 연도 세로 표시 -->
-                    <div style="writing-mode: vertical-rl;transform: rotate(180deg);font-size: 30px;line-height: 11px; height: 77px; /* 11px * 7줄 */
-                    color: #4b5563; margin-right: 20px; user-select: none;">
-                        <span th:text="${currentYear}"></span>
-                    </div>
-
-                    <div>
-                        <!-- 요일 표시 -->
-                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 77px; /* 11px * 7줄 */
-                            font-size: 9px; color: #4b5563; margin-right: 8px; width: 14px; user-select: none; flex-shrink: 0; ">
-                            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
-                        </div>
-
-
-                    </div>
-
-                    <!-- 캘린더 히트맵 -->
-                    <div>
-                        <div id="cal-heatmap" style="margin-left:2px; flex-grow:1;"></div>
-                    </div>
-
+            <div style="display: flex; align-items: flex-start;">
+                <div style="writing-mode: vertical-rl;transform: rotate(180deg);font-size: 30px;line-height: 11px; height: 77px; /* 11px * 7줄 */
+                color: #4b5563; margin-right: 20px; user-select: none;">
+                    <span th:text="${#dates.format(new java.util.Date(), 'yyyy')}"></span>
                 </div>
 
+                <div>
+                    <div style="display: flex; flex-direction: column; justify-content: space-between; height: 77px; /* 11px * 7줄 */
+                        font-size: 9px; color: #4b5563; margin-right: 8px; width: 14px; user-select: none; flex-shrink: 0; ">
+                        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                    </div>
+                </div>
+
+                <div id="cal-heatmap" style="margin-left:2px; flex-grow:1;"></div>
+            </div>
         </section>
     </div>
 </th:block>

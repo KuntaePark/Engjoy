@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,47 +21,52 @@ public class ReportService {
     private final IncorrectExprRepository incorrectExprRepository;
 
     public ReportDataDto getReportData(Long accountId){
-        Account account = new Account();
-        account.setId(accountId);
 
         LocalDate today = LocalDate.now();
-        LocalDate weekStart = today.minusDays(6);
+        LocalDateTime start = today.minusDays(364).atStartOfDay();
+        LocalDateTime end   = today.plusDays(1).atStartOfDay();
 
-        // 주간 데이터
-        Long weekReviews = exprUsedRepository.countUsedByDateRange(
-                account, weekStart.atStartOfDay(), today.plusDays(1).atStartOfDay()
-        );
+        // 한 번에 날짜별 사용 횟수, 오답 횟수 조회
+        List<Object[]> reviews   = exprUsedRepository.countPerDayNative(accountId, start, end);
+        List<Object[]> incorrect = incorrectExprRepository.countIncorrectPerDayNative(accountId, start, end);
 
-        // 주간 오답 수
-        Long weekIncorrectCount = incorrectExprRepository.countByAccountAndUsedTimeBetween(
-                account,weekStart.atStartOfDay(), today.plusDays(1).atStartOfDay()
-        );
+        // 결과를 Map으로 변환
+        Map<String, Integer> reviewMap = initializeDateMap(today);
+        Map<String, Integer> incorrectMap = initializeDateMap(today);
 
-        // 일별 학습 수 + 오답 수
-        Map<String, Integer> dailyReviewMap = new LinkedHashMap<>();
-        Map<String, Integer> dailyIncorrectMap = new LinkedHashMap<>();
-        Map<String, Boolean> dailyDidQuizMap = new LinkedHashMap<>(); // 복습 여부
-
-        for (int i = 29; i >= 0; i--) {
-            LocalDate day = today.minusDays(i);
-            LocalDateTime start = day.atStartOfDay();
-            LocalDateTime end = day.plusDays(1).atStartOfDay();
-            String key = day.toString();
-
-            Long dailyReview = exprUsedRepository.countUsedByDateRange(account, start, end);
-            Long dailyIncorrect = incorrectExprRepository.countByAccountAndUsedTimeBetween(account, start, end);
-
-            dailyReviewMap.put(key, dailyReview != null ? dailyReview.intValue() : 0);
-            dailyIncorrectMap.put(key, dailyIncorrect != null ? dailyIncorrect.intValue() : 0);
-            dailyDidQuizMap.put(key, dailyIncorrect > 0);  // 복습한 날이면 true
+        for (Object[] row : reviews) {
+            String day = (String) row[0];
+            reviewMap.put(day, ((Number) row[1]).intValue());
+        }
+        for (Object[] row : incorrect) {
+            String day = (String) row[0];
+            incorrectMap.put(day, ((Number) row[1]).intValue());
         }
 
-        return ReportDataDto.from(
-                weekReviews != null ? weekReviews.intValue() : 0,
-                weekIncorrectCount != null ? weekIncorrectCount.intValue() : 0,
-                dailyReviewMap,
-                dailyIncorrectMap,
-                dailyDidQuizMap
-        );
+
+        // 주간 합계
+        long weekStartIndex = 364 - 6;
+        int weekReviews = reviewMap.values().stream().skip(weekStartIndex).mapToInt(Integer::intValue).sum();
+        int weekIncorrect = incorrectMap.values().stream().skip(weekStartIndex).mapToInt(Integer::intValue).sum();
+
+        // 복습 여부 맵
+        Map<String, Boolean> didQuizMap = reviewMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue() > 0,
+                        (a,b)->a, LinkedHashMap::new
+                ));
+
+        return ReportDataDto.from(weekReviews, weekIncorrect, reviewMap, incorrectMap, didQuizMap);
+    }
+
+    private Map<String, Integer> initializeDateMap(LocalDate today) {
+        Map<String, Integer> map = new LinkedHashMap<>();
+        LocalDate cursor = today.minusDays(364);
+        while (!cursor.isAfter(today)) {
+            map.put(cursor.toString(), 0);
+            cursor = cursor.plusDays(1);
+        }
+        return map;
     }
 }

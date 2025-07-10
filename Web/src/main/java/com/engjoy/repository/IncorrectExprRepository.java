@@ -32,4 +32,23 @@ public interface IncorrectExprRepository extends JpaRepository<IncorrectExpr,Lon
             @Param("minCount") int minCount,
             @Param("today") LocalDate today,
             Pageable pageable);
+
+    @Query(
+            value = """
+        SELECT DATE_FORMAT(i.used_time, '%Y-%m-%d') AS day,
+               COUNT(*) AS cnt
+          FROM incorrect_expr i
+         WHERE i.account_id = :accountId
+           AND i.used_time BETWEEN :start AND :end
+         GROUP BY day
+         ORDER BY day
+      """,
+            nativeQuery = true
+    )
+    List<Object[]> countIncorrectPerDayNative(
+            @Param("accountId") Long accountId,
+            @Param("start")     LocalDateTime start,
+            @Param("end")       LocalDateTime end
+    );
+
 }
