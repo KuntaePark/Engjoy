@@ -4,19 +4,48 @@ const { Monster, MonsterType } = require("../packet/monster.js");
 const { generateId } = require("./utils.js");
 const { getRandomSentence, getRandomWords } = require("../db/dbUtils.js");
 
+const fs = require("fs");
+const path = require("path");
+
 //랜덤 정수 생성 헬퍼
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-async function setupLevel(gameState, gameLevel = 10) {
+// ================= ▼▼▼ 맵 세팅 ▼▼▼ =================
+function loadMap(gameState, mapName) {
+  try {
+    const mapPath = path.join(__dirname, "..", "maps", `${mapName}.json`);
+    const mapFileContent = fs.readFileSync(mapPath, "utf8");
+    const mapData = JSON.parse(mapFileContent);
+
+    gameState.colliders = new Set(
+      mapData.colliders.map((c) => `${c.x}, ${c.y}`)
+    );
+
+    console.log(
+      `[Map] Successfully loaded map: ${mapName}. ${gameState.colliders.size} colliders registered.`
+    );
+  } catch (error) {
+    console.error(
+      "[Map] Failed to load map data. Make sure 'maps/map1.json' exists."
+    );
+    gameState.colliders = new Set();
+  }
+}
+// ================= ▲▲▲ 맵 세팅 ▲▲▲ =================
+
+// ================= ▼▼▼ 레벨 세팅 ▼▼▼ =================
+async function setupLevel(gameState, gameLevel = 1) {
   console.log(`LevelManager: Setting up level for gameLevel ${gameLevel}...`);
   gameState.keywords = {};
   gameState.exit = null;
 
   gameState.monsters = {};
 
-  // ================= ▼▼▼ 키워드 세팅 ▼▼▼ =================
+  const mapName = "map1";
+  loadMap(gameState, mapName);
+
   //db에서 영문장 가져오기
   const sentenceData = await getRandomSentence(gameLevel);
 
@@ -36,7 +65,7 @@ async function setupLevel(gameState, gameLevel = 10) {
 
   //영문장 키워드 수에 따라 빈칸 개수 결정
   let answerCount;
-  if (totalWordCount <= 4) {
+  if (totalWordCount <= 4 && gameLevel <= 3) {
     answerCount = 1;
   } else if (totalWordCount <= 9) {
     answerCount = 2;
@@ -127,18 +156,22 @@ async function setupLevel(gameState, gameLevel = 10) {
     gameState.monsters[monsterId] = newMonster;
   }
 
+  //출구 위치도 랜덤으로 생성해주기
+
   //출구 생성 및 gameState에 추가
   const newExit = new Exit(
     7.5, //x
     7.5, //y
     sentenceData.word_text, //원본 문장 전달
     answerTexts, //정답 단어들의 배열
-    sentenceData.meaning
+    sentenceData.meaning, //해설문
+    sentenceData.expr_id, //문장ID
+    sentenceData.difficulty //문장 난이도
   );
   gameState.exit = newExit;
-  // ================= ▲▲▲ 키워드 세팅 ▲▲▲ =================
 
   console.log("LevelManager: Level setup complete.");
 }
+// ================= ▲▲▲ 레벨 세팅 ▲▲▲ =================
 
-module.exports = { setupLevel };
+module.exports = { setupLevel, loadMap };

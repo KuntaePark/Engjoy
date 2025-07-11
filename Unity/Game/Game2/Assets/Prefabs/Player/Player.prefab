@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6463454590710239065}
   - component: {fileID: 3747929283075826896}
+  - component: {fileID: 3704698513230740764}
   m_Layer: 0
   m_Name: PlayerSprite
   m_TagString: Untagged
@@ -73,7 +74,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 10
-  m_Sprite: {fileID: 126561834, guid: 6bbe56c3115ce534e92bf0708159a877, type: 3}
+  m_Sprite: {fileID: 481574946, guid: db72028e07c7c8d4a9f58d6885627007, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -84,6 +85,27 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &3704698513230740764
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 595944263387187546}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 8ede72fe79a7cc3499daabe3ce12f4c3, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &5372353706082603807
 GameObject:
   m_ObjectHideFlags: 0
@@ -227,6 +249,8 @@ MonoBehaviour:
   target: {fileID: 3883149828471710205}
   smoothSpeed: 0.125
   offset: {x: 0, y: 0, z: -10}
+  zoomSize: 4
+  zoomSpeed: 1
 --- !u!1 &6375736174452686202
 GameObject:
   m_ObjectHideFlags: 0
@@ -273,7 +297,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95c96222f4708d5479fa482d5e8920cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerCamera: {fileID: 0}
+  downedSprite: {fileID: -497850894, guid: db72028e07c7c8d4a9f58d6885627007, type: 3}
+  playerCamera: {fileID: 1099242888068429577}
   audioListener: {fileID: 0}
   maxHP: 3
   currentHP: 0
+  ani: {fileID: 3704698513230740764}

@@ -13,10 +13,15 @@ class Monster {
     this.keywordData = keywordData; //키워드 정보 직접 저장
     this.isActive = false;
 
-    //로밍 상태를 위한 변수 추가
-    this.roamingTargetX = null; //로밍 X좌표
-    this.roamingTargetY = null; //로밍 Y좌표
-    this.roamTimer = 0; //로밍 쿨타임
+    this.hitStunTimer = 0; //피격 시 경직 타이머
+
+    if (this.type === MonsterType.RUNNER) {
+      this.roamingTargetX = null; //로밍 X좌표
+      this.roamingTargetY = null; //로밍 Y좌표
+      this.hitFleeBoostTimer = 0; // 피격 후 이속 부스트 타이머
+    } else if (this.type === MonsterType.CHASER) {
+      this.teleportTime = 2;
+    }
   }
 
   toPacket() {

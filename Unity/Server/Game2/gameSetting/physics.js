@@ -12,7 +12,7 @@ class Vector2 {
 //collide circle size
 const colliderRadius = 0.25;
 
-const keywordInteractionRadius = 1.0;
+const keywordInteractionRadius = 2.0;
 
 const interactionDistSq = (colliderRadius + keywordInteractionRadius) ** 2;
 

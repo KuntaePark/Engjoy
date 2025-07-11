@@ -16,13 +16,57 @@ class GameState {
     this.keywords = {};
     this.monsters = {};
     this.exit = null; //출구는 단일객체로 관리
+
+    this.gameLevel = 1;
+    this.timeLimit = 61;
+    this.isGameOver = false;
+
+    this.score = 0;
+    this.gold = 0;
+    this.completedSentences = []; //text, meaning, difficulty, id 등을 담을 것.
+
+    this.status = "MATCHINGROOM"; //"MATCHINGROOM", "PLAY"
+    this.countdown = 60; //준비완료 상태
   } //새 플레이어 추가
 
   // ================= ▼▼▼ 플레이어 생성 & 삭제 ▼▼▼ =================
   addPlayer() {
     const idSet = new Set(Object.keys(this.players));
     const newPlayerId = generateId(idSet);
-    const player = new Player(newPlayerId);
+
+    const spawnArea = { minX: 1.0, maxX: 4.0, minY: 8.0, maxY: 11.0 };
+
+    let spawnX = 2.0; //기본 스폰 위치
+    let spawnY = 9.0;
+    let isSpawnPointSafe = false;
+    let attempts = 0;
+    const maxAttempts = 50;
+
+    while (attempts < maxAttempts && !isSpawnPointSafe) {
+      const randomX =
+        Math.random() * (spawnArea.maxX - spawnArea.minX) + spawnArea.minX;
+      const randomY =
+        Math.random() * (spawnArea.maxY - spawnArea.minY) + spawnArea.minY;
+
+      const tileX = Math.floor(randomX);
+      const tileY = Math.floor(randomY);
+
+      if (!this.colliders.has(`${tileX},${tileY}`)) {
+        spawnX = randomX;
+        spawnY = randomY;
+        isSpawnPointSafe = true; // 안전한 위치를 찾았으므로 루프를 종료합니다.
+      }
+      attempts++;
+    }
+
+    if (!isSpawnPointSafe) {
+      console.warn(
+        `Could not find a safe spawn point in ${maxAttempts} attempts. Using default spawn point.`
+      );
+    }
+
+    //Player 객체 생성 시 ID만 전달
+    const player = new Player(newPlayerId, spawnX, spawnY);
 
     //우선은 inventory에 테스트용으로 최대 세팅
     player.inventory = {
@@ -31,12 +75,7 @@ class GameState {
       shield: 1,
     };
 
-    this.players[newPlayerId] = player; //첫 플레이어 접속 시 키워드 스폰
-
-    //첫 플레이어가 접속하면 게임 레벨 설정 (이후 매칭 및 대기방 구현 시 변경)
-    if (Object.keys(this.players).length === 1) {
-      setupLevel(this, 1);
-    }
+    this.players[newPlayerId] = player;
 
     console.log(`Player ${newPlayerId} connected`);
     return player;
@@ -44,17 +83,43 @@ class GameState {
 
   playerInteracts(playerId) {
     const player = this.players[playerId];
-    if (!player) return;
+    if (!player || player.isDown || this.isGameOver) return;
 
-    //출구와 상호작용 가능상 상태인 경우 (키워드 홀딩 & 출구 근처)
-    if (player.canInteractWithExit && player.holdingKeywordId) {
-      this.playerSubmitsKeywordToExit(playerId);
+    //[1순위] 다른 플레이어 부활시키기
+    if (player.revivablePlayerId) {
+      //부활은 상호작용키를 누르는 것으로 처리. 다른 동작 블락.
+      return;
     }
-    //키워드를 들 수 있는 상태인 경우 (키워드 홀딩X & 키워드 근처)
+
+    //[2순위] 출구와 상호작용 가능상 상태인 경우 (키워드 홀딩 & 출구 근처)
+    if (player.holdingKeywordId && player.canInteractWithExit && this.exit) {
+      this.playerSubmitsKeywordToExit(playerId);
+      return;
+    }
+
+    //[3순위] 키워드를 들 수 있는 상태인 경우 (키워드 홀딩X & 키워드 근처)
     else if (!player.holdingKeywordId && player.interactableKeywordId) {
       this.playerHoldingKeywords(playerId);
+      return;
     }
-    //(키워드 들고 있지만 출구 근처가 아니라면 => do nothing)
+
+    //[빈손으로 열린 출구와 상호작용]
+    if (
+      !player.holdingKeywordId &&
+      player.canInteractWithExit &&
+      this.exit &&
+      this.exit.isOpen
+    ) {
+      player.isEscaped = true;
+      console.log(`[Level] Player ${playerId} has escaped.`);
+      // 탈출 시 들고 있던 키워드가 있다면 제거 (이 경우는 없지만 안전장치)
+      if (player.holdingKeywordId) {
+        delete this.keywords[player.holdingKeywordId];
+        player.holdingKeywordId = null;
+      }
+      this.checkForLevelUp();
+      return; // 행동 완료
+    }
   }
 
   removePlayer(playerId) {
@@ -85,14 +150,39 @@ class GameState {
     }
   }
   // ================= ▲▲▲ 플레이어 생성 & 삭제 ▲▲▲ =================
+  // ================= ▼▼▼ 플레이어 준비완료 ▼▼▼ =================
+  setPlayerReady(playerId, isReady) {
+    const player = this.players[playerId];
+    if (!player) return;
 
+    player.isReady = isReady;
+
+    const playersArray = Object.values(this.players);
+    //모든 플레이어가 준비 완료 상태일 시
+    const allReady = playersArray.every((p) => p.isReady);
+
+    if (allReady) {
+      if (this.countdown > 5) {
+        this.countdown = 5;
+        console.log(`All players are ready. Countdown started.`);
+      }
+    }
+  }
+  // ================= ▲▲▲ 플레이어 준비완료 ▲▲▲ =================
   // ================= ▼▼▼ 플레이어 이동 ▼▼▼ =================
   setPlayerInput(playerId, input) {
-    if (this.players[playerId]) {
-      this.players[playerId].inputH = input.x;
+    const player = this.players[playerId];
+    if (!player || player.isDown || this.isGameOver) return;
 
-      this.players[playerId].inputV = input.y;
-    }
+    this.players[playerId].inputH = input.x;
+    this.players[playerId].inputV = input.y;
+
+    player.isHoldingInteract = input.interactHold;
+
+    //디버깅용 콘솔 로그
+    // if (player.isHoldingInteract) {
+    //   console.log(`[Server] ${playerId} is pressing Space Key...`);
+    // }
   }
   // ================= ▲▲▲ 플레이어 이동 ▲▲▲ =================
 
@@ -118,7 +208,7 @@ class GameState {
 
   usePotion(player) {
     if (player.inventory.potion > 0 && player.hp < player.maxHp) {
-      player.inventory.potion--;
+      if (this.status === "PLAY") player.inventory.potion--;
       player.hp++;
       console.log(
         `[Item Success] Player ${player.id} used HP Potion. HP: ${player.hp}`
@@ -130,7 +220,7 @@ class GameState {
 
   useBuff(player) {
     if (player.inventory.buff > 0 && !player.isBuffed) {
-      player.inventory.buff--;
+      if (this.status === "PLAY") player.inventory.buff--;
       player.isBuffed = true;
       player.speed *= 1.25; //버프 속도
       //player.attackSpeed *= 1.25; //공격 속도는 나중에 추가
@@ -144,7 +234,7 @@ class GameState {
 
   useShield(player) {
     if (player.inventory.shield > 0 && !player.hasShield) {
-      player.inventory.shield--;
+      if (this.status === "PLAY") player.inventory.shield--;
       player.hasShield = true;
       console.log(`[Item Success] Player ${player.id} used Shield.`);
     } else {
@@ -201,6 +291,9 @@ class GameState {
     //플레이어가 몬스터를 타격한 경우
     if (hitMonster) {
       hitMonster.hp -= ATTACK_DAMAGE;
+
+      hitMonster.hitStunTimer = 0.3; //몬스터가 아야! 하는 시간
+
       console.log(
         `[Hit Success] Player ${player.id} hit monster ${hitMonster}`
       );
@@ -271,17 +364,18 @@ class GameState {
 
     if (result.matched) {
       //정답 키워드일 경우
-
       console.log(
         `[Correct] Player ${player.id} submitted correct keyword: ${keyword.text}`
       );
-
+      this.score += 50; //[정답] 50점 추가
       delete this.keywords[holdingKeywordId];
     } else {
       console.log(
         `[Incorrect] Player ${player.id} submitted wrong keyword: ${keyword.text}. Deleting it.`
       );
 
+      this.score -= 25; //[오답] -25점 감점
+      // if (score <= 0) score = 0; //점수 0점 이하로 떨어지지 않게
       delete this.keywords[holdingKeywordId];
     } //플레이어의 키워드 홀딩 상태 해제
 
@@ -322,20 +416,127 @@ class GameState {
     if (player.holdingKeywordId) {
       //들고 있던 키워드 드랍
       const droppedKeyword = this.keywords[player.holdingKeywordId];
+
       if (droppedKeyword) {
         console.log(`Player dropped keyword ${droppedKeyword.text}`);
         droppedKeyword.carrierId = null;
+
+        //키워드 드랍 위치
+        const maxDropDistance = 2.0;
+
+        const offsetX = (Math.random() - 0.5) * 2 * maxDropDistance;
+        const offsetY = (Math.random() - 0.5) * 2 * maxDropDistance;
+
+        droppedKeyword.x = player.x + offsetX;
+        droppedKeyword.y = player.y + offsetY;
+
+        player.holdingKeywordId = null;
       }
-      player.holdingKeywordId = null;
     }
 
     //HP가 0이 되면 전투 불능. (지금은 console.log()만)
     if (player.hp <= 0) {
+      player.hp = 0;
+      player.isDown = true;
       console.log(`[Player Down] Player ${player.id} is down.`);
+
+      //전투불능 시 입력 0으로 만들기
+      player.inputH = 0;
+      player.inputV = 0;
+
+      let allPlayersDown = true;
+
+      //만약 모든 플레이어가 전투불능(isDown)상태라면:
+      for (const id in this.players) {
+        if (!this.players[id].isDown) {
+          allPlayersDown = false;
+          break;
+        }
+      }
+
+      if (allPlayersDown) {
+        console.log("[GAME OVER] All players are down.");
+        this.isGameOver = true;
+      }
     }
   }
 
   // ================= ▲▲▲ 몬스터 피격 ▲▲▲ =================
+
+  checkForLevelUp() {
+    //모든 플레이어 탈출 확인
+    for (const id in this.players) {
+      if (!this.players[id].isEscaped) {
+        return;
+      }
+    }
+
+    console.log("[Level] All players escaped! Proceeding to the next level.");
+
+    const lastExitData = this.exit; //방금 클리어한 레벨의 출구 데이터
+
+    //스테이지의 영문장 레벨에 따라 골드 획득량
+    if (lastExitData && lastExitData.difficulty) {
+      switch (lastExitData.difficulty) {
+        case 1:
+          this.gold += 30;
+          break;
+        case 2:
+          this.gold += 50;
+          break;
+        case 3:
+          this.gold += 70;
+          break;
+        case 4:
+          this.gold += 90;
+          break;
+        case 5:
+          this.gold += 110;
+          break;
+        default:
+          this.gold += 0;
+          break;
+      }
+
+      this.completedSentences.push({
+        id: lastExitData.sentenceId,
+        text: lastExitData.originalSentence,
+        meaning: lastExitData.translation,
+      });
+    }
+
+    this.gameLevel++;
+    this.timeLimit += 15; //보너스 시간 30초 추가
+
+    //다음 레벨 설정(levelManager에게 레벨 다시 세팅하게 시킴)
+    setupLevel(this, this.gameLevel);
+
+    //새 레벨을 위해 플레이어 상태 초기화
+    const spawnArea = { minX: 1, maxX: 5, minY: 6, maxY: 12 };
+
+    for (const id in this.players) {
+      const player = this.players[id];
+      player.isEscaped = false;
+      player.holdingKeywordId = null;
+
+      if (player.isBuffed) {
+        player.isBuffed = false;
+        player.speed = player.baseSpeed;
+      }
+
+      //플레이어 위치 리셋
+      player.x =
+        Math.random() * (spawnArea.maxX - spawnArea.minX) + spawnArea.minX;
+      player.y =
+        Math.random() * (spawnArea.maxY - spawnArea.minY) + spawnArea.minY;
+
+      console.log(
+        `[Level] Player ${id} spawned at (${player.x.toFixed(
+          2
+        )}, ${player.y.toFixed(2)})`
+      );
+    }
+  }
 
   // ================= ▼▼▼ 게임 상태 데이터 패킹 ▼▼▼ =================
   getFullStatePacket() {
@@ -370,8 +571,25 @@ class GameState {
         keywords: keywordsPacket,
         monsters: monstersPacket,
         exit: exitPacket,
+
+        gameLevel: this.gameLevel,
+        score: this.score,
+        gold: this.gold,
+        completedSentences: this.completedSentences,
+        timeLimit: this.timeLimit,
+        countdown: this.countdown,
+
+        status: this.status,
+        isGameOver: this.isGameOver,
       }),
     };
+  }
+
+  resetPlayerInputs() {
+    for (const id in this.players) {
+      this.players[id].inputH = 0;
+      this.players[id].inputV = 0;
+    }
   }
 }
 // ================= ▲▲▲ 게임 상태 데이터 패킹 ▲▲▲ =================

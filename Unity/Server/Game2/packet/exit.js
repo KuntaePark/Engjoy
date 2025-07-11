@@ -1,11 +1,21 @@
 class Exit {
-  constructor(x, y, originalSentence, answerTexts, translation) {
+  constructor(
+    x,
+    y,
+    originalSentence,
+    answerTexts,
+    translation,
+    sentenceId,
+    difficulty
+  ) {
     this.x = x;
     this.y = y;
 
     this.originalSentence = originalSentence; //원본 문장
     this.answerTexts = answerTexts; //정답 단어 목록
     this.translation = translation; //문장 해설
+    this.sentenceId = sentenceId; //문장 ID (expr_id)
+    this.difficulty = difficulty; //난이도 저장 (골드 계산에 필요)
     this.isOpen = false;
     this.correctedTexts = [];
   }

@@ -1,71 +1,55 @@
 const WebSocket = require("ws");
-
-const { GameState } = require("./gameSetting/gameState.js");
-
+const { RoomManager } = require("./room/roomManager.js");
 const { startGameUpdate } = require("./gameSetting/gameUpdate.js");
 
-const { setupLevel } = require("./gameSetting/levelManager.js");
-
 const wss = new WebSocket.Server({ port: 7777 }, () => {
-  console.log("Server started on port 7777");
+  console.log("✅ Server started on port 7777 ✅ ");
 });
 
-const gameState = new GameState();
-
-//모든 클라이언트들에게 메시지 보내는 함수
-
-function broadcast(message) {
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
-  });
-}
+const roomManager = new RoomManager();
 
 wss.on("connection", (ws) => {
-  const player = gameState.addPlayer();
-  const playerId = player.id;
-
-  ws.playerId = playerId; //ws객체에 playerId 저장
-
-  console.log(`[Connection] Player ${playerId} has connected.`); //클라이언트(각 플레이어)에게 ID 알려주기
-
-  ws.send(JSON.stringify({ type: "playerId", payload: playerId }));
-  console.log(`[Message Sent] Sent 'yourId' to ${playerId}.`); //메시지 핸들러
+  console.log("[Connection] A new client has connected.");
+  roomManager.handleConnection(ws);
 
   ws.on("message", (data) => {
     const message = JSON.parse(data);
+    const room = roomManager.getRoom(ws.roomId);
+    if (!room) return; //방이 없으면 돌아가세요..
 
     switch (message.type) {
+      case "ready":
+        room.gameState.setPlayerReady(
+          ws.playerId,
+          JSON.parse(message.payload).isReady
+        );
+        break;
       case "input":
-        const inputs =
-          typeof message.payload === "string"
-            ? JSON.parse(message.payload)
-            : message.payload;
-        gameState.setPlayerInput(ws.playerId, inputs);
+        //MATCHINGROOM 상태일 때 입력 처리
+        const inputs = JSON.parse(message.payload);
+        room.gameState.setPlayerInput(ws.playerId, inputs);
         break;
-
+      //상호작용
       case "interact":
-        gameState.playerInteracts(ws.playerId);
+        room.gameState.playerInteracts(ws.playerId);
         break;
-
+      //공격
       case "playerAttack":
-        gameState.playerAttacks(ws.playerId);
+        room.gameState.playerAttacks(ws.playerId);
         break;
-
+      //아이템 사용
       case "useItem":
         const itemData = JSON.parse(message.payload);
-        gameState.playerUseItem(ws.playerId, itemData.itemType);
+        room.gameState.playerUseItem(ws.playerId, itemData.itemType);
         break;
     }
   });
 
   //연결 종료 핸들러
   ws.on("close", () => {
-    gameState.removePlayer(ws.playerId);
+    const room = roomManager.getRoom(ws.roomId);
+    if (room) {
+      room.removePlayer(ws.playerId);
+    }
   });
 });
-
-startGameUpdate(gameState, broadcast);
-
-console.log("✅ GameUpdate started.");

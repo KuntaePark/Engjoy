@@ -1,4 +1,5 @@
-const { MonsterType } = require("../packet/monster.js");
+const { MonsterType, Monster } = require("../packet/monster.js");
+const { setupLevel } = require("./levelManager.js");
 const Physics = require("./physics.js");
 
 const deltaTime = 1 / 40; //40 FPS _ 프레임
@@ -13,28 +14,46 @@ const RUNNER_FLEE_RANGE_SQ = RUNNER_FLEE_RANGE * RUNNER_FLEE_RANGE; //거리 제
 //체이서의 어그로 범위
 const CHASER_AGGRO_RANGE = 10;
 const CHASER_AGGRO_RANGE_SQ = CHASER_AGGRO_RANGE * CHASER_AGGRO_RANGE; //거리 제곱값
+const CHASER_TELEPORT_RADIUS = 8.0; //체이서 순간이동 범위
 
 //몬스터의 콜라이더 범위
 const MONSTER_COLLIDER_DISTANCE = 1;
 const MONSTER_COLLIDER_DISTANCE_SQ =
   MONSTER_COLLIDER_DISTANCE * MONSTER_COLLIDER_DISTANCE; //거리 제곱값
 
-const ROAMING_SPEED = 2.0; //로밍 속도
+const ROAMING_SPEED = 1.0; //로밍 속도
 const ROAM_AREA_SIZE = 15; //로밍 범위
 
-function update(gameState) {
-  // ================= ▼▼▼ 플레이어 관련 동기화 ▼▼▼ =================
+// =================================================================
+// ## 세부 기능별 업데이트 함수
+// =================================================================
+// ================= ▼▼▼ 플레이어 관련 동기화 ▼▼▼ =================
+function updatePlayers(gameState) {
   for (const id in gameState.players) {
     const p = gameState.players[id];
 
-    //플레이어 무적 처리
-    if (p.invincibility <= 40) p.invincibility++;
-
     //플레이어 이동 계산
     const newX = p.x + p.inputH * deltaTime * p.speed;
-    const newY = p.y + p.inputV * deltaTime * p.speed; //충돌 체크 로직
+    const newY = p.y + p.inputV * deltaTime * p.speed;
 
-    let isColliding = false;
+    //충돌 체크 로직 - 맵 콜라이더
+    let isCollidingWithMap = false;
+
+    if (gameState.colliders && gameState.colliders.size > 0) {
+      const y_offset = -0.7;
+
+      const checkX = newX; //x축
+      const checkY = newY + y_offset; //축
+
+      const targetTileX = Math.floor(checkX);
+      const targetTileY = Math.floor(checkY);
+      if (gameState.colliders.has(`${targetTileX}, ${targetTileY}`)) {
+        isCollidingWithMap = true;
+      }
+    }
+
+    //충돌 체크 로직 - 플레이어
+    let isCollidingWithPlayer = false;
 
     for (const otherId in gameState.players) {
       if (id === otherId) continue;
@@ -47,50 +66,169 @@ function update(gameState) {
       if (Physics.checkCollision(myPos, otherCurrentPos, 30)) {
         console.log(`Player ${id} is colliding with ${otherId}`);
 
-        isColliding = true;
+        isCollidingWithPlayer = true;
 
         break;
       }
     }
 
-    if (!isColliding) {
+    if (!isCollidingWithMap && !isCollidingWithPlayer) {
       p.x = newX;
       p.y = newY;
-    } //입력값 초기화
+    }
 
-    p.inputH = 0;
-    p.inputV = 0; //상호작용 가능 상태 업데이트(키워드, 출구)
+    // -------------- 게임 플레이 중일 때에만 실행되는 로직 --------------
+    if (gameState.status === "PLAY") {
+      //플레이어 무적 처리
+      if (p.invincibility <= 40) p.invincibility++;
 
-    updateInteractionState(p, gameState.keywords);
-    updateExitInteractionState(p, gameState.exit);
+      updateInteractionState(p, gameState.keywords);
+      updateExitInteractionState(p, gameState.exit);
+      updateRevive(p, gameState);
+
+      //키워드 위치 동기화
+      if (p.holdingKeywordId && gameState.keywords[p.holdingKeywordId]) {
+        const holdingKeyword = gameState.keywords[p.holdingKeywordId];
+
+        holdingKeyword.x = p.x;
+        holdingKeyword.y = p.y;
+      }
+    }
   }
-  // ================= ▲▲▲ 플레이어 관련 동기화 ▲▲▲ =================
-
-  // ================= ▼▼▼ 몬스터 관련 동기화 ▼▼▼ =================
+}
+// ================= ▲▲▲ 플레이어 관련 동기화 ▲▲▲ =================
+// ================= ▼▼▼ 몬스터 관련 동기화 ▼▼▼ =================
+function updateMonsters(gameState) {
   for (const id in gameState.monsters) {
     const monster = gameState.monsters[id];
     if (!monster) continue;
 
     updateMonsterMovement(monster, gameState);
   }
-  // ================= ▲▲▲ 몬스터 관련 동기화 ▲▲▲ =================
+}
+// ================= ▲▲▲ 몬스터 관련 동기화 ▲▲▲ =================
+// ================= ▼▼▼ 제한시간 동기화 ▼▼▼ =================
+function updateGameTimer(gameState) {
+  if (gameState.timeLimit > 0) {
+    gameState.timeLimit -= deltaTime;
+  }
 
-  // ================= ▼▼▼ 키워드 동기화 ▼▼▼ =================
-  for (const id in gameState.players) {
-    const p = gameState.players[id]; //키워드 들고 있으면 키워드 위치도 플레이어 위치로 고정!(동기화)
+  if (gameState.timeLimit <= 0) {
+    gameState.timeLimit = 0;
+    gameState.isGameOver = true;
+    console.log("[GAME OVER] Time is up.");
+  }
+}
+// ================= ▲▲▲ 제한시간 동기화 ▲▲▲ =================
+// ================= ▼▼▼ [대기방]카운트다운 동기화 ▼▼▼ =================
+function updateCountdown(gameState) {
+  if (gameState.countdown > -1) {
+    gameState.countdown -= deltaTime;
+    if (gameState.countdown <= 0) {
+      gameState.status = "PLAY";
 
-    if (p.holdingKeywordId && gameState.keywords[p.holdingKeywordId]) {
-      const holdingKeyword = gameState.keywords[p.holdingKeywordId];
+      for (const id in gameState.players) {
+        const player = gameState.players[id];
+        if (player.isBuffed) {
+          player.isBuffed = false;
+          player.speed = player.baseSpeed;
+        }
+        if (player.hasShield) player.hasShield = false;
 
-      holdingKeyword.x = p.x;
-      holdingKeyword.y = p.y;
+        const spawnArea = { minX: 1, maxX: 5, minY: 6, maxY: 12 };
+
+        //플레이어 위치 리셋
+        player.x =
+          Math.random() * (spawnArea.maxX - spawnArea.minX) + spawnArea.minX;
+        player.y =
+          Math.random() * (spawnArea.maxY - spawnArea.minY) + spawnArea.minY;
+      }
+
+      setupLevel(gameState, 1);
     }
   }
-  // ================= ▲▲▲ 키워드 동기화 ▲▲▲ =================
+}
+// ================= ▲▲▲ [대기방]카운트다운 동기화 ▲▲▲ =================
+
+// =================================================================
+// ## 메인 업데이트
+// =================================================================
+// ================= ▼▼▼ 게임2 동기화! ▼▼▼ =================
+function update(gameState) {
+  //항상 실행되는 동기화
+  updatePlayers(gameState);
+
+  //'PLAY' 상태(게임 플레이 중)일 때에만 실행되는 로직
+  if (gameState.status === "PLAY") {
+    updateMonsters(gameState);
+    updateGameTimer(gameState);
+  }
+
+  //'MATCHING' 상태(대기방)일 때에만 실행되는 로직
+  else if (gameState.status === "MATCHINGROOM") {
+    updateCountdown(gameState);
+  }
+}
+// ================= ▲▲▲ 게임2 동기화! ▲▲▲ =================
+
+// =================================================================
+// ## 헬퍼 함수들
+// =================================================================
+// ------ 플레이어 부활 함수 ------
+function updateRevive(player, gameState) {
+  if (player.isDown || gameState.isGameOver) {
+    player.revivablePlayerId = null;
+    player.reviveProgress = 0;
+    return;
+  }
+
+  //부활 대상 찾기
+  let closestDownPlayerId = null;
+  let closestDistSq = Physics.interactionDistSq;
+
+  for (const id in gameState.players) {
+    if (player.id === id) continue;
+    const otherPlayer = gameState.players[id];
+    if (otherPlayer.isDown) {
+      const distSq = Physics.squareDistance(player, otherPlayer);
+
+      if (distSq < closestDistSq) {
+        closestDistSq = distSq;
+        closestDownPlayerId = id;
+      }
+    }
+  }
+  player.revivablePlayerId = closestDownPlayerId;
+
+  // console.log(
+  //   `[REVIVE CONFIRM] Player: ${player.id}, rivived: ${player.revivablePlayerId}`
+  // );
+
+  if (player.revivablePlayerId && player.isHoldingInteract) {
+    player.reviveProgress += deltaTime;
+
+    console.log(
+      `[REVIVE] ${player.id} is reviving ${player.reviveProgress.toFixed(2)}`
+    );
+
+    if (player.reviveProgress >= 2) {
+      const targetPlayer = gameState.players[player.revivablePlayerId];
+      if (targetPlayer) {
+        targetPlayer.isDown = false;
+        targetPlayer.hp = 2;
+        targetPlayer.invincibility = 0;
+      }
+
+      player.reviveProgress = 0;
+    }
+  } else {
+    player.reviveProgress = 0;
+  }
 }
 
+// ------ 플레이어와 출구 간의 상호작용 상태 업데이트 함수 ------
 function updateExitInteractionState(player, exit) {
-  if (!player.holdingKeywordId || !exit || exit.isOpen) {
+  if (!exit) {
     player.canInteractWithExit = false;
 
     return;
@@ -108,7 +246,7 @@ function updateExitInteractionState(player, exit) {
   }
 }
 
-//플레이어와 키워드 간의 상호작용 상태 업데이트 함수
+// ------ 플레이어와 키워드 간의 상호작용 상태 업데이트 함수 ------
 function updateInteractionState(player, keywords) {
   //키워드를 이미 들고 있는 상태라면 상호작용 불가
 
@@ -143,140 +281,157 @@ function updateInteractionState(player, keywords) {
   player.interactableKeywordId = closestKeywordId;
 }
 
-// ================= 몬스터 이동 =================
+// ------ 몬스터 이동 함수 ------
 function updateMonsterMovement(monster, gameState) {
-  let target = null;
-  let closestDistSq = Infinity;
+  if (monster.hitStunTimer > 0) {
+    monster.hitStunTimer -= deltaTime;
+
+    if (monster.hitStunTimer <= 0) {
+      if (monster.type === MonsterType.RUNNER) {
+        monster.hitFleeBoostTimer = 1.5;
+      }
+    }
+    return; //경직 중에는 모든 행동 중지!
+  }
 
   //러너, 체이서 타입에 따라 움직임 패턴 부여
   switch (monster.type) {
     case MonsterType.RUNNER: //러너
-      //해당 몬스터와 가장 가까운 플레이어를 찾는다.
+      let target = null;
+      let closestDistSq = Infinity;
       for (const id in gameState.players) {
         const player = gameState.players[id];
-        const distSq = Physics.squareDistance(monster, player);
+        if (player.isDown) continue; // 쓰러진 플레이어 무시
 
+        const distSq = Physics.squareDistance(monster, player);
         if (distSq < closestDistSq) {
           closestDistSq = distSq;
           target = player;
         }
       }
 
-      //타겟이 있다면 도망치는 움직임 부여
-      if (target && closestDistSq < RUNNER_FLEE_RANGE_SQ) {
-        const dx = monster.x - target.x;
-        const dy = monster.y - target.y;
-        //몬스터의 일정한 로밍 속도를 위해 제곱근 계산(Math.sqrt)를 이용
-        const dist = Math.sqrt(dx * dx + dy * dy);
+      const isFleeing = target && closestDistSq < RUNNER_FLEE_RANGE_SQ;
+      const isBoosted = monster.hitFleeBoostTimer > 0;
 
-        if (dist > 0) {
-          //거리가 0 이상일 때에만 이동
-          const moveX = (dx / dist) * RUNNER_SPEED * deltaTime;
-          const moveY = (dy / dist) * RUNNER_SPEED * deltaTime;
+      let moveX = 0;
+      let moveY = 0;
+      let currentSpeed = ROAMING_SPEED;
 
-          if (!isNaN(moveX) && !isNaN(moveY)) {
-            monster.x += moveX;
-            monster.y += moveY;
-          }
-        }
-      }
-      break;
+      //행동 결정: 도망, 부스트, 로밍
+      if (isFleeing || isBoosted) {
+        if (!target) {
+          //부스트 상태지만 도망칠 대상이 없다면 로밍처럼 행동
+        } else {
+          const dx = monster.x - target.x;
+          const dy = monster.y - target.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
 
-    case MonsterType.CHASER: //체이서
-      for (const id in gameState.players) {
-        const player = gameState.players[id];
-        if (player.holdingKeywordId) {
-          //해당 플레이어가 키워드 홀딩 상태인지 확인
-          const distSq = Physics.squareDistance(monster, player);
-          if (distSq < closestDistSq) {
-            closestDistSq = distSq;
-            target = player;
+          currentSpeed = RUNNER_SPEED;
+          if (isBoosted) {
+            monster.hitFleeBoostTimer -= deltaTime;
+            currentSpeed *= 1.25; //부스트 시 러너 이속증가
           }
         }
       }
 
-      //타겟이 있다면 그 방향으로 이동
-      if (target && closestDistSq < CHASER_AGGRO_RANGE_SQ) {
-        monster.isActive = true;
-
-        const dx = target.x - monster.x;
-        const dy = target.y - monster.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist > 0) {
-          //거리가 0 이상일 때에만 이동
-          const moveX = (dx / dist) * CHASER_SPEED * deltaTime;
-          const moveY = (dy / dist) * CHASER_SPEED * deltaTime;
-
-          if (!isNaN(moveX) && !isNaN(moveY)) {
-            monster.x += moveX;
-            monster.y += moveY;
-          }
-        }
+      //일반 로밍 상태
+      if (moveX === 0 && moveY === 0) {
         if (
-          target &&
-          Physics.squareDistance(monster, target) < MONSTER_COLLIDER_DISTANCE_SQ
+          monster.roamTargetX === null ||
+          Physics.squareDistance(monster, {
+            x: monster.roamTargetX,
+            y: monster.roamTargetY,
+          }) < 1
         ) {
-          gameState.monsterHitsPlayer(monster.id, target.id);
-        }
-      } else {
-        //타겟이 없다면,
-        //비활성 상태.
-        monster.isActive = false;
-
-        //로밍
-        monster.roamTimer -= deltaTime;
-
-        //타이머가 다 되거나 목표 지점이 없으면 새로운 목표 설정
-        if (monster.roamTimer <= 0 || monster.roamTargetX === null) {
-          //현재 위치 주변에 새로운 목표 좌표 랜덤 설정
           monster.roamTargetX =
             monster.x + (Math.random() - 0.5) * ROAM_AREA_SIZE;
           monster.roamTargetY =
             monster.y + (Math.random() - 0.5) * ROAM_AREA_SIZE;
-
-          //2~6초 사이의 랜덤 시간 지정
-          monster.roamTimer = 2 + Math.random() * 4;
-
-          console.log(
-            `Monster ${monster.id} is roaming to (${monster.roamTargetX.toFixed(
-              0
-            )}, ${monster.roamTargetY.toFixed(0)})`
-          );
         }
 
-        //목표 지점을 향해 이동
-        if (monster.roamTargetX !== null) {
-          const dx = monster.roamTargetX - monster.x;
-          const dy = monster.roamTargetY - monster.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+        //목표를 향해 이동
+        const dx = monster.roamTargetX - monster.x;
+        const dy = monster.roamingTargetY - monster.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-          //목표에 거의 도달하면 멈추기
-          if (dist > 1) {
-            const moveX = (dx / dist) * ROAMING_SPEED * deltaTime;
-            const moveY = (dy / dist) * ROAMING_SPEED * deltaTime;
+        if (dist > 1) {
+          moveX = (dx / dist) * ROAMING_SPEED * deltaTime;
+          moveY = (dy / dist) * ROAMING_SPEED * deltaTime;
+        }
+      }
 
-            if (!isNaN(moveX) && !isNaN(moveY)) {
-              monster.x += moveX;
-              monster.y += moveY;
-            }
+      //이동 적용
+      if (moveX !== 0 || moveY !== 0) {
+        const y_offset = -0.7; //충돌 판정 y좌표 보정값
+        const OVER_COLLISION = 0.3;
+
+        // X축 이동 시도
+        if (moveX !== 0) {
+          const newX = monster.x + moveX;
+          const checkX = newX + Math.sign(moveX) * OVER_COLLISION;
+          if (
+            !gameState.colliders.has(
+              `${Math.floor(checkX)}, ${Math.floor(monster.y + y_offset)}`
+            )
+          ) {
+            monster.x = newX;
+          }
+        }
+
+        // Y축 이동 시도
+        if (moveY !== 0) {
+          const newY = monster.y + moveY;
+          const checkY = newY + Math.sign(moveY) * OVER_COLLISION;
+          if (
+            !gameState.colliders.has(
+              `${Math.floor(monster.x)}, ${Math.floor(checkY + y_offset)}`
+            )
+          ) {
+            monster.y = newY;
           }
         }
       }
+
       break;
+
+    case MonsterType.CHASER: {
+      //체이서
+      let moveX = 0;
+      let moveY = 0;
+
+      //키워드 든 플레이어 있는지 찾기
+      let targetPlayer = null;
+      let isAnyPlayerHoldingKeyword = false;
+      for (const id in gameState.players) {
+        const player = gameState.players[id];
+        if (player.holdingKeywordId && !player.isDown) {
+          isAnyPlayerHoldingKeyword = true;
+          targetPlayer = player; //아무나 지정
+          break;
+        }
+      }
+      break;
+    }
   }
 }
 
-// ================= SETINTERVAL =================
+// =================================================================
+// ## 루프 시작 함수
+// =================================================================
 function startGameUpdate(gameState, broadcast) {
   setInterval(() => {
     //게임 로직 업데이트 실행!
 
+    if (Object.keys(gameState.players).length === 0 || gameState.isGameOver) {
+      return;
+    }
+
     update(gameState); //업데이트된 전체 상태를 모든 클라이언트에게 브로드캐스트!
 
     const packet = gameState.getFullStatePacket();
-
     broadcast(JSON.stringify(packet));
+
+    gameState.resetPlayerInputs();
   }, deltaTime * 1000);
 }
 

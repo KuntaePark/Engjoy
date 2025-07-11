@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/SampleScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
-    path: Assets/Scenes/WFC.unity
+    path: Assets/Scenes/Game2-MatchingRoom.unity
+    guid: f1af67b079c5a8c4fb0a1383de390af3
+  - enabled: 1
+    path: Assets/Scenes/Game2-Play.unity
     guid: 21c84c625431eba43988a95f748a1803
   m_configObjects: {}

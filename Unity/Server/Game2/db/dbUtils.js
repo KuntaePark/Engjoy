@@ -7,9 +7,9 @@ async function getRandomSentence(gameLevel = 10) {
 
     if (gameLevel <= 2) {
       dbDifficulty = [1]; //level 1-2 : 1
-    } else if (gameLevel <= 5) {
+    } else if (gameLevel > 2 && gameLevel <= 5) {
       dbDifficulty = [2]; //level 3-5 : 2
-    } else if (gameLevel <= 9) {
+    } else if (gameLevel > 5 && gameLevel <= 9) {
       dbDifficulty = [3]; //level 6-9 : 3
     } else {
       dbDifficulty = [4, 5]; //else 4,5
