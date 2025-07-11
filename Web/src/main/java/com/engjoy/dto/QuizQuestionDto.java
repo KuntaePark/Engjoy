@@ -17,6 +17,7 @@ public class QuizQuestionDto {
     private List<String> sentenceWords;
     private boolean isFavorite;
     private String pronAudio;
+    private String finalPunctuation; // 문장 부호 담는 필드
 
     public static QuizQuestionDto from(Long exprId,
                                        EXPRTYPE exprType,
@@ -24,7 +25,8 @@ public class QuizQuestionDto {
                                        List<String> multipleChoices,
                                        List<String> sentenceWords,
                                        boolean isFavorite,
-                                       String pronAudio) {
+                                       String pronAudio,
+                                       String finalPunctuation) {
         QuizQuestionDto dto = new QuizQuestionDto();
         dto.setExprId(exprId);
         dto.setExprType(exprType);
@@ -33,6 +35,7 @@ public class QuizQuestionDto {
         dto.setSentenceWords(sentenceWords);
         dto.setFavorite(isFavorite);
         dto.setPronAudio(pronAudio);
+        dto.setFinalPunctuation(finalPunctuation);
         return dto;
     }
 

@@ -216,6 +216,8 @@
         <span class="font-medium">🔔 알림:</span> [[${notifyMsg}]]
     </div>
 
+    <span th:if="${question.finalPunctuation}" th:text="${question.finalPunctuation}" class="text-2xl font-bold ml-1"></span>
+
     <div id="quiz-container" class="w-full max-w-3xl p-8 bg-white rounded-lg shadow-md my-12">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold">퀴즈</h2>
@@ -230,13 +232,29 @@
         </div>
 
         <div th:if="${question.exprType.name() == 'SENTENCE'}">
-            <div id="answer-board" class="min-h-[6rem] p-3 mb-4 bg-gray-100 rounded-lg border-2 border-dashed flex flex-wrap gap-2 items-center"></div>
-            <div id="word-bank" class="flex flex-wrap gap-2 justify-center mb-6 min-h-[4rem] p-2 border rounded-lg">
-                <button th:each="word : ${question.sentenceWords}" class="word-btn p-3 text-lg font-semibold text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200">
-                    <span th:text="${word}">word</span>
-                </button>
+            <div id="answer-board"
+                 class="min-h-[6rem] p-3 mb-4 bg-gray-100 rounded-lg border-2 border-dashed flex items-center flex-wrap gap-2">
+                <!-- 조합된 단어들 -->
+                <span th:each="word : ${question.sentenceWords}"
+                      class="px-2 py-1 bg-indigo-100 rounded font-medium text-indigo-700"
+                      th:text="${word}">단어</span>
+
+                <!-- 마지막 문장 부호: 반드시 닫는 태그 형식으로 -->
+                <span th:if="${question.finalPunctuation != null}"
+                      th:text="${question.finalPunctuation}"
+                      class="text-2xl font-bold ml-1">
+    </span>
+            </div>
+
+            <div id="word-bank"
+                 class="flex flex-wrap gap-2 justify-center mb-6 min-h-[4rem] p-2 border rounded-lg">
+                <button th:each="word : ${question.sentenceWords}"
+                        class="word-btn p-3 text-lg font-semibold text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200"
+                        th:text="${word}">word</button>
             </div>
         </div>
+
+
 
         <div id="choices-area" th:if="${question.exprType.name() == 'WORD'}" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button th:each="choice : ${question.multipleChoices}" th:data-answer="${choice}" class="answer-btn p-4 text-lg text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-indigo-100">

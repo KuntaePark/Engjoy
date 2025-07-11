@@ -28,7 +28,7 @@ public class QuizService {
     private final ExprUsedRepository exprUsedRepository;
     private final IncorrectExprRepository incorrectExprRepository;
     private final ExpressionService expressionService;
-//    private final AccountRepository accountRepository;
+    //    private final AccountRepository accountRepository;
     private final ExprFavoritesRepository exprFavoritesRepository;
 
     // ✅ 세션 키를 역할에 따라 두 개로 분리하여 관리합니다.
@@ -39,20 +39,18 @@ public class QuizService {
     // QuizService.java
 
     public QuizPageDto createQuizQuestions(Long accountId, QuizSettingDto quizSettingDto){
-        System.out.println("➡️ [Service] 컨트롤러에서 전달받은 카테고리: " + quizSettingDto.getCategory());
+
         Account account = getAccount(accountId);
         String notifyMsg = null;
         int requestedCount = getQuizCountValue(quizSettingDto.getQuizcount());
         List<Expression> expressions = new ArrayList<>(getExpressionsForQuiz(account, quizSettingDto, requestedCount));
-        System.out.println("➡️ [Service] 요청 개수: " + requestedCount);
-        System.out.println("➡️ [Service] DB에서 찾은 문제 개수: " + expressions.size());
+
         if (expressions.isEmpty()) {
             // DTO의 from 메서드를 사용하도록 통일
             return QuizPageDto.from(Collections.emptyList(), "출제할 문제가 없습니다.", 0, quizSettingDto.getCategory());
         }
         if(expressions.size() < requestedCount){
             notifyMsg = "복습할 문제가 " + expressions.size() + "개입니다. " + expressions.size() + "문제로 시작합니다.";
-            System.out.println("✅ [Service] 알림 메시지 생성됨: " + notifyMsg);
         }
 
         Collections.shuffle(expressions);
@@ -66,25 +64,35 @@ public class QuizService {
                     boolean isFavorite = favoriteExprIds.contains(expr.getId());
 
                     if (expr.getExprType() == EXPRTYPE.SENTENCE) {
+                        String originalSentence = expr.getWordText();
+                        String sentenceBody = originalSentence;
+                        String finalPunctuation = "";
+
+                        // 정규식을 사용해 문장 끝의 부호를 분리
+                        java.util.regex.Pattern p = java.util.regex.Pattern.compile("([.?!,;])$");
+                        java.util.regex.Matcher m = p.matcher(originalSentence);
+                        if (m.find()) {
+                            finalPunctuation = m.group(1); // 찾은 문장 부호 (., ?, ! 등)
+                            sentenceBody = originalSentence.substring(0, m.start()); // 부호를 제외한 문장
+                        }
+
                         String questionText = expr.getMeaning();
-                        List<String> sentenceWords = new ArrayList<>(Arrays.asList(expr.getWordText().split(" ")));
+                        List<String> sentenceWords = new ArrayList<>(Arrays.asList(sentenceBody.split(" ")));
                         Collections.shuffle(sentenceWords);
 
-                        // ▼▼▼ 'new'를 'QuizQuestionDto.from'으로 수정 ▼▼▼
                         return QuizQuestionDto.from(
                                 expr.getId(), expr.getExprType(), questionText,
                                 null, sentenceWords,
-                                isFavorite, expr.getPronAudio()
+                                isFavorite, expr.getPronAudio(), finalPunctuation
                         );
                     } else {
                         String questionText = expr.getWordText();
                         List<String> multipleChoices = generateChoicesFromPool(expr.getMeaning(), distractorPool);
 
-                        // ▼▼▼ 'new'를 'QuizQuestionDto.from'으로 수정 ▼▼▼
                         return QuizQuestionDto.from(
                                 expr.getId(), expr.getExprType(), questionText,
                                 multipleChoices, null,
-                                isFavorite, expr.getPronAudio()
+                                isFavorite, expr.getPronAudio(),null
                         );
                     }
                 })
@@ -150,68 +158,68 @@ public class QuizService {
     }
 
 
-     // 골드 계산
-     private int calculateReward(Long accountId, List<QuizGradedDto> results, CATEGORY category) {
-         List<Long> correctExprIds = results.stream()
-                 .filter(QuizGradedDto::isCorrect)
-                 .map(QuizGradedDto::getExprId)
-                 .toList();
+    // 골드 계산
+    private int calculateReward(Long accountId, List<QuizGradedDto> results, CATEGORY category) {
+        List<Long> correctExprIds = results.stream()
+                .filter(QuizGradedDto::isCorrect)
+                .map(QuizGradedDto::getExprId)
+                .toList();
 
-         if (correctExprIds.isEmpty()) {
-             System.out.println("💰 [보상 계산] 맞은 문제가 없어 획득 골드: 0");
-             return 0;
-         }
+        if (correctExprIds.isEmpty()) {
+            System.out.println("💰 [보상 계산] 맞은 문제가 없어 획득 골드: 0");
+            return 0;
+        }
 
-         System.out.println("--- 💰 골드 보상 계산 시작 💰 ---");
-         int totalGold = 0;
+        System.out.println("--- 💰 골드 보상 계산 시작 💰 ---");
+        int totalGold = 0;
 
-         if (category == CATEGORY.INCORRECT) {
-             // '오답 노트' 퀴즈 보상 계산
-             List<IncorrectExpr> correctIncorrectExprs = incorrectExprRepository.findByAccount_IdAndExpression_IdIn(accountId, correctExprIds);
-             for (IncorrectExpr incorrectExpr : correctIncorrectExprs) {
-                 // ▼▼▼ 확인용 로그 추가 ▼▼▼
-                 int calculatedGold = 20 + (incorrectExpr.getIncorrectCount() * 5);
-                 System.out.printf("[오답노트 보상] 문제 ID: %d, 오답횟수: %d회 -> 획득 골드: %d%n",
-                         incorrectExpr.getExpression().getId(),
-                         incorrectExpr.getIncorrectCount(),
-                         calculatedGold
-                 );
-                 totalGold += calculatedGold;
-             }
-         } else {
-             // '일반(단어/문장/섞어서)' 퀴즈 보상 계산
-             Map<Long, ExprUsed> usedMap = exprUsedRepository.findByAccount_IdAndExpression_IdIn(accountId, correctExprIds)
-                     .stream().collect(Collectors.toMap(e -> e.getExpression().getId(), e -> e));
+        if (category == CATEGORY.INCORRECT) {
+            // '오답 노트' 퀴즈 보상 계산
+            List<IncorrectExpr> correctIncorrectExprs = incorrectExprRepository.findByAccount_IdAndExpression_IdIn(accountId, correctExprIds);
+            for (IncorrectExpr incorrectExpr : correctIncorrectExprs) {
+                // ▼▼▼ 확인용 로그 추가 ▼▼▼
+                int calculatedGold = 20 + (incorrectExpr.getIncorrectCount() * 5);
+                System.out.printf("[오답노트 보상] 문제 ID: %d, 오답횟수: %d회 -> 획득 골드: %d%n",
+                        incorrectExpr.getExpression().getId(),
+                        incorrectExpr.getIncorrectCount(),
+                        calculatedGold
+                );
+                totalGold += calculatedGold;
+            }
+        } else {
+            // '일반(단어/문장/섞어서)' 퀴즈 보상 계산
+            Map<Long, ExprUsed> usedMap = exprUsedRepository.findByAccount_IdAndExpression_IdIn(accountId, correctExprIds)
+                    .stream().collect(Collectors.toMap(e -> e.getExpression().getId(), e -> e));
 
-             LocalDate today = LocalDate.now();
-             for (Long exprId : correctExprIds) {
-                 ExprUsed exprUsed = usedMap.get(exprId);
-                 if (exprUsed != null) {
-                     LocalDate usedDate = exprUsed.getUsedTime().toLocalDate();
-                     int calculatedGold = 0;
+            LocalDate today = LocalDate.now();
+            for (Long exprId : correctExprIds) {
+                ExprUsed exprUsed = usedMap.get(exprId);
+                if (exprUsed != null) {
+                    LocalDate usedDate = exprUsed.getUsedTime().toLocalDate();
+                    int calculatedGold = 0;
 
-                     if (usedDate.isBefore(today.minusMonths(1))) calculatedGold = 100;
-                     else if (usedDate.isBefore(today.minusWeeks(1))) calculatedGold = 50;
-                     else if (usedDate.isBefore(today)) calculatedGold = 30;
-                     else calculatedGold = 10;
+                    if (usedDate.isBefore(today.minusMonths(1))) calculatedGold = 100;
+                    else if (usedDate.isBefore(today.minusWeeks(1))) calculatedGold = 50;
+                    else if (usedDate.isBefore(today)) calculatedGold = 30;
+                    else calculatedGold = 10;
 
-                     // ▼▼▼ 확인용 로그 추가 ▼▼▼
-                     System.out.printf("[일반퀴즈 보상] 문제 ID: %d, 학습일: %s -> 획득 골드: %d%n",
-                             exprId,
-                             usedDate.toString(),
-                             calculatedGold
-                     );
-                     totalGold += calculatedGold;
-                 }
-             }
-         }
+                    // ▼▼▼ 확인용 로그 추가 ▼▼▼
+                    System.out.printf("[일반퀴즈 보상] 문제 ID: %d, 학습일: %s -> 획득 골드: %d%n",
+                            exprId,
+                            usedDate.toString(),
+                            calculatedGold
+                    );
+                    totalGold += calculatedGold;
+                }
+            }
+        }
 
-         System.out.println("---------------------------------");
-         System.out.printf("🏆 총 획득 골드: %d%n", totalGold);
-         System.out.println("---------------------------------");
+        System.out.println("---------------------------------");
+        System.out.printf("🏆 총 획득 골드: %d%n", totalGold);
+        System.out.println("---------------------------------");
 
-         return totalGold;
-     }
+        return totalGold;
+    }
 
     // 오답 횟수 증가
     @Transactional
@@ -334,30 +342,7 @@ public class QuizService {
             return Collections.emptyList();
         }
 
-        // 1. 해당 조건에 맞는 전체 문제 수를 먼저 계산합니다.
-        long totalItems = exprUsedRepository.countUsedByTypeAndDateRange(account, exprType, start, end);
-
-        if (totalItems == 0) {
-            return Collections.emptyList();
-        }
-
-        // 만약 전체 문제 수가 요청 수보다 적으면, 그냥 전부 가져옵니다.
-        if (totalItems <= count) {
-            Pageable pageable = PageRequest.of(0, (int) totalItems);
-            return exprUsedRepository.findUsedByDateRangeFetchExpr(account, exprType, start, end, pageable)
-                    .map(ExprUsed::getExpression).getContent();
-        }
-
-        // 2. 가져올 수 있는 최대 페이지 수를 계산합니다. (예: 총 50개, 5개씩 -> 10 페이지)
-        int totalPages = (int) Math.ceil((double) totalItems / count);
-
-        // 3. 0부터 최대 페이지 수 사이에서 무작위 페이지 번호를 선택합니다.
-        int randomPage = new Random().nextInt(totalPages);
-
-        // 4. 해당 무작위 페이지의 데이터를 조회합니다.
-        Pageable pageable = PageRequest.of(randomPage, count);
-
-        System.out.printf("🐞 [DEBUG] 총 %d개 문제 (%d 페이지) 중 %d 페이지 조회%n", totalItems, totalPages, randomPage);
+        Pageable pageable = PageRequest.of(0, count);
 
         return exprUsedRepository.findUsedByDateRangeFetchExpr(account, exprType, start, end, pageable)
                 .map(ExprUsed::getExpression).getContent();

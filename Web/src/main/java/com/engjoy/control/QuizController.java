@@ -92,8 +92,8 @@ public class QuizController {
     @PostMapping("/submit")
     @ResponseBody
     public ResponseEntity<QuizGradedDto> submitQuiz(@RequestBody QuizAnsweredDto quizAnsweredDto,
-                             Principal principal,
-                             HttpSession session){
+                                                    Principal principal,
+                                                    HttpSession session){
         Object quizState = session.getAttribute(QUIZ_STATE);
         if(quizState==null){
             return ResponseEntity.badRequest().build();

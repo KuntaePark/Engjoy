@@ -2,11 +2,6 @@ import flatpickr from 'https://unpkg.com/flatpickr?module';
 import 'https://unpkg.com/flatpickr/dist/l10n/ko.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-            flatpickr("#customDateRangePicker", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                locale: flatpickr.l10ns.ko
-              });
 
             // --- 1. 요소 가져오기 (한 곳에서 유일하게 선언) ---
             const searchForm = document.getElementById('search-form');
@@ -25,10 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const filterBtn = document.getElementById('filter-btn');
             const filterDropdown = document.getElementById('filter-dropdown');
             const typeSelect = document.getElementById('exprType');
-            const activeFiltersContainer = document.getElementById('active-filters');
             const resetBtn = document.getElementById('reset-btn');
             const alphaCheckbox = document.getElementById('alpha-sort-checkbox');
             const keywordInput = document.getElementById('keyword');
+            const datePickerInput = document.getElementById('date-range-picker');
+
+             console.log('datePickerInput 변수의 값:', datePickerInput);
 
             // --- 2. 상태 관리 변수 ---
             let currentPage = 0, isLastPage = false, isLoading = false;
@@ -36,11 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let wordInfoData = {};
             let wrongAnswerData = [];
             let currentView = 'study_log';
+            let datePickerInstance = null;
 
-            document.getElementById('home-btn')?.addEventListener('click', () => {
-              currentView = 'study_log';
-              fetchAndRender({ isNewSearch: true, view: currentView });
-            });
 
             // 이벤트: 알파벳순 체크박스 (사전 모드일 때만)
               alphaCheckbox?.addEventListener('change', () => {
@@ -54,8 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
                   applyFiltersToCurrentView();
                 }
               });
-
-
 
              // 필터/정렬 적용 함수
               const applyFiltersToCurrentView = () => {
@@ -77,63 +69,115 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
                 function setupEventListeners(flatpickrInstance) {
-                    // 드롭다운 제어
+
+                    // --- 드롭다운 관련 요소들 ---
+                    const typeBtn = document.getElementById('type-btn');
+                    const typeDropdown = document.getElementById('type-dropdown');
+                    const typeBtnLabel = document.getElementById('type-btn-label');
+
+                    // --- 드롭다운 제어 ---
                     const closeAllDropdowns = () => {
-                        sortDropdown.classList.add('hidden');
-                        filterDropdown.classList.add('hidden');
+                        sortDropdown?.classList.add('hidden');
+                        filterDropdown?.classList.add('hidden');
+                        typeDropdown?.classList.add('hidden');
                     };
+
+                    window.addEventListener('click', (e) => {
+                        if(e.target.closest('.flatpickr-calendar')){
+                            return;
+                        }
+                        closeAllDropdowns();
+                    });
+
                     sortBtn?.addEventListener('click', e => {
                         e.stopPropagation();
                         sortDropdown.classList.toggle('hidden');
                         filterDropdown.classList.add('hidden');
+                        typeDropdown.classList.add('hidden');
                     });
+
                     filterBtn?.addEventListener('click', e => {
                         e.stopPropagation();
                         filterDropdown.classList.toggle('hidden');
                         sortDropdown.classList.add('hidden');
+                        typeDropdown.classList.add('hidden');
+                        // 참고: 이전에 고쳤던 flatpickr 로직은 그대로 유지합니다.
+                        // 단, 파라미터로 받은 flatpickrInstance를 사용해야 합니다.
+                        if (!filterDropdown.classList.contains('hidden')) {
+                            if (flatpickrInstance) {
+                                flatpickrInstance.open();
+                            }
+                        }
                     });
-                    window.addEventListener('click', closeAllDropdowns);
 
-                    // 뷰 전환 버튼
+                    typeBtn?.addEventListener('click', e => {
+                        e.stopPropagation();
+                        typeDropdown.classList.toggle('hidden');
+                        sortDropdown.classList.add('hidden');
+                        filterDropdown.classList.add('hidden');
+                    });
+
+
+                    // 1) 뷰 전환할 때 currentView 갱신
+                    document.getElementById('home-btn')?.addEventListener('click', () => {
+                      currentView = 'study_log';
+                      fetchAndRender({ isNewSearch: true, view: currentView });
+                    });
+
                     document.getElementById('dictionary-btn')?.addEventListener('click', () => {
-                        fetchAndRender({ isNewSearch: true, view: 'dictionary' });
-                        closeAllDropdowns();
-                    });
-                    resetBtn?.addEventListener('click', () => {
-                        if (searchForm) searchForm.reset();
-                        sortInput.value = 'id,desc';
-                        typeInput.value = '';
-                        startDateInput.value = '';
-                        endDateInput.value = '';
-                        if (flatpickrInstance) flatpickrInstance.clear();
-                        activeFiltersContainer.innerHTML = '';
-                        updateSortButtonState(false);
-                        typeSelect.value = '';
-                        fetchAndRender({ isNewSearch: true, view: 'study_log' });
+                      currentView = 'dictionary';             // ← 추가!
+                      fetchAndRender({ isNewSearch: true, view: currentView });
+                      closeAllDropdowns();
                     });
 
-                    // 정렬 옵션
+
+                    // 2) reset 버튼 핸들러
+                    resetBtn?.addEventListener('click', () => {
+                      if (searchForm) searchForm.reset();
+                      sortInput.value = 'id,desc';
+                      typeInput.value = '';
+                      startDateInput.value = '';
+                      endDateInput.value = '';
+                      if (flatpickrInstance) flatpickrInstance.clear();
+
+                      updateButtonState(sortBtn,   '정렬',  false);
+                      updateButtonState(filterBtn, '날짜',  false);
+                      updateButtonState(typeBtn,   '전체',  false);
+
+                      if(alphaCheckbox){
+                        alphaCheckbox.checked = false;
+                      }
+
+                      // 현재 뷰(currentView)에 맞춰 다시 그려주기
+                      fetchAndRender({ isNewSearch: true, view: currentView });
+                    });
+
+
+                    // --- 정렬, 타입, 날짜 옵션 선택 ---
                     document.querySelectorAll('.sort-option').forEach(option => {
                         option.addEventListener('click', e => {
                             e.preventDefault();
                             sortInput.value = option.dataset.sort;
-                            updateSortButtonState(true, option.innerText);
+                            updateButtonState(sortBtn, option.innerText, true);
                             applyFiltersToCurrentView();
                             closeAllDropdowns();
                         });
                     });
 
-                    // 타입 필터
-                    typeSelect?.addEventListener('change', () => {
-                        typeInput.value = typeSelect.value;
-                        applyTypeFilter(typeSelect.options[typeSelect.selectedIndex].text);
-                        applyFiltersToCurrentView();
+                    document.querySelectorAll('.type-option').forEach(option => {
+                        option.addEventListener('click', e => {
+                            e.preventDefault();
+                            typeInput.value = option.dataset.value;
+                            updateButtonState(typeBtn, option.textContent, true);
+                            applyFiltersToCurrentView();
+                            closeAllDropdowns();
+                        });
                     });
 
-                    // 날짜 필터
                     document.querySelectorAll('.date-filter-option').forEach(link => {
                         link.addEventListener('click', e => {
                             e.preventDefault();
+                            updateButtonState(filterBtn, link.innerText, true);
                             applyDateFilter(link.dataset.range, link.innerText, flatpickrInstance);
                             applyFiltersToCurrentView();
                             closeAllDropdowns();
@@ -175,45 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }));
                 }
 
-            function addFilterBadge(type, label, onRemove) {
-                if (!activeFiltersContainer) return;
-                const existingBadge = activeFiltersContainer.querySelector(`[data-type="${type}"]`);
-                if (existingBadge) existingBadge.remove();
-                if (label === '타입 (전체)' && type === 'type') return;
-
-                const badge = document.createElement('div');
-                badge.className = 'flex items-center gap-1 bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full';
-                badge.dataset.type = type;
-                badge.innerHTML = `<span>${label}</span><button class="font-bold text-lg leading-none hover:text-blue-600 ml-1">&times;</button>`;
-
-                badge.querySelector('button').onclick = () => {
-                    onRemove();
-                    badge.remove();
-                    applyFiltersToCurrentView();
-                };
-                activeFiltersContainer.appendChild(badge);
-            }
-
-            function updateSortButtonState(isActive, text = '정렬') {
-                if (!sortBtn) return;
-                sortBtn.innerHTML = `${text} <i class="fa-solid fa-chevron-down text-xs ml-2"></i>`;
-                if (isActive) {
-                    sortBtn.classList.add('border-blue-500', 'border-2', 'font-semibold', 'text-blue-600');
-                } else {
-                    sortBtn.classList.remove('border-blue-500', 'border-2', 'font-semibold', 'text-blue-600');
-                }
-            }
-
-            function applyTypeFilter(label) {
-                if (typeInput.value) {
-                    addFilterBadge("type", label, () => {
-                        typeInput.value = '';
-                        if(typeSelect) typeSelect.value = '';
-                    });
-                } else {
-                    const existingBadge = activeFiltersContainer.querySelector(`[data-type="type"]`);
-                    if (existingBadge) existingBadge.remove();
-                }
+            function updateButtonState(btnElement, label, isActive) {
+              if (!btnElement) return;
+              // 1) 텍스트+아이콘 갱신
+              btnElement.innerHTML = `
+                <span>${label}</span>
+                <i class="fa-solid fa-chevron-down text-sm ml-2"></i>
+              `;
+              // 2) 활성화 스타일 토글
+              btnElement.classList.toggle('border-blue-500', isActive);
+              btnElement.classList.toggle('text-blue-600',   isActive);
             }
 
             function applyDateFilter(range, label, flatpickrInstance) {
@@ -231,11 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     startDateInput.value = toYYYYMMDD(startDate);
                     endDateInput.value = toYYYYMMDD(today);
                 }
-                addFilterBadge("dateRange", label, () => {
-                    startDateInput.value = '';
-                    endDateInput.value = '';
-                    if (flatpickrInstance) flatpickrInstance.clear(false);
-                });
             }
 
             function initializeFlatpickr() {
@@ -247,8 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (selectedDates.length === 2) {
                             const customRange = dateStr.replace(" to ", "~");
                             applyDateFilter(customRange, dateStr, instance);
+                            updateButtonState(filterBtn, '기간', true);
                             applyFiltersToCurrentView();
                         }
+                        closeAllDropdowns();
                     }
                 });
             }
@@ -461,18 +473,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     collocations: expr.collocations,
                 };
                 const detailButtonHtml = (expr.exprType === 'WORD' && detailInfo.part_of_speech)
-                  ? `<button class="detail-button absolute bottom-4 right-4 bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-2 px-3 rounded-full" data-word-info='${JSON.stringify(detailInfo)}'>자세히</button>`
+                  ? `<button class="detail-button absolute bottom-4 right-4 bg-green-600 hover:bg-green-500 text-white text-xs font-bold py-2 px-3 rounded-full" data-word-info='${JSON.stringify(detailInfo)}'>자세히</button>`
                   : '';
                 return `
                 <div class="word-card-wrapper">
                     <div class="word-card-inner">
-                        <div class="word-card-front p-4">
+                        <div class="word-card-front p-4 border border-gray-300 font-['Open_Sans']">
                             <div class="w-full flex justify-between items-center absolute top-4 left-0 px-4">
-                                <span class="pron-audio-icon text-2xl" data-audio-src="${expr.pronAudio}"><i class="fa-solid fa-volume-high"></i></span>
-                                <span class="favorite-button text-2xl" data-expr-id="${expr.exprId}"><i class="fa-star favorite-icon ${expr.favorite ? 'fa-solid active' : 'fa-regular'}"></i></span>
+                                <span class="pron-audio-icon text-lg" data-audio-src="${expr.pronAudio}"><i class="fa-solid fa-volume-high"></i></span>
+                                <span class="favorite-button text-lg" data-expr-id="${expr.exprId}"><i class="fa-star favorite-icon ${expr.favorite ? 'fa-solid active' : 'fa-regular'}"></i></span>
                                 <div class="text-sm text-gray-500">*${expr.difficulty}</div>
                             </div>
-                            <h3 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4 text-3xl font-bold text-gray-900">${expr.wordText}</h3>
+                            <h3 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4 text-4xl font-bold text-gray-900">${expr.wordText}</h3>
                         </div>
                         <div class="word-card-back p-6 relative">
                             <div class="flex flex-col justify-center h-full text-center">
