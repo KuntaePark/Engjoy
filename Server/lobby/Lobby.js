@@ -79,7 +79,7 @@ class Lobby {
 
         this.broadcast(makePacket('player_update', this.members));
 
-        //트리거 제거
+        //트리거 초기화
         this.clearTrigger();
     }
 

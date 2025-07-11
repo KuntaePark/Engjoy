@@ -23,8 +23,7 @@ wss.on('connection', function connection(ws) {
    ws.on('message', (data) => {
       //update location
       const {type, payload} = JSON.parse(data);
-      
-      const now = new Date(Date.now());
+      // const now = new Date(Date.now());
       // console.log("[" + now.toUTCString()+"]" + " incoming message, type: ", type);
       
       (PacketHandler[type] || (()=> console.log("unknown packet type.")))(ws,payload);

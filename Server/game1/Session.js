@@ -5,6 +5,9 @@ const {Player} = require('./Player');
 const {deltaTime} = require('./GameLogic');
 const {makePacket} = require('../common/Packet');
 
+const CUTSCENE_LENGTH = 0; //in milliseconds, 게임 시작 전 컷씬 시간
+const COUNTDOWN_LENGTH = 4000; //in milliseconds
+
 /* [sessionId] : [Session] */
 const sessions = new Map(); //게임 세션
 
@@ -26,7 +29,12 @@ class Session {
         this.usedWords = [];   //해당 라운드에서 사용된 단어들
         
         //상대 판정 쉽게 하기 위해 배열로 저장
-        this.players = [new Player(0,id1, this), new Player(1, id2, this)]; //2인
+        try {
+            this.players = [new Player(0,id1, this), new Player(1, id2, this)]; //2인
+        } catch (e) {
+            //db 로드 오류
+            throw new Error(`Player creation failed: ${e.message}`);
+        }
 
         //10초 이내에 두 플레이어 모두 접속하지 않았을 경우, 세션 파기
         setTimeout(() => {
@@ -48,7 +56,7 @@ class Session {
         for(const player of this.players) {
             if(player.id === id) {
                 player.socket = ws;
-                player['sessionId'] = this.id;
+                player.socket['sessionId'] = this.id;
                 console.log(`player connection set.`);
                 ws.send(makePacket('session_connect', player.idx));
             }
@@ -62,35 +70,53 @@ class Session {
 
     //게임 시작 시 호출
     gameStart() {
-        console.log('game start');
+        //게임 시작 전 컷씬 및 카운트다운
+        console.log('game start countdown');
+        this.state = 'countdown';
         this.startTime = Date.now();
-        this.intervalId = setInterval(() => this.tick(), deltaTime * 1000);
-        this.state = "start";
         this.broadcast(makePacket('gameState', this));
+        //게임 컷씬 및 타이머 계산 시간 이후 게임 시작
+        setTimeout(() => {
+            console.log('game start');
+            this.intervalId = setInterval(() => this.tick(), deltaTime * 1000);
+            this.state = "start";
+            this.broadcast(makePacket('gameState', this));
+        }, CUTSCENE_LENGTH + COUNTDOWN_LENGTH);
     }
 
     //프레임 당 연산
     tick() {
-        //각 플레이어에 대해 input 체크 후 행동 수행
         for(const player of this.players) {
-            //먼저 초기화 필요한 애니메이션 플래그 초기황
-            player.clearAnimFlag();
-
-            if(player.hasInput()) {
-                //행동 수행
-                player.doAction();
-            }
+            //딜레이 스킬 발동
+            player.activateDelayedSkill();
         }
-
-        //업데이트 존재 시 브로드캐스트
-        this.broadcast(makePacket('gameState',this));
-
+        
+        //딜레이 스킬 연산 후, 게임 종료 체크
         //게임 종료 체크
         this.checkGameEnd();
+
+
+        //각 플레이어에 대해 input 체크 후 행동 수행
+        if(this.state === 'start') {
+            for(const player of this.players) {
+                //먼저 초기화 필요한 애니메이션 플래그 초기황
+                player.clearAnimFlag();
+                
+                if(player.hasInput()) {
+                    //행동 수행
+                    player.doAction();
+                }
+            }
+        }
+        //게임 상태 브로드캐스트
+        this.broadcast(makePacket('gameState',this));
+        
+
     }
     
     //각 플레이어에게 브로드캐스트
     broadcast(message) {
+        // console.log(`broadcasting message: ${message}`);
         for(const player of this.players) {
             player.socket.send(message);
         }
@@ -101,7 +127,7 @@ class Session {
         const now = Date.now();
         //시간 체크
         let winner = -1;
-        if(now - this.startTime >= timeLimit * 1000) {
+        if(now - this.startTime >= (timeLimit) * 1000 + COUNTDOWN_LENGTH) {
             //게임 끝
             console.log("game end by timeover");
             if(this.players[0].hp > this.players[1].hp) {

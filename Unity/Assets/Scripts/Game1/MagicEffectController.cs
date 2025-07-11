@@ -51,9 +51,5 @@ public class MagicEffectController : MonoBehaviour
         emissionModule.rateOverTime = initEmission * (1 + strengthLevel * emissionMultiplier);
         mainModule.startSize = initStartSize * (1 + strengthLevel * sizeMultiplier);
         mainModule.startLifetime = Mathf.Abs(shapeModule.radius / mainModule.startSpeed.constant);
-
-
-        Debug.Log("Start Lifetime: " + mainModule.startLifetime);
-
     }
 }

@@ -52,8 +52,8 @@ public class CharacterRenderer : MonoBehaviour
             }
             Debug.Log("Loading body prefab: " + bodyType);
             this.bodyTypeIndex = bodyTypeIndex; // Update body type index
-            GameObject bodyObject = Instantiate(bodyPrefab, BodyPlacer.transform.position, Quaternion.identity);
-            bodyObject.transform.SetParent(BodyPlacer.transform);
+            GameObject bodyObject = Instantiate(bodyPrefab, Vector3.zero, Quaternion.identity);
+            bodyObject.transform.SetParent(BodyPlacer.transform, false);
             bodyAnimator = bodyObject.GetComponent<Animator>();
         }
     }
@@ -75,8 +75,8 @@ public class CharacterRenderer : MonoBehaviour
             }
             Debug.Log("Loading weapon prefab: " + weaponType);
             this.weaponTypeIndex = weaponTypeIndex; // Update weapon type index
-            GameObject weaponObject = Instantiate(weaponPrefab, WeaponPlacer.transform.position, Quaternion.identity);
-            weaponObject.transform.SetParent(WeaponPlacer.transform);
+            GameObject weaponObject = Instantiate(weaponPrefab, Vector3.zero, Quaternion.identity);
+            weaponObject.transform.SetParent(WeaponPlacer.transform, false);
             weaponAnimator = weaponObject.GetComponent<Animator>();
         }
     }

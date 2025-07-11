@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class PlayerPanel : MonoBehaviour
 {
-    //°¢ ÇÃ·¹ÀÌ¾î ÆĞ³Î
+    //ê° í”Œë ˆì´ì–´ íŒ¨ë„
     public Text username;
     
     //hp
@@ -20,18 +20,21 @@ public class PlayerPanel : MonoBehaviour
     //strengthLevel
     public Slider StrBar;
 
-    public Image[] actionPanels = new Image[3]; // ¾×¼Ç ÆĞ³Î ÀÌ¹ÌÁö ¹è¿­ (°ø°İ, ¹æ¾î, ½ºÆä¼È)
+    public RectTransform[] actionPanels = new RectTransform[3]; // ì•¡ì…˜ íŒ¨ë„ ì´ë¯¸ì§€ ë°°ì—´ (ê³µê²©, ë°©ì–´, ìŠ¤í˜ì…œ)
     public int selected = 0;
 
-    public Text[] buttonTexts = new Text[2]; //Å° ¹öÆ° ÅØ½ºÆ®
+    public Text[] buttonTexts = new Text[2]; //í‚¤ ë²„íŠ¼ í…ìŠ¤íŠ¸
+
+    [SerializeField]
+    private RectTransform selector;
 
     // Start is called before the first frame update
     void Start()
     {
-        HPbar.maxValue = 100; // ÃÖ´ë HP °ª ¼³Á¤
+        HPbar.maxValue = 100; // ìµœëŒ€ HP ê°’ ì„¤ì •
         HPbar.value = 100;
 
-        MPbar.maxValue = 10; // ÃÖ´ë MP °ª ¼³Á¤
+        MPbar.maxValue = 10; // ìµœëŒ€ MP ê°’ ì„¤ì •
         MPbar.value = 0;
 
         StrBar.maxValue = 5;
@@ -46,20 +49,24 @@ public class PlayerPanel : MonoBehaviour
         {
             if (i == selected)
             {
-                actionPanels[i].color = Color.green; // ¼±ÅÃµÈ ¾×¼Ç ÆĞ³ÎÀº ³ë¶õ»ö
-            }
-            else
-            {
-                actionPanels[i].color = Color.white; // ¼±ÅÃµÇÁö ¾ÊÀº ¾×¼Ç ÆĞ³ÎÀº Èò»ö
+                placeSelector(i); // ì„ íƒëœ ì•¡ì…˜ íŒ¨ë„ì— ì…€ë ‰í„° ë°°ì¹˜
             }
         }
     }
 
+    private void placeSelector(int index)
+    {         
+        // ì„ íƒëœ ì•¡ì…˜ íŒ¨ë„ì˜ ìœ„ì¹˜ì— ì…€ë ‰í„°ë¥¼ ë°°ì¹˜
+            
+        selector.position = actionPanels[index].position;
+    }
+
     public void showPlayerInfo(PlayerData player)
     {
-        HPbar.value = player.hp; // ÇÃ·¹ÀÌ¾î HP ½½¶óÀÌ´õ °ª ¾÷µ¥ÀÌÆ®
+        username.text = player.nickname; // í”Œë ˆì´ì–´ ì´ë¦„ í‘œì‹œ
+        HPbar.value = player.hp; // í”Œë ˆì´ì–´ HP ìŠ¬ë¼ì´ë” ê°’ ì—…ë°ì´íŠ¸
         HpText.text = player.hp.ToString();
-        MPbar.value = player.mp; // ÇÃ·¹ÀÌ¾î MP ½½¶óÀÌ´õ °ª ¾÷µ¥ÀÌÆ®
+        MPbar.value = player.mp; // í”Œë ˆì´ì–´ MP ìŠ¬ë¼ì´ë” ê°’ ì—…ë°ì´íŠ¸
         MpText.text = player.mp.ToString();
         StrBar.value = player.strengthLevel;
     }
@@ -68,13 +75,13 @@ public class PlayerPanel : MonoBehaviour
     {
         if (isActionSelected)
         {
-            buttonTexts[0].text = "½ÃÀü\n(Ctrl)"; // ¼±ÅÃ ¿Ï·á ¹öÆ° ÅØ½ºÆ®
-            buttonTexts[1].text = "Ãë¼Ò\n(Alt)"; // Ãë¼Ò ¹öÆ° ÅØ½ºÆ®
+            buttonTexts[0].text = "ì‹œì „\n(Ctrl)"; // ì„ íƒ ì™„ë£Œ ë²„íŠ¼ í…ìŠ¤íŠ¸
+            buttonTexts[1].text = "ì·¨ì†Œ\n(Alt)"; // ì·¨ì†Œ ë²„íŠ¼ í…ìŠ¤íŠ¸
         }
         else
         {
-            buttonTexts[0].text = "°áÁ¤\n(Ctrl)"; // ¼±ÅÃ ¹öÆ° ÅØ½ºÆ®
-            buttonTexts[1].text = "¸¶³ª ÃæÀü\n(Alt)"; // ¸¶³ª ÃæÀü ¹öÆ° ÅØ½ºÆ®
+            buttonTexts[0].text = "ê²°ì •\n(Ctrl)"; // ì„ íƒ ë²„íŠ¼ í…ìŠ¤íŠ¸
+            buttonTexts[1].text = "ë§ˆë‚˜ ì¶©ì „\n(Alt)"; // ë§ˆë‚˜ ì¶©ì „ ë²„íŠ¼ í…ìŠ¤íŠ¸
         }
     }
 }

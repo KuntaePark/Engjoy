@@ -68,12 +68,14 @@ namespace DataForm
     {
         //기본 수치
         public string id = ""; //플레이어 ID, 서버로부터 배정받음
+        public string nickname = ""; //플레이어 닉네임, 서버로부터 배정받음
         public int idx = -1;
         public float hp = -1;
         public float mp = -1;
         public int strengthLevel = -1;
         public bool isActionSelected = false;
         public string currentAction = "";
+        public string skillId = ""; //스페셜 스킬 ID, 서버로부터 배정받음
 
         //단어 관련
         public wordData[] words = null;
@@ -83,6 +85,10 @@ namespace DataForm
         public bool isCharging = false;
         public bool isCasting = false;
         public bool castEnd = false;
+
+        //커스터마이징 관련
+        public int bodyTypeIndex = 0; //몸통 타입 인덱스
+        public int weaponTypeIndex = 0; //무기 타입 인덱스
     }
 
     [System.Serializable]
