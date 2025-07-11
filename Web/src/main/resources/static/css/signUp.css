@@ -11,14 +11,13 @@
 
   }
 
-    #wrapper{
-        display:flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items:center;
-        height: 70vh;
-
-    }
+  #wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 90px);
+    margin-top: 90px;
+  }
 
     #box{
     border: 1px solid black;
@@ -42,7 +41,8 @@
 }
 
 h2{
-    color:white
+    color:black;
+    text-align: center;
 }
 
 body{
@@ -73,16 +73,12 @@ body{
   z-index: 1000;
 }
 
-.logo {
-  color: #00cc66;
-  font-size: 32px;
-  font-weight: bold;
-  font-family: '맑은 고딕', sans-serif;
-  text-decoration: none;
-  line-height: 90px;
-}
+
 
 .menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 80px;
 }
@@ -94,32 +90,66 @@ body{
   line-height: 90px;
 }
 
-.nav-right .login-button{
-  text-decoration: none;
-  color: white;
-  font-size: 16px;;
-  line-height: 90px;
-
-}
-
-.nav-right{
-  padding-right:90px;
-  text-decoration: underline;
+.nav-right {
+  padding-right: 90px;
   text-align: right;
 }
 
-
-.nav-right a {
+.nav-right a, .nav-right span {
   color: white;
   text-decoration: underline;
   margin-left: 10px;
   font-size: 16px;
+  line-height: 90px;
 }
 
 
 
 
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
+
 .login a{
     color: white;
     text-decoration:none;
-}}
+}
+
+
+form > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+
+form > div label {
+    width: 90px; /* or 100px */
+    font-weight: bold;
+}
+
+
+form > div input {
+    flex: 1;
+    padding: 6px 8px;
+    box-sizing: border-box;
+}
+
+form > div button {
+    white-space: nowrap;
+}
+
+#container {
+  width: 400px;
+  padding: 30px;
+  background-color: whitesmoke;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+

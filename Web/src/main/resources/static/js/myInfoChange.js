@@ -1,6 +1,6 @@
 function existingNickname() {
   const nickname = document.getElementById("nicknameInput").value.trim();
-  const result = document.getElementById("nicknameResult");
+  const result = document.getElementById("nicknameExistResult");
 
   if (!nickname) {
     result.textContent = "닉네임을 입력해주세요.";
@@ -12,10 +12,11 @@ function existingNickname() {
     .then(response => response.json())
     .then(data => {
       if (data.exists) {
-        result.textContent = "회원님의 닉네임이 확인되었습니다!.";
-        result.style.color = "red";
+        result.textContent = "회원님의 닉네임이 확인되었습니다!";
+        result.style.color = "green";
       } else {
-        result.textContent = "존재하지 않는 닉네임입니다.다시 입력해주세요"
+        result.textContent = "존재하지 않는 닉네임입니다. 다시 입력해주세요.";
+        result.style.color = "red";
       }
     })
     .catch(err => {
@@ -26,16 +27,17 @@ function existingNickname() {
 }
 
 
+function nicknameCheck() {
+  const newNickname = document.getElementById("newNicknameInput").value.trim();
+  const result = document.getElementById("nicknameCheckResult");
 
-function nicknameCheck(){
-    const newNickname = document.getElementById("newNicknameInput").value.trim();
-    const result = document.getElementById("nicknameResult");
-    if (!newNickname){
-        result.textContent = "새 닉네임을 입력해주세요"
-        result.style.color = "gray";
-        return;
-    }
-     fetch(`/api/check-nickname?nickname=${encodeURIComponent(newNickname)}`)
+  if (!newNickname) {
+    result.textContent = "새 닉네임을 입력해주세요.";
+    result.style.color = "gray";
+    return;
+  }
+
+  fetch(`/api/check-nickname?nickname=${encodeURIComponent(newNickname)}`)
     .then(response => response.json())
     .then(data => {
       if (data.exists) {
@@ -51,16 +53,11 @@ function nicknameCheck(){
       result.style.color = "gray";
       console.error(err);
     });
-
-
-
 }
-
-
 
 function existingEmail() {
   const email = document.getElementById("emailInput").value.trim();
-  const result = document.getElementById("emailResult");
+  const result = document.getElementById("emailExistResult");
 
   if (!email) {
     result.textContent = "이메일을 입력해주세요.";
@@ -72,11 +69,11 @@ function existingEmail() {
     .then(response => response.json())
     .then(data => {
       if (data.exists) {
-        result.textContent = "회원님의 이메일이 확인되었습니다!.";
-        result.style.color = "red";
-      } else {
-        result.textContent = "존재하지 않는 이메일 입니다. 다시 입력해주세요.";
+        result.textContent = "회원님의 이메일이 확인되었습니다!";
         result.style.color = "green";
+      } else {
+        result.textContent = "존재하지 않는 이메일입니다. 다시 입력해주세요.";
+        result.style.color = "red";
       }
     })
     .catch(err => {
@@ -87,18 +84,17 @@ function existingEmail() {
 }
 
 
+function emailCheck() {
+  const newEmail = document.getElementById("newEmailInput").value.trim();
+  const result = document.getElementById("emailCheckResult");
 
+  if (!newEmail) {
+    result.textContent = "새 이메일을 입력해주세요.";
+    result.style.color = "gray";
+    return;
+  }
 
-
-function emailCheck(){
-    const newEmail = document.getElementById("newEmailInput").value.trim();
-    const result = document.getElementById("emailResult");
-    if( !newEmail) {
-        result.textContent = "새 이메일을 입력해주세요"
-        result.style.color = "gray";
-        return;
-    }
-    fetch(`/api/check-email?email=${encodeURIComponent(newEmail)}`)
+  fetch(`/api/check-email?email=${encodeURIComponent(newEmail)}`)
     .then(response => response.json())
     .then(data => {
       if (data.exists) {
@@ -114,15 +110,69 @@ function emailCheck(){
       result.style.color = "gray";
       console.error(err);
     });
-
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    const nicknameCheckBtn = document.getElementById("nicknameCheckBtn");
+  const saveBtn = document.getElementById("save");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", function () {
+      const nickname = document.getElementById("newNicknameInput").value.trim();
+      const email = document.getElementById("newEmailInput").value.trim();
 
-    if (nicknameCheckBtn) {
-        nicknameCheckBtn.addEventListener("click", nicknameCheck);
+      const params = new URLSearchParams();
+      params.append("nickname", nickname);
+      params.append("email", email);
+
+      fetch("/myInfoChange", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params
+      })
+      .then(response => {
+        if (response.redirected) {
+          window.location.href = response.url;
+        } else {
+          return response.text().then(text => {
+            alert("응답 메시지: " + text);
+          });
+        }
+      })
+      .catch(err => {
+        alert("오류 발생: " + err);
+      });
+    });
+  }
+});
+
+
+
+saveBtn.addEventListener("click", function () {
+  const nickname = document.getElementById("newNicknameInput").value.trim();
+  const email = document.getElementById("newEmailInput").value.trim();
+
+  fetch("/myInfoChange", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      nickname: nickname,
+      email: email,
+      password: "새로운 비밀번호 값도 필요하다면 여기에 추가"
+    }),
+  })
+  .then(response => {
+    if (response.redirected) {
+      window.location.href = response.url;
+    } else {
+      alert("저장 완료!");
     }
+  })
+  .catch(error => {
+    alert("저장 실패: " + error);
+  });
 });
 
 

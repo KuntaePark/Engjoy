@@ -38,43 +38,41 @@
         </div>
     </header>
     <div id="wrapper">
-        <div id="box">
-            <div>
+        <div id="container">
                 <h2>개인 정보 수정</h2>
                 <hr><br>
-            </div>
             <div>
                 <label>내 닉네임</label>
                 <input type="text" id="nicknameInput">
-                <button class="btn" id="nicknameCheck">확인</button>
-                <span id="nicknameResult"></span>
+                <button class="btn" id="nicknameExistBtn" onclick="existingNickname()">확인</button><br>
+                <span id="nicknameExistResult"></span>
                 <br><br>
                 <label>새 닉네임</label>
                 <input type="text" id="newNicknameInput">
-                <button class="btn" onclick="nicknameCheckBtn()">중복확인</button>
-                <span id="newNicknameResult"></span>
+                <button class="btn" id="nicknameCheckBtn" onclick="nicknameCheck()">중복확인</button><br>
+                <span id="nicknameCheckResult"></span>
             </div>
             <br>
             <div>
                 <label>내 이메일</label>
-                <input type="text" id="emailInput">
-                <button class="btn" onclick="existingEmail()">확인</button>
-                <span id="emailResult"></span>
+                <input type="text" name="email" id="emailInput">
+                <button class="btn" id="emailExistBtn" onclick="existingEmail()">확인</button><br>
+                <span id="emailExistResult"></span>
                 <br><br>
                 <label>새 이메일</label>
                 <input type="email" id="newEmailInput">
-                <button class="btn" onclick="emailCheck()">중복확인</button>
-                <span id="newEmailResult"></span>
+                <button class="btn" onclick="emailCheck()">중복확인</button><br>
+                <span id="emailCheckResult"></span>
             </div>
             <br><br>
             <a th:href="@{/passwordChange}">비밀번호 변경하기 이동</a>
             <br><br>
             <div id="submit">
-                <input type="button" value="저장" id="save">
+                <input type="button" value="저장" id="save" onclick="saveInfo()">
                 <button type="button" id="cancel" onclick="location.href='myPage.html'">취소</button>
             </div>
         </div>
 
-    </div>
+    </div>>
 </th:block>
 </html>

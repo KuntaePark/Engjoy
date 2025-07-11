@@ -43,6 +43,9 @@
 }
 
 .menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 80px;
 }
@@ -54,34 +57,34 @@
   line-height: 90px;
 }
 
-.nav-right .login-button{
-  text-decoration: none;
-  color: white;
-  font-size: 16px;;
-  line-height: 90px;
-
-}
-
-.nav-right{
-  padding-right:90px;
-  text-decoration: underline;
+.nav-right {
+  padding-right: 90px;
   text-align: right;
 }
 
-
-.nav-right a {
+.nav-right a, .nav-right span {
   color: white;
   text-decoration: underline;
   margin-left: 10px;
   font-size: 16px;
+  line-height: 90px;
 }
-
-
-
 
 .login a{
     color: white;
     text-decoration:none;
+}
+
+#container{
+    margin-left: 80px;
+}
+
+.battle-image{
+      width: 600px;
+      height: 600px;
+      object-fit: cover;
+      border-radius: 50%;
+      background-color: lightgray;
 }
 
 

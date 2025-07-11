@@ -17,16 +17,15 @@ public class PasswordChangeService {
     }
 
     public boolean passwordCheck(Long accountId, String inputPassword){
-        // 1. DB에서 암호화된 비밀번호 조회
         Optional<String> encodedPasswordOpt = accountRepository.findPasswordById(accountId);
 
         if (encodedPasswordOpt.isEmpty()) {
-            return false; // 계정이 없으면 실패
+            return false;
         }
 
         String encodedPassword = encodedPasswordOpt.get();
 
-        // 2. 입력한 비밀번호와 암호화된 비밀번호 비교
+
         return passwordEncoder.matches(inputPassword, encodedPassword);
     }
 }

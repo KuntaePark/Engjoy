@@ -1,22 +1,34 @@
+document.addEventListener("DOMContentLoaded", function (){
 document.getElementById("passwordChangeForm").addEventListener("submit", function(event){
 
+    const form = document.getElementById("passwordChangeForm");
     const pw1 = document.getElementById("passwordFirst").value;
     const pw2 = document.getElementById("passwordSecond").value;
     const result = document.getElementById("result");
 
-    if(!pw1 || !pw2){
-        event.preventDefault();
-        result.innerHTML = "※비밀번호를 입력해주세요."
+    form.addEventListener("submit", function (e) {
+      const pw1 = pw1Input.value.trim();
+      const pw2 = pw2Input.value.trim();
 
-    }else if( pw1 !== pw2){
-        event.preventDefault();
-        result.innerHTML = "※비밀번호가 서로 일치하지 않습니다."
-    }else if( pw1.length < 8 || pw1.length > 32){
-        event.preventDefault();
+      let hasError = false;
 
-        result.innerHTML = "※비밀번호를 8자 이상 32자 이하로 입력해주세요"
-    }else{
-        result.innerHTML = "비밀번호가 성공적으로 변경되었습니다."
-    }
-});
+      if (!pw1 || !pw2) {
+        result.textContent = "※비밀번호를 모두 입력해주세요.";
+        result.style.color = "red";
+        hasError = true;
+      } else if (pw1 !== pw2) {
+        result.textContent = "※비밀번호가 일치하지 않습니다.";
+        result.style.color = "red";
+        hasError = true;
+      } else if (pw1.length < 8 || pw1.length > 32) {
+        result.textContent = "※비밀번호는 8~32자 사이여야 합니다.";
+        result.style.color = "red";
+        hasError = true;
+      }
+
+      if (hasError) {
+        e.preventDefault();
+      }
+    });
+
 

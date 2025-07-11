@@ -3,15 +3,16 @@ package com.engjoy.control;
 import com.engjoy.Dto.PasswordResetDto;
 import com.engjoy.service.PasswordResetService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+
 
 import java.util.Map;
 
 
-    @RestController
+    @Controller
     @RequestMapping("/api")
     public class ResetController {
 
@@ -34,7 +35,7 @@ import java.util.Map;
             }
         }
 
-        // 실제 비밀번호 변경 요청
+
         @PostMapping("/reset-password")
         public ResponseEntity<String> resetPassword(@RequestBody PasswordResetDto dto) {
             boolean result = passwordResetService.resetPassword(dto.getToken(), dto.getNewPassword());
@@ -44,7 +45,19 @@ import java.util.Map;
             } else {
                 return ResponseEntity.badRequest().body("토큰이 유효하지 않거나 만료되었습니다.");
             }
+
+
         }
-    }
+
+
+
+
+
+        }
+
+
+
+
+
 
 

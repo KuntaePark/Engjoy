@@ -21,15 +21,13 @@
   line-height: 90px;
 }
 
-
 .menu {
   position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 80px;
 }
-
 
 .menu a {
   text-decoration: none;
@@ -39,46 +37,52 @@
 }
 
 .nav-right {
-    padding-right:90px;
-    text-decoration: underline;
-    text-align: right;
+  padding-right: 90px;
+  text-align: right;
 }
 
-.nav-right a {
+.nav-right a, .nav-right span {
   color: white;
   text-decoration: underline;
   margin-left: 10px;
   font-size: 16px;
-}
-
-
-/* 로고 스타일 */
-.navbar .logo {
-    color: #00cc66;
-    font-size: 32px;
-    font-weight: bold;
-    font-family: '맑은 고딕', sans-serif;
-    text-decoration: none;
-    line-height: 90px;
-    margin-right: 40px;
-    /* 또는 margin-left: 40px;으로 설정 */
-}
-
-
-.nav-right .login-button{
-  text-decoration: none;
-  color: white;
-  font-size: 16px;;
   line-height: 90px;
-
 }
 
 
 
-    .moving{
-    color:white;
-    }
+
+.moving{
+color:white;
+}
 
 #wrapper {
-  margin-top: 90px; /* navbar의 height만큼 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 90px);
+    margin-top: 90px;
 }
+
+.card-container {
+  display: flex;
+  flex-direction: row;
+  gap: 80px;
+  font-size: 35px;
+}
+
+.card{
+      width: 180px;
+      height: 200px;
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+}
+
+.login a{
+    color: white;
+    text-decoration:none;
+}
+
+

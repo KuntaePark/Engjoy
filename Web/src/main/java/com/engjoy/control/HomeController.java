@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.security.Principal;
 import java.util.Map;
-import java.util.Optional;
+
 
 
 @Controller
@@ -47,18 +47,16 @@ public class HomeController {
     }
 
 
-
-
     @GetMapping("/mainPage")
     public String mainPage(Model model, Principal principal) {
         if (principal != null) {
             String email = principal.getName();
-            System.out.println("▶ 로그인된 사용자 이메일: " + email); // 디버깅용 로그
+            System.out.println("▶ 로그인된 사용자 이메일: " + email);
 
             Account account = accountService.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("사용자 정보를 찾을 수 없습니다."));
 
-            System.out.println("▶ 닉네임: " + account.getNickname()); // 닉네임 확인
+            System.out.println("▶ 닉네임: " + account.getNickname());
 
             model.addAttribute("nickname", account.getNickname());
         } else {
@@ -78,12 +76,12 @@ public class HomeController {
                          BindingResult bindingResult,
                          Model model) {
 
-        // 유효성 검사 실패 시 다시 회원가입 페이지로
+
         if (bindingResult.hasErrors()) {
             return "signUp"; // signUp.html로 돌아감
         }
 
-        // 중복 이메일, 닉네임 등의 비즈니스 로직 검사 예시
+
         if (accountService.existsByEmail(signUpDto.getEmail())) {
             model.addAttribute("error", "이미 사용 중인 이메일입니다.");
             return "signUp";
@@ -96,18 +94,18 @@ public class HomeController {
 
         accountService.insert(signUpDto);
 
-        // 5. 회원가입 완료 → 로그인 페이지로 이동
+
         return "redirect:/login";
 
     }
 
     @GetMapping("/agree")
-    public String goToAgree(){
+    public String goToAgree() {
         return "agree";
     }
 
     @GetMapping("/gameInfo")
-    public String goToGameInfo(Model model, Principal principal){
+    public String goToGameInfo(Model model, Principal principal) {
         if (principal != null) {
             String email = principal.getName();
             Account account = accountService.findByEmail(email)
@@ -118,13 +116,9 @@ public class HomeController {
     }
 
 
-    @GetMapping("/pwChangeDone")
-    public String goToPwChangeDone(){
-        return "pwChangeDone";
-    }
 
     @GetMapping("/serviceInfo")
-    public String goToServiceInfo(Model model, Principal principal){
+    public String goToServiceInfo(Model model, Principal principal) {
         if (principal != null) {
             String email = principal.getName();
             Account account = accountService.findByEmail(email)
@@ -136,23 +130,13 @@ public class HomeController {
 
 
 
-    @GetMapping("/signUpFinished")
-    public String goToSignUpFinished(){
-        return "signUpFinished";
-    }
-    @PostMapping("/signUpCheck")
-    public String signUpCheck(@Valid SignUpDto signUpDto,
-                              BindingResult bindingResult,
-                              Model model) {
-        // 회원가입 로직 작성
-        return "redirect:/login";
-    }
     @GetMapping("/api/check-email")
     @ResponseBody
     public Map<String, Boolean> checkEmail(@RequestParam String email) {
         boolean exists = accountService.existsByEmail(email);
         return Map.of("exists", exists);
     }
+
     @GetMapping("/login")
     public String loginPage(@RequestParam(value = "error", required = false) String error,
                             Model model) {
@@ -161,6 +145,15 @@ public class HomeController {
         }
         return "login";
     }
+    @GetMapping("/api/check-nickname")
+    @ResponseBody
+    public Map<String, Boolean> checkNickname(@RequestParam String nickname) {
+        boolean exists = accountService.existsByNickname(nickname);
+        return Map.of("exists", exists);
+    }
+
+
+
 
 }
 

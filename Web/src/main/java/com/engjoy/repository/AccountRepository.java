@@ -8,11 +8,11 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface AccountRepository extends JpaRepository<Account, Long > {
-    // 기본키(id)로 이메일 조회
+
     @Query("SELECT a.email FROM Account a WHERE a.id = :id")
     Optional<String> findEmailById(@Param("id") Long id);
 
-    // 기본키(id)로 비밀번호 조회
+
     @Query("SELECT a.password FROM Account a WHERE a.id = :id")
     Optional<String> findPasswordById(@Param("id") Long id);
 

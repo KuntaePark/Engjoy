@@ -1,7 +1,15 @@
 
 
+    #wrapper {
+      height: calc(100vh - 90px);
+      margin-top: 90px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
     #container{
-        width: 25%;
+        width: 400px;
         margin: 0 auto;
         padding : 20px;
         background-color: whitesmoke;
@@ -9,7 +17,6 @@
         justify-content: center;
         display: flex;
         flex-direction: column;
-        margin-top: 10%;
     }
 
     body{
@@ -32,53 +39,53 @@
 
 
 .navbar {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   background-color: #2f3e46;
   height: 90px;
   padding: 0 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
 }
 
-
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
 
 .menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 80px;
-  justify-content:center;
 }
 
 .menu a {
   text-decoration: none;
   color: white;
   font-size: 16px;
-  padding: 0 10px;
+  line-height: 90px;
 }
 
-    .nav-right {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      color: white;
-      font-size: 16px;
-    }
+.nav-right {
+  padding-right: 90px;
+  text-align: right;
+}
 
-    .nav-right a {
-      color: white;
-      text-decoration: underline;
-    }
+.nav-right a, .nav-right span {
+  color: white;
+  text-decoration: underline;
+  margin-left: 10px;
+  font-size: 16px;
+  line-height: 90px;
+}
 
-    .nav-left {
-      display: flex;
-      align-items: center;
-    }
-
-    .logo {
-      color: #00cc66;
-      font-size: 32px;
-      font-weight: bold;
-      font-family: '맑은 고딕', sans-serif;
-      text-decoration: none;
-      line-height: 90px;
-      margin-right: 40px
-    }

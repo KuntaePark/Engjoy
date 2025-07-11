@@ -1,4 +1,4 @@
-#box{
+#container{
         width: 25%;
         margin: 0 auto;
         padding : 20px;
@@ -7,7 +7,6 @@
         justify-content: center;
         display: flex;
         flex-direction: column;
-        margin-top: 10%;
    }
 
 .btn{
@@ -85,6 +84,10 @@
 
 #wrapper {
   padding-top: 90px;
+  display:flex;
+  height: calc(100vh - 90px);
+  align-items:center;
+  justify-content:center;
 }
 
 .navbar {
@@ -111,6 +114,9 @@
 }
 
 .menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 80px;
 }
@@ -122,25 +128,19 @@
   line-height: 90px;
 }
 
-.nav-right .login-button{
-  text-decoration: none;
-  color: white;
-  font-size: 16px;;
-  line-height: 90px;
-
-}
-
-.nav-right{
-  padding-right:90px;
-  text-decoration: underline;
+.nav-right {
+  padding-right: 90px;
   text-align: right;
 }
 
-
-.nav-right a {
+.nav-right a, .nav-right span {
   color: white;
   text-decoration: underline;
   margin-left: 10px;
   font-size: 16px;
+  line-height: 90px;
 }
+
+
+
 

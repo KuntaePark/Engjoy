@@ -19,8 +19,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/signUp", "/serviceInfo", "/gameInfo",
-                                "/api/**", "/css/**", "/js/**", "/images/**", "/favicon.ico", "/mainPage" ).permitAll()
+                        .requestMatchers("/", "/login", "/signUp", "/agree", "/passwordSearch", "/passwordChange","/serviceInfo", "/gameInfo",
+                                "/api/**", "/css/**", "/js/**", "/images/**", "/favicon.ico", "/mainPage").permitAll()
 
                         .anyRequest().authenticated()
                 )
@@ -33,7 +33,7 @@ public class SecurityConfig {
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/mainPage")
+                        .logoutSuccessUrl("/login")
                         .permitAll());
 
         return http.build();
