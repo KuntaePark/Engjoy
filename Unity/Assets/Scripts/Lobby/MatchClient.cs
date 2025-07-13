@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 public class MatchClient : WebSocketClient
 {
-    private const string matchServerUrl = "ws://192.168.0.51:7779";
+    private const string matchServerUrl = "ws://localhost:7779";
 
     public long id { get; set; }
     // Start is called before the first frame update

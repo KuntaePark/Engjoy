@@ -38,7 +38,10 @@ wss.on('connection', function connection(ws) {
         if(ws.id !== matchServerId) {
             //세션에서 해당 플레이어 제거
             const sessionId = ws['sessionId'];
-            session.close();
+            if(sessionId) {
+                const session = sessions.get(sessionId);
+                session.close();
+            }
         }
         
     })
