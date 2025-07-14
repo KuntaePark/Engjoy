@@ -110,25 +110,6 @@ function handleInput(ws, payload) {
 
 }
 
-//임시 아이디 생성 함수.
-function generateId() {
-   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-   
-   while(true)
-   {
-      //simple id redundancy checking. should use UUID or player login id later.
-      let result = '';
-      for (let i = 0; i < idLength; i++) {
-         result += chars[Math.floor(Math.random() * chars.length)];
-      }
-
-      if(!idSet.has(result))
-      {
-         idSet.add(result);
-         return result;
-      }
-   }
-}
 
 //********기타 편의성 함수*********//
 function UTCTimeStamp() {return new Date(Date.now()).toUTCString();}

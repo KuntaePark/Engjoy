@@ -4,14 +4,14 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    public Transform target; //µû¶ó´Ù´Ò ÇÃ·¹ÀÌ¾î
-    public float smoothSpeed = 0.125f;
-    public Vector3 offset = new Vector3(0,0,-10); //Ä«¸Ş¶ó¿Í ÇÃ·¹ÀÌ¾îÀÇ °Å¸® ¿ÀÇÁ¼Â
+    public Transform target; //ë”°ë¼ë‹¤ë‹ í”Œë ˆì´ì–´
+    public float smoothSpeed = 10.0f;
+    public Vector3 offset = new Vector3(0,0,-10); //ì¹´ë©”ë¼ì™€ í”Œë ˆì´ì–´ì˜ ê±°ë¦¬ ì˜¤í”„ì…‹
 
     private Camera cam;
     private float originalSize;
-    [SerializeField] private float zoomSize = 4f; //ÁÜÀÎµÇ¾úÀ» ¶§ÀÇ Ä«¸Ş¶ó Å©±â
-    [SerializeField] private float zoomSpeed = 1f; //ÁÜ¾Æ¿ô ¼Óµµ
+    [SerializeField] private float zoomSize = 4f; //ì¤Œì¸ë˜ì—ˆì„ ë•Œì˜ ì¹´ë©”ë¼ í¬ê¸°
+    [SerializeField] private float zoomSpeed = 1f; //ì¤Œì•„ì›ƒ ì†ë„
     private bool isReviveZooming = false;
 
     private void Start()
@@ -30,7 +30,7 @@ public class CameraController : MonoBehaviour
         if(target != null)
         {
             Vector3 desiredPosition = target.position + offset;
-            Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
+            Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * smoothSpeed);
             transform.position = smoothedPosition;
         }
 

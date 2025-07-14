@@ -78,7 +78,7 @@ public class EffectController : MonoBehaviour
                     }
                 }
 
-                if (player.castEnd && Projectiles[player.idx] == null)
+                if (player.castEnd && !player.castFail && Projectiles[player.idx] == null)
                 {
                     switch (player.currentAction)
                     {

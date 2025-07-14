@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DataForm;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public class Game1Manager : MonoBehaviour
 {
@@ -93,9 +94,12 @@ public class Game1Manager : MonoBehaviour
         return countdownTime * 1000 + gameState.startTime - (long)(DateTime.UtcNow - epoch).TotalMilliseconds;
     }
 
-    public void endGame(int winnerIdx)
+    public void endGame(JObject gameEndData)
     {
         //게임 종료 처리
+        int winnerIdx = (int)gameEndData["winner"];
+        int score = (int)gameEndData["score"];
+        int diff = (int)gameEndData["diff"];
         Debug.Log("Game ended. Winner index: " + winnerIdx);
         gameState.startTime = 0;
         gameState.state = "end";
@@ -103,8 +107,14 @@ public class Game1Manager : MonoBehaviour
         //게임 끝 연출 재생
         if(winnerIdx != 2)
         {
-            StartCoroutine(camAnimator.finalBlowCameraMovement(characterRenderers[1 - winnerIdx].bodyAnimator, 1 - winnerIdx, () => { uiController.showGameOver(winnerIdx); }));
+            uiController.gameObject.SetActive(false);
+            StartCoroutine(camAnimator.finalBlowCameraMovement(characterRenderers[1 - winnerIdx].bodyAnimator, 1 - winnerIdx, () => { uiController.showGameOver(winnerIdx,score,diff); }));
         }
+        else
+        {
+            uiController.showGameOver(winnerIdx, score, diff);
+        }
+        
         
 
     }
