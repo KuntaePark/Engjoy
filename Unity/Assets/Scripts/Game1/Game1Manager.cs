@@ -20,6 +20,9 @@ public class Game1Manager : MonoBehaviour
     public GameClient1 gameClient; //게임 클라이언트 스크립트 참조
     public GameState gameState; //게임 상태 데이터
     public int myIdx = -1;
+    
+    public CameraAnimator camAnimator;
+
 
     public const int timeLimit = 99; //게임 시간 제한(초)
     public const int countdownTime = 4; //카운트다운 시간(초)
@@ -96,7 +99,13 @@ public class Game1Manager : MonoBehaviour
         Debug.Log("Game ended. Winner index: " + winnerIdx);
         gameState.startTime = 0;
         gameState.state = "end";
-        uiController.showGameOver(winnerIdx);
+
+        //게임 끝 연출 재생
+        if(winnerIdx != 2)
+        {
+            StartCoroutine(camAnimator.finalBlowCameraMovement(characterRenderers[1 - winnerIdx].bodyAnimator, 1 - winnerIdx, () => { uiController.showGameOver(winnerIdx); }));
+        }
+        
 
     }
 }

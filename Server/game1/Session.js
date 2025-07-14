@@ -4,6 +4,8 @@
 const {Player} = require('./Player');
 const {deltaTime} = require('./GameLogic');
 const {makePacket} = require('../common/Packet');
+const {preciseSetInterval, clearPreciseInterval} = require('../common/PreciseInterval');
+
 
 const CUTSCENE_LENGTH = 0; //in milliseconds, 게임 시작 전 컷씬 시간
 const COUNTDOWN_LENGTH = 4000; //in milliseconds
@@ -78,7 +80,7 @@ class Session {
         //게임 컷씬 및 타이머 계산 시간 이후 게임 시작
         setTimeout(() => {
             console.log('game start');
-            this.intervalId = setInterval(() => this.tick(), deltaTime * 1000);
+            this.intervalId = preciseSetInterval(() => this.tick(), deltaTime * 1000);
             this.state = "start";
             this.broadcast(makePacket('gameState', this));
         }, CUTSCENE_LENGTH + COUNTDOWN_LENGTH);
@@ -147,9 +149,9 @@ class Session {
         }
         if(winner >= 0) {
             console.log("game end");
-            clearInterval(this.intervalId);
-            this.intervalId = null;
             this.state = 'end';
+            clearPreciseInterval(this.intervalId);
+            this.intervalId = null;
             const message = makePacket('gameEnd', winner);
             this.broadcast(message);
             this.close();
@@ -166,7 +168,7 @@ class Session {
 
     close() {
         console.log(`closing session ${this.id}`);
-        if(this.intervalId) clearInterval(this.intervalId);
+        if(this.intervalId) clearPreciseInterval(this.intervalId);
         sessions.delete(this.id);
         
     }

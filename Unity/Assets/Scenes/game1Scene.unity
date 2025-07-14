@@ -212,6 +212,7 @@ GameObject:
   - component: {fileID: 79810987}
   - component: {fileID: 79810986}
   - component: {fileID: 79810989}
+  - component: {fileID: 79810990}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -337,6 +338,23 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!114 &79810990
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 79810985}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa5eb16a04474ee41ab2cd1998877d01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetLocations:
+  - {fileID: 1742157400}
+  - {fileID: 218567936}
+  targetSize: 2
+  duration: 1
 --- !u!1 &111180829
 GameObject:
   m_ObjectHideFlags: 0
@@ -666,6 +684,11 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 7
+--- !u!4 &218567936 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4582961854047649481, guid: 4dd881e90f2065547a73c510950354f4, type: 3}
+  m_PrefabInstance: {fileID: 160331863}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &234881300
 GameObject:
   m_ObjectHideFlags: 0
@@ -4838,6 +4861,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7b0977d024160047874bcc25433ca3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  projectileScaleFactor: 0.5
   MagicPlaceholder:
   - {fileID: 966109185}
   - {fileID: 626935668}
@@ -11199,6 +11223,7 @@ MonoBehaviour:
   gameState:
     state: ready
   myIdx: -1
+  camAnimator: {fileID: 79810990}
   uiController: {fileID: 2096913195}
   characterRenderers:
   - {fileID: 71810677}
@@ -11389,6 +11414,11 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.5
+--- !u!4 &1742157400 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4582961854047649481, guid: 4dd881e90f2065547a73c510950354f4, type: 3}
+  m_PrefabInstance: {fileID: 71810675}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1778641717
 GameObject:
   m_ObjectHideFlags: 0

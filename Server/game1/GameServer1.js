@@ -40,7 +40,7 @@ wss.on('connection', function connection(ws) {
             const sessionId = ws['sessionId'];
             if(sessionId) {
                 const session = sessions.get(sessionId);
-                session.close();
+                // session.close();
             }
         }
         
