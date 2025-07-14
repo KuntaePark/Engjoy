@@ -3,40 +3,16 @@ package com.engjoy.service;
 import com.engjoy.dto.SignUpDto;
 import com.engjoy.entity.Account;
 import com.engjoy.repository.AccountRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import com.engjoy.entity.Account;
-import com.engjoy.repository.AccountRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
-public class AccountService implements UserDetailsService {
+public class AccountService {
 
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        //해당 유저의 이메일로
-        Account account = accountRepository.findByEmail(username).get();
-
-        if(account == null) {
-            throw new UsernameNotFoundException(username);
-        }
-
-        return User.builder()
-                .username(account.getEmail())
-                .password(account.getPassword())
-                .build();
-    }
 
 
     public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
