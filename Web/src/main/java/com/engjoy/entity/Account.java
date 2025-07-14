@@ -28,5 +28,36 @@ public class Account {
     @OneToOne(cascade = CascadeType.ALL,mappedBy = "account")
     @PrimaryKeyJoinColumn
     private UserGameData userGameData;
+
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setBirth(LocalDate birth) {
+        this.birth = birth;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getNickname() {
+        return this.nickname;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
 }
 

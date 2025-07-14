@@ -6,12 +6,9 @@
       layout:decorate="~{fragment/default}">
 
 <th:block layout:fragment="css">
-    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link rel="stylesheet" th:href="@{/css/gameInfo.css}">
 </th:block>
-
-<th:block layout:fragment="script">
-    <script th:src="@{/js/login.js}"></script>
-</th:block>
+<th:block layout:fragment="script"></th:block>
 
 
 <th:block layout:fragment="main">
@@ -37,31 +34,30 @@
         </div>
     </header>
 
-
     <div id="wrapper">
-
-        <h2>로그인</h2>
-        <div id="container">
-            <form th:action="@{/login}" method="post">
-
-                <div>
-                    <input type="email" name="username" style="border-radius: 10px;" placeholder="이메일을 입력하시오"><br>
-                    <input type="password" name="password" style="border-radius: 10px;" placeholder="비밀번호를 입력하시오">
+        <div class="gameIntro">
+            <div class="card-container">
+                <div class="card">
+                    <img src="https://via.placeholder.com/150" alt="items">
+                    <p>첫째! 다양한 아이템 사서!</p>
                 </div>
-                <div id="btn">
-                    <input type="submit" value="로그인하기">
+            <br>
+            <div>
+                <div class="card">
+                    <img src="" alt="battle">
+                    <p>둘째! 유저들끼리 팀을 이뤄 배틀을 통해 영어 실력도 끌러올리고!</p>
                 </div>
-                <div th:if="${error}" th:text="${error}" id="error" style="color:red; margin-top:10px;"></div>
-            </form>
-
-
+            </div>
+            <br>
+            <div>
+                <div class="card">
+                    <img src="https://via.placeholder.com/150" alt="calendar">
+                    <p>셋째! 그날 배운 것 복습하는 기회까지!!</p>
+                </div>
+            </div>
         </div>
-        <div id="link">
-            <a th:href="@{/agree}">회원가입</a>
-            /
-            <a th:href="@{/passwordSearch}">비밀번호 찾기</a>
 
-        </div>
+    </div>
     </div>
 </th:block>
 </html>

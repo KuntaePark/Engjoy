@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Engjoy.iml" filepath="$PROJECT_DIR$/.idea/Engjoy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.Engjoy.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.Engjoy.main.iml" />
     </modules>
   </component>
 </project>

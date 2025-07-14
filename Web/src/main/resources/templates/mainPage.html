@@ -6,12 +6,10 @@
       layout:decorate="~{fragment/default}">
 
 <th:block layout:fragment="css">
-    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link rel="stylesheet" th:href="@{/css/mainPage.css}">
 </th:block>
 
-<th:block layout:fragment="script">
-    <script th:src="@{/js/login.js}"></script>
-</th:block>
+<th:block layout:fragment="script"></th:block>
 
 
 <th:block layout:fragment="main">
@@ -36,32 +34,14 @@
             <a th:href="@{/login}">로그인</a>
         </div>
     </header>
+    <div id="container">
+        <h1>외우지 말고, 플레이 하세요!<br>당신의 영어는 게임 속에 있습니다.</h1><br>
 
+        <p>영어 공부, 아직도 '외우니?' 난 '사냥해!'</p>
+    </div>
 
-    <div id="wrapper">
-
-        <h2>로그인</h2>
-        <div id="container">
-            <form th:action="@{/login}" method="post">
-
-                <div>
-                    <input type="email" name="username" style="border-radius: 10px;" placeholder="이메일을 입력하시오"><br>
-                    <input type="password" name="password" style="border-radius: 10px;" placeholder="비밀번호를 입력하시오">
-                </div>
-                <div id="btn">
-                    <input type="submit" value="로그인하기">
-                </div>
-                <div th:if="${error}" th:text="${error}" id="error" style="color:red; margin-top:10px;"></div>
-            </form>
-
-
-        </div>
-        <div id="link">
-            <a th:href="@{/agree}">회원가입</a>
-            /
-            <a th:href="@{/passwordSearch}">비밀번호 찾기</a>
-
-        </div>
+    <div>
+        <img src="" alt="battleImage" class="battle-image">
     </div>
 </th:block>
 </html>
