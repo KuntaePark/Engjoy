@@ -25,6 +25,9 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.itextpdf:kernel:8.0.4'
+    implementation 'com.itextpdf:layout:8.0.4'
+
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
