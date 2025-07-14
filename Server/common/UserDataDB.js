@@ -24,7 +24,9 @@ class UserDataDB {
         }
 
         //쿼리 실행
-        return this.DBConnection.query("select a.nickname, u.body_type_index, u.weapon_type_index from account a left join user_game_data u on a.account_id = u.account_id where a.account_id= ?", [userId])
+        return this.DBConnection.query("select a.nickname, u.game1score, u.body_type_index, u.weapon_type_index " +
+                                        "from account a left join user_game_data u " + 
+                                        "on a.account_id = u.account_id where a.account_id= ?", [userId])
         .then(([rows]) => {
             if (rows.length > 0) {
                 return rows[0];
@@ -32,6 +34,23 @@ class UserDataDB {
                 throw new Error('User not found');
             }
         });
+    }
+
+    updateUserPoint(updatedPoint, userId) {
+        if(!this.DBConnection) {
+            throw new Error('Database connection not established.');
+            //쿼리 실행
+        }
+        return this.DBConnection.query("update user_game_data set game1score = ? where account_id = ?", [updatedPoint, userId])
+        .then(([result]) => {
+            if (result.changedRows == 1) {
+                //고유 아이디이므로 1이여야 함
+                return 1;
+            } else {
+                throw new Error('User not found');
+            }
+        });
+
     }
 }
 
