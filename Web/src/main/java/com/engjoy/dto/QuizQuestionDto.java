@@ -9,33 +9,32 @@ import java.util.List;
 
 @Getter @Setter
 public class QuizQuestionDto {
-    private Long quizQuestionId;
+    // 공통 필드
     private Long exprId;
     private EXPRTYPE exprType;
     private String questionText;
-    private List<String> multipleChoices;
-    private List<String> sentenceWords;
     private boolean isFavorite;
     private String pronAudio;
-    private String finalPunctuation; // 문장 부호 담는 필드
+
+    // 퀴즈 타입별 필드
+    private List<String> multipleChoices;    // 단어 퀴즈용
+    private List<String> shuffledWords;      // 문장 퀴즈용 (이름을 sentenceWords -> shuffledWords로 변경)
 
     public static QuizQuestionDto from(Long exprId,
                                        EXPRTYPE exprType,
                                        String questionText,
                                        List<String> multipleChoices,
-                                       List<String> sentenceWords,
+                                       List<String> shuffledWords,
                                        boolean isFavorite,
-                                       String pronAudio,
-                                       String finalPunctuation) {
+                                       String pronAudio) {
         QuizQuestionDto dto = new QuizQuestionDto();
         dto.setExprId(exprId);
         dto.setExprType(exprType);
         dto.setQuestionText(questionText);
-        dto.setMultipleChoices(multipleChoices);
-        dto.setSentenceWords(sentenceWords);
         dto.setFavorite(isFavorite);
         dto.setPronAudio(pronAudio);
-        dto.setFinalPunctuation(finalPunctuation);
+        dto.setMultipleChoices(multipleChoices);
+        dto.setShuffledWords(shuffledWords);
         return dto;
     }
 

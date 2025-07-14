@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/quiz")
@@ -124,5 +126,37 @@ public class QuizController {
         session.removeAttribute("QUIZ_GRADED_RESULTS");
         return "redirect:/expressions";
     }
+
+    @GetMapping("/check-availability")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> checkQuizAvailability(
+            QuizSettingDto quizSettingDto, Principal principal) {
+
+        Long testAccountId = 1L; // 실제 사용자 ID 로직으로 교체 필요
+        Map<String, Object> response = new HashMap<>();
+
+        // 1. 기존의 createQuizQuestions 메서드를 그대로 호출하여 퀴즈 정보를 미리 받아옵니다.
+        QuizPageDto quizInfo = quizService.createQuizQuestions(testAccountId, quizSettingDto);
+
+        // 2. 받아온 퀴즈 정보(quizInfo)를 바탕으로 상태를 결정합니다.
+        if (quizInfo.getQuestions().isEmpty()) {
+            // [UNAVAILABLE]: 문제가 아예 없는 경우
+            response.put("status", "UNAVAILABLE");
+            response.put("message", quizInfo.getNotifyMsg()); // "출제할 문제가 없습니다."
+
+        } else if (quizInfo.getNotifyMsg() != null) {
+            // [AVAILABLE_PARTIAL]: 문제는 있지만 부족한 경우 (notifyMsg가 생성됨)
+            response.put("status", "AVAILABLE_PARTIAL");
+            response.put("message", quizInfo.getNotifyMsg()); // "N개 뿐입니다..."
+
+        } else {
+            // [AVAILABLE_FULL]: 문제가 충분한 경우
+            response.put("status", "AVAILABLE_FULL");
+            response.put("message", "퀴즈를 시작하시겠습니까?");
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
 
 }

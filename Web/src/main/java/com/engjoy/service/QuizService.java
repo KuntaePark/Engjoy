@@ -65,34 +65,30 @@ public class QuizService {
 
                     if (expr.getExprType() == EXPRTYPE.SENTENCE) {
                         String originalSentence = expr.getWordText();
-                        String sentenceBody = originalSentence;
-                        String finalPunctuation = "";
-
-                        // 정규식을 사용해 문장 끝의 부호를 분리
-                        java.util.regex.Pattern p = java.util.regex.Pattern.compile("([.?!,;])$");
-                        java.util.regex.Matcher m = p.matcher(originalSentence);
-                        if (m.find()) {
-                            finalPunctuation = m.group(1); // 찾은 문장 부호 (., ?, ! 등)
-                            sentenceBody = originalSentence.substring(0, m.start()); // 부호를 제외한 문장
-                        }
-
                         String questionText = expr.getMeaning();
-                        List<String> sentenceWords = new ArrayList<>(Arrays.asList(sentenceBody.split(" ")));
-                        Collections.shuffle(sentenceWords);
+
+                        // 문장 부호를 먼저 모두 제거
+                        String cleanSentence = originalSentence.replaceAll("[.,!?;:]", "");
+
+                        // 부호가 제거된 깨끗한 문장을 단어로 나누고 섞기
+                        //    공백이 여러 개일 경우를 대비해 split("\\s+") 사용
+                        List<String> wordsToShuffle = new ArrayList<>(Arrays.asList(cleanSentence.split("\\s+")));
+                        Collections.shuffle(wordsToShuffle);
 
                         return QuizQuestionDto.from(
                                 expr.getId(), expr.getExprType(), questionText,
-                                null, sentenceWords,
-                                isFavorite, expr.getPronAudio(), finalPunctuation
+                                null, wordsToShuffle,
+                                isFavorite, expr.getPronAudio()
                         );
-                    } else {
+
+                    } else { // 단어 문제
                         String questionText = expr.getWordText();
                         List<String> multipleChoices = generateChoicesFromPool(expr.getMeaning(), distractorPool);
 
                         return QuizQuestionDto.from(
                                 expr.getId(), expr.getExprType(), questionText,
                                 multipleChoices, null,
-                                isFavorite, expr.getPronAudio(),null
+                                isFavorite, expr.getPronAudio()
                         );
                     }
                 })

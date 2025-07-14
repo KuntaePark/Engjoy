@@ -45,9 +45,9 @@
                     <a th:href="@{/print/setting}" class="text-lg text-green-800 font-semibold px-4 py-2 rounded-md text-sm flex items-center gap-2 transition-colors hover:bg-white/20">
                         <i class="fa-solid fa-print text-lg"></i> 인쇄
                     </a>
-                    <button type="button" id="wrong-answer-btn" class="text-lg text-green-800 font-semibold px-4 py-2 rounded-md text-sm flex items-center gap-2 transition-colors hover:bg-white/20">
-                        <i class="fa-solid fa-pen-to-square text-lg"></i> 오답
-                    </button>
+                    <a th:href="@{/report}" id="report-btn" class="text-lg text-green-800 font-semibold px-4 py-2 rounded-md text-sm flex items-center gap-2 transition-colors hover:bg-white/20">
+                        <i class="fa-solid fa-chart-bar text-lg"></i> 레포트
+                    </a>
                     <button type="button" id="dictionary-btn" class="text-lg text-green-800 font-semibold px-4 py-2 rounded-md text-sm flex items-center gap-2 transition-colors hover:bg-white/20">
                         <i class="fa-solid fa-book text-lg"></i> 사전
                     </button>
@@ -98,10 +98,13 @@
                         <button id="type-btn" class="w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none flex items-center justify-between transition-all">
                             <span id="type-btn-label">전체</span> <i class="fa-solid fa-chevron-down text-xs ml-2"></i>
                         </button>
-                        <div id="type-dropdown" class="dropdown-content hidden w-full border border-gray-300 shadow-sm rounded-md bg-white text-sm font-medium text-gray-700">
+                        <div id="type-dropdown" class="dropdown-content hidden min-w-max border border-gray-300 shadow-sm rounded-md bg-white text-sm font-medium text-gray-700">
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 type-option" data-value="">전체</a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 type-option" data-value="WORD">단어</a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 type-option" data-value="SENTENCE">문장</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 type-option" data-value="FAVORITE">
+                                <i class="fa-solid fa-star text-yellow-500"></i> 즐겨찾기
+                            </a>
                         </div>
                     </div>
 
@@ -134,45 +137,13 @@
         </div>
     </div>
 
-    <!--오답 모달창-->
-    <div id="wrong-answer-modal" class="modal-overlay hidden">
-        <div class="modal-content !p-0 rounded-lg overflow-hidden w-full max-w-3xl">
-
-            <div class="modal-header relative flex justify-center items-center px-6 py-4 bg-[#8CCE47]">
-                <h4 class="font-bold text-xl text-white">오답 노트</h4>
-                <button class="close-modal-btn absolute top-1/2 right-4 -translate-y-1/2 text-white/70 hover:text-white text-4xl transition-colors">&times;</button>
-            </div>
-
-            <div class="p-6">
-                <div class="mb-4 text-right space-x-2">
-                    <button data-sort="recent" class="wrong-sort-btn text-sm font-semibold text-blue-600">최근순</button>
-                    <button data-sort="frequency" class="wrong-sort-btn text-sm font-semibold text-gray-500">빈도순</button>
-                </div>
-
-                <div class="max-h-96 overflow-y-auto border rounded-lg">
-                    <table class="w-full text-sm text-left text-gray-500">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3">단어/문장</th>
-                            <th scope="col" class="px-6 py-3">뜻</th>
-                            <th scope="col" class="px-6 py-3 text-center">오답 횟수</th>
-                            <th scope="col" class="px-6 py-3 text-right">마지막 복습일</th>
-                        </tr>
-                        </thead>
-                        <tbody id="wrong-answer-list">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div id="reco-modal-overlay" class="modal-overlay hidden">
         <div class="modal-content !p-0 bg-white rounded-lg overflow-hidden shadow-lg w-full max-w-md">
 
             <div class="modal-header relative flex justify-center items-center px-6 py-4 bg-[#8CCE47]">
-                <h4 class="modal-title font-bold text-lg text-white">오늘의 복습 추천 단어 💡</h4>
-                <button class="close-modal-btn absolute top-1/2 right-4 -translate-y-1/2 text-white/70 hover:text-white text-3xl transition-colors">&times;</button>
+                <h4 class="modal-title font-bold text-lg text-white">오늘의 복습 추천</h4>
+                <button class="close-modal-btn absolute top-1/2 right-4 -translate-y-1/2 text-white/70 hover:text-white text-4xl transition-colors">&times;</button>
             </div>
 
             <ul id="reco-list" class="modal-body space-y-2 max-h-60 overflow-y-auto p-6"></ul>
@@ -194,7 +165,7 @@
 
             <div class="modal-header relative flex justify-center items-center px-6 py-4 bg-[#8CCE47]">
                 <h4 class="font-bold text-lg text-white">상세 정보</h4>
-                <button class="close-modal-btn absolute top-1/2 right-4 -translate-y-1/2 text-white/70 hover:text-white text-3xl transition-colors">&times;</button>
+                <button class="close-modal-btn absolute top-1/2 right-4 -translate-y-1/2 text-white/70 hover:text-white text-4xl transition-colors">&times;</button>
             </div>
 
             <div class="p-6">

@@ -3,14 +3,12 @@ import 'https://unpkg.com/flatpickr/dist/l10n/ko.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
-            // --- 1. 요소 가져오기 (한 곳에서 유일하게 선언) ---
+            // 요소 가져오기 (한 곳에서 유일하게 선언)
             const searchForm = document.getElementById('search-form');
             const expressionContainer = document.getElementById('expression-container');
             const loadMoreBtn = document.getElementById('load-more-btn');
             const detailModalOverlay = document.getElementById('detail-modal-overlay');
             const recoModalOverlay = document.getElementById('reco-modal-overlay');
-            const wrongAnswerModal = document.getElementById('wrong-answer-modal');
-            const wrongAnswerList = document.getElementById('wrong-answer-list');
             const sortInput = document.getElementById('sort-input');
             const typeInput = document.getElementById('type-input');
             const startDateInput = document.getElementById('start-date');
@@ -27,13 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
              console.log('datePickerInput 변수의 값:', datePickerInput);
 
-            // --- 2. 상태 관리 변수 ---
+            // 상태 관리 변수
             let currentPage = 0, isLastPage = false, isLoading = false;
             let currentPlayingAudio = null;
             let wordInfoData = {};
-            let wrongAnswerData = [];
             let currentView = 'study_log';
             let datePickerInstance = null;
+            let onlyFavorites = false;
 
 
             // 이벤트: 알파벳순 체크박스 (사전 모드일 때만)
@@ -58,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchAndRender({ isNewSearch: true, view });
               };
 
-            // --- 3. 함수 정의 ---
+            // 함수 정의
 
             function initializePage() {
                 const flatpickrInstance = initializeFlatpickr();
@@ -83,9 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
 
                     window.addEventListener('click', (e) => {
-                        if(e.target.closest('.flatpickr-calendar')){
-                            return;
-                        }
+                            if (e.target.closest('.flatpickr-calendar') || e.target.closest('.dropdown-content')) {
+                                return;
+                            }
                         closeAllDropdowns();
                     });
 
@@ -99,15 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     filterBtn?.addEventListener('click', e => {
                         e.stopPropagation();
                         filterDropdown.classList.toggle('hidden');
-                        sortDropdown.classList.add('hidden');
-                        typeDropdown.classList.add('hidden');
-                        // 참고: 이전에 고쳤던 flatpickr 로직은 그대로 유지합니다.
-                        // 단, 파라미터로 받은 flatpickrInstance를 사용해야 합니다.
-                        if (!filterDropdown.classList.contains('hidden')) {
-                            if (flatpickrInstance) {
-                                flatpickrInstance.open();
-                            }
-                        }
+                        sortDropdown?.classList.add('hidden');
+                        typeDropdown?.classList.add('hidden');
                     });
 
                     typeBtn?.addEventListener('click', e => {
@@ -148,6 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         alphaCheckbox.checked = false;
                       }
 
+                      onlyFavorites = false;
+                      currentView = 'study_log';
+
                       // 현재 뷰(currentView)에 맞춰 다시 그려주기
                       fetchAndRender({ isNewSearch: true, view: currentView });
                     });
@@ -167,7 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.querySelectorAll('.type-option').forEach(option => {
                         option.addEventListener('click', e => {
                             e.preventDefault();
-                            typeInput.value = option.dataset.value;
+                            const value = option.dataset.value;
+                            typeInput.value = value;
+                            onlyFavorites = (value == 'FAVORITE')
                             updateButtonState(typeBtn, option.textContent, true);
                             applyFiltersToCurrentView();
                             closeAllDropdowns();
@@ -180,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             updateButtonState(filterBtn, link.innerText, true);
                             applyDateFilter(link.dataset.range, link.innerText, flatpickrInstance);
                             applyFiltersToCurrentView();
+                            flatpickrInstance?.close();
                             closeAllDropdowns();
                         });
                     });
@@ -199,24 +196,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 카드 클릭 (뒤집기, 발음, 즐겨찾기, 상세)
                     expressionContainer?.addEventListener('click', handleCardClick);
 
-                    document.getElementById('wrong-answer-btn')?.addEventListener('click', openWrongAnswerModal);
-
-
                     // 모달 닫기
                     document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', closeAllModals));
                     detailModalOverlay?.addEventListener('click', e => { if(e.target===detailModalOverlay) closeAllModals(); });
                     recoModalOverlay?.addEventListener('click', e => { if(e.target===recoModalOverlay) closeAllModals(); });
-                    wrongAnswerModal?.addEventListener('click', e => { if(e.target===wrongAnswerModal) closeAllModals(); });
                     document.getElementById('reco-close-btn')?.addEventListener('click', e => {
                         e.stopPropagation();
                         if(document.getElementById('reco-hide-checkbox')?.checked) setCookie('hideRecoModal','done',1);
                         closeAllModals();
                     });
-                    wrongAnswerModal?.querySelectorAll('.wrong-sort-btn').forEach(btn => btn.addEventListener('click', () => {
-                        wrongAnswerModal.querySelectorAll('.wrong-sort-btn').forEach(b => b.classList.replace('text-blue-600','text-gray-500'));
-                        btn.classList.replace('text-gray-500','text-blue-600');
-                        renderWrongAnswerTable(btn.dataset.sort);
-                    }));
                 }
 
             function updateButtonState(btnElement, label, isActive) {
@@ -260,7 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             updateButtonState(filterBtn, '기간', true);
                             applyFiltersToCurrentView();
                         }
-                        closeAllDropdowns();
                     }
                 });
             }
@@ -334,6 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   currentPage = 0;
                   isLastPage  = false;
                   expressionContainer.innerHTML = '';
+                  const oldMsg = document.getElementById('end-of-content-msg');
+                  if(oldMsg) oldMsg.remove();
                 }
 
                 const params = new URLSearchParams({ view, page: currentPage });
@@ -344,31 +333,126 @@ document.addEventListener('DOMContentLoaded', () => {
                 params.set('sort',      sortInput.value);
 
                 fetch(`/expressions/api?${params.toString()}`)
-                  .then(res => res.ok ? res.json() : Promise.reject('로드 실패'))
+                  .then(res => {
+                            if (res.status === 401) {
+                              // 인증이 안 된 경우
+                              displayMessage("로그인 후 이용해주세요.");
+                              return Promise.reject(new Error("Unauthorized"));
+                            }
+                            if (!res.ok) {
+                              // 그 외 에러
+                              return Promise.reject(new Error(`HTTP ${res.status}`));
+                            }
+                            // 정상 응답: JSON 파싱
+                            return res.json();
+                   })
                   .then(rawData => {
-                    if (view === 'dictionary') {
-                      renderDictionary(rawData);
-                      isLastPage = !!rawData.last;
-                    } else {
-                      renderStudyLog(rawData);
-                      // 날짜 그룹이 하나도 없으면 마지막
-                      isLastPage = Object.keys(rawData).length === 0;
+                    const isDictionaryView = view === 'dictionary';
+
+                    // ★ 즐겨찾기 모드일 경우, 받아온 rawData를 실제로 필터링
+                      if (onlyFavorites) {
+                        if (isDictionaryView) {
+                          // 사전 뷰: content 배열에서 favorite=true 만 남김
+                          rawData.content = (rawData.content || [])
+                            .filter(item => item.favorite);
+                        } else {
+                          // 학습 기록 뷰: 날짜별로 리스트를 걸러, 빈 날짜는 삭제
+                          Object.entries(rawData).forEach(([date, list]) => {
+                            const filtered = list.filter(item => item.favorite);
+                            if (filtered.length) rawData[date] = filtered;
+                            else delete rawData[date];
+                          });
+                        }
+                      }
+
+                    const isNowEmpty = isDictionaryView
+                        ? !rawData.content || rawData.content.length === 0
+                        : Object.keys(rawData).length === 0;
+
+                    if (onlyFavorites && isNowEmpty) {
+                         displayMessage("즐겨찾기한 기록이 없습니다.");
+                         loadMoreBtn?.classList.add('hidden');
+                         return;  // 더 이상 렌더링하지 않음
                     }
+
+                    if (isNewSearch && isNowEmpty) {
+                        const message = keywordInput.value.trim() ? "해당하는 단어나 문장이 존재하지 않습니다." : "해당하는 학습 기록이 없습니다.";
+                        displayMessage(message);
+                        loadMoreBtn?.classList.add('hidden');
+                        return;
+                    }
+
+                     // ★ 필터링된 rawData를 렌더링
+                      if (isDictionaryView) {
+                        renderDictionary(rawData);
+                        isLastPage = !!rawData.last;
+                      } else {
+                        renderStudyLog(rawData);
+                        isLastPage = Object.keys(rawData).length === 0;
+                      }
+
+                    //  '더보기'를 눌렀는데 결과가 없는 경우
+                    if (!isNewSearch && isNowEmpty) {
+                        showEndOfContentMessage("더 이상 불러올 학습 기록이 없습니다.");
+                        loadMoreBtn?.classList.add('hidden');
+                        isLastPage = true; // 마지막 페이지라고 확정
+                        return;
+                    }
+
+
+                    // 결과가 있는 경우, 기존 로직대로 화면을 렌더링
+                    if (isDictionaryView) {
+                        renderDictionary(rawData);
+                        isLastPage = !!rawData.last;
+                    } else {
+                        renderStudyLog(rawData);
+                        isLastPage = Object.keys(rawData).length === 0;
+                    }
+
                     if (!isLastPage) {
-                      currentPage++;
-                      loadMoreBtn?.classList.remove('hidden');
+                        currentPage++;
+                        loadMoreBtn?.classList.remove('hidden');
                     } else {
-                      loadMoreBtn?.classList.add('hidden');
+                        loadMoreBtn?.classList.add('hidden');
+                        showEndOfContentMessage("더 이상 불러올 학습 기록이 없습니다.");
                     }
-                  })
-                  .catch(console.error)
-                  .finally(() => {
+                })
+                .catch(err => {
+                    console.error(err);
+                    if (err.message !== 'Unauthorized') {
+                          displayMessage("데이터를 불러오는 중 오류가 발생했습니다.");
+                    }
+                })
+                .finally(() => {
                     isLoading = false;
-                    loadMoreBtn && (loadMoreBtn.innerText = '더보기');
-                  });
+                    if(loadMoreBtn) loadMoreBtn.innerText = '더보기';
+                });
               }
 
+              function displayMessage(message) {
+                  if (!expressionContainer) return;
+                  expressionContainer.innerHTML = `
+                      <div class="text-center text-gray-500 py-20">
+                          <i class="fa-regular fa-folder-open fa-3x mb-4"></i>
+                          <p>${message}</p>
+                      </div>
+                  `;
+              }
 
+              function showEndOfContentMessage(message) {
+                  // 이미 메시지가 있다면 중복으로 추가하지 않음
+                  if (document.getElementById('end-of-content-msg')) return;
+
+                  const messageEl = document.createElement('p');
+                  messageEl.id = 'end-of-content-msg'; // 중복 방지를 위한 id
+                  messageEl.className = 'text-center text-gray-500 py-10';
+                  messageEl.textContent = message;
+
+                  // '더보기' 버튼이 있다면, 그 바로 위에 메시지를 삽입
+                  if (loadMoreBtn) {
+                      loadMoreBtn.parentElement.insertBefore(messageEl, loadMoreBtn);
+                  }
+              }
 
 
             function renderData(view, data) {
@@ -427,42 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                     .catch(console.error)
 
-            }
-
-            async function openWrongAnswerModal() {
-                if (!wrongAnswerModal) return;
-                try {
-                    const response = await fetch('/expressions/api/wrong-answers');
-                    if (!response.ok) throw new Error('오답 목록 로딩 실패');
-                    wrongAnswerData = await response.json();
-                    renderWrongAnswerTable('recent');
-                    wrongAnswerModal.classList.remove('hidden');
-                } catch (error) {
-                    console.error(error);
-                    alert(error.message);
-                }
-            }
-
-            function renderWrongAnswerTable(sortBy) {
-                if (!wrongAnswerList) return;
-                const sortedData = [...wrongAnswerData].sort((a, b) => {
-                    if (sortBy === 'frequency') {
-                        return b.incorrectCount - a.incorrectCount;
-                    }
-                    return new Date(b.lastReviewDate) - new Date(a.lastReviewDate);
-                });
-                wrongAnswerList.innerHTML = '';
-                sortedData.forEach(item => {
-                    const row = `
-                        <tr class="bg-white border-b">
-                            <td class="px-6 py-4 font-medium text-gray-900">${item.wordText}</td>
-                            <td class="px-6 py-4">${item.meaning}</td>
-                            <td class="px-6 py-4 text-center">${item.incorrectCount}</td>
-                            <td class="px-6 py-4">${item.lastReviewDate}</td>
-                        </tr>
-                    `;
-                    wrongAnswerList.insertAdjacentHTML('beforeend', row);
-                });
             }
 
             function createExpressionCard(expr) {
@@ -595,7 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
             function closeAllModals() {
                 detailModalOverlay?.classList.add('hidden');
                 recoModalOverlay?.classList.add('hidden');
-                wrongAnswerModal?.classList.add('hidden');
             }
 
             // --- 페이지 실행 ---

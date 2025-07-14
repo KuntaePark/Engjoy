@@ -8,19 +8,67 @@
 <th:block layout:fragment="css">
     <script src="https://cdn.tailwindcss.com"></script>
 </th:block>
-<th:block layout:fragment="script"></th:block>
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('start-quiz-btn');
+            const modal = document.getElementById('start-quiz-modal');
+            const modalMessage = document.getElementById('modal-message');
+            const modalButtons = document.getElementById('modal-buttons');
+            const form = document.getElementById('quiz-form');
 
+            // '퀴즈 시작하기' 버튼 클릭 이벤트
+            startBtn?.addEventListener('click', e => {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const params = new URLSearchParams(formData).toString();
+
+                // 서버에 퀴즈 시작 가능 여부를 먼저 물어봄 (AJAX).
+                fetch(`/quiz/check-availability?${params}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        // 서버 응답 상태에 따라 다르게 동작.
+                        if (data.status === 'AVAILABLE_FULL' || data.status === 'AVAILABLE_PARTIAL') {
+                            // 문제가 충분하거나 부족할 때: 확인 모달을 띄움
+                            modalMessage.textContent = data.message;
+                            modalButtons.innerHTML = `
+                                <button id="quiz-confirm-yes" class="px-8 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md">예</button>
+                                <button id="quiz-confirm-no" class="px-8 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-md">아니오</button>
+                            `;
+                            document.getElementById('quiz-confirm-yes').onclick = () => form.submit();
+                            document.getElementById('quiz-confirm-no').onclick = () => modal.classList.add('hidden');
+                            modal.classList.remove('hidden');
+
+                        } else if (data.status === 'UNAVAILABLE') {
+                            // 퀴즈가 불가능하면, 알림 모달을 띄움
+                            modalMessage.textContent = data.message;
+                            modalButtons.innerHTML = `<button id="quiz-confirm-ok" class="px-8 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md">확인</button>`;
+                            document.getElementById('quiz-confirm-ok').onclick = () => modal.classList.add('hidden');
+                            modal.classList.remove('hidden');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+
+            // 모달 바깥쪽 클릭 시 닫기
+            modal?.addEventListener('click', e => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</th:block>
 
 <th:block layout:fragment="main">
-    <div class="flex items-center justify-center py-12">
-        <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-            <div th:if="${notifyMsg}" class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
-                <span class="font-medium">⚠️ </span> [[${notifyMsg}]]
-            </div>
+    <div class="flex items-center justify-center h-screen">
+        <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl border border-gray-300 border-2">
             <h2 class="text-2xl font-bold text-center text-gray-900">퀴즈 설정</h2>
-            <form th:action="@{/quiz/start}" method="post" class="space-y-6">
+
+            <form id="quiz-form" th:action="@{/quiz/start}" method="post" class="space-y-6">
                 <div>
-                    <label for="category" class="block text-sm font-medium text-gray-700">카테고리</label>
+                    <label for="category" class="block text-sm font-semibold text-gray-700">카테고리</label>
                     <select id="category" name="category" class="block w-full px-3 py-2 mt-1 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="WORD">단어</option>
                         <option value="SENTENCE">문장</option>
@@ -28,9 +76,8 @@
                         <option value="INCORRECT">오답</option>
                     </select>
                 </div>
-
                 <div>
-                    <label for="quizcount" class="block text-sm font-medium text-gray-700">문제 개수</label>
+                    <label for="quizcount" class="block text-sm font-semibold text-gray-700">문제 개수</label>
                     <select id="quizcount" name="quizcount" class="block w-full px-3 py-2 mt-1 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="FIVE">5개</option>
                         <option value="TEN" selected>10개</option>
@@ -38,11 +85,18 @@
                     </select>
                 </div>
 
-                <button type="submit" class="w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <button type="button" id="start-quiz-btn" class="w-full px-4 py-2 bg-[#8CCE47] hover:brightness-110 border-b-4 border-green-600 text-white rounded-xl font-bold text-base uppercase transition-colors">
                     퀴즈 시작하기
                 </button>
-        </form>
+            </form>
+        </div>
     </div>
+
+    <div id="start-quiz-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6 text-center">
+            <p id="modal-message" class="mb-6 text-lg font-medium text-gray-900"></p>
+            <div id="modal-buttons" class="flex justify-center gap-4"></div>
+        </div>
     </div>
 </th:block>
 </html>
