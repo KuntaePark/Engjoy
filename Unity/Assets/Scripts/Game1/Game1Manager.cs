@@ -14,7 +14,7 @@ public class Game1Manager : MonoBehaviour
     {
         public long startTime { get; set; } //게임 시작 시간
         public string state = "ready";
-        public PlayerData[] players { get; set; } = new PlayerData[2]; //플레이어 데이터 배열
+        public Game1PlayerData[] players { get; set; } = new Game1PlayerData[2]; //플레이어 데이터 배열
     }
 
     public GameClient1 gameClient; //게임 클라이언트 스크립트 참조
@@ -33,7 +33,7 @@ public class Game1Manager : MonoBehaviour
     {
         for(int i=0; i < 2; i++)
         {
-            gameState.players[i] = new PlayerData(); // 플레이어 데이터 초기화
+            gameState.players[i] = new Game1PlayerData(); // 플레이어 데이터 초기화
             characterRenderers[i].SetBody(0); //기본 바디 타입 설정
             characterRenderers[i].SetWeapon(0); //기본 무기 타입 설정
         }

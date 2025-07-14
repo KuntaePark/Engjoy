@@ -61,7 +61,7 @@ public class PlayerPanel : MonoBehaviour
         selector.position = actionPanels[index].position;
     }
 
-    public void showPlayerInfo(PlayerData player)
+    public void showPlayerInfo(Game1PlayerData player)
     {
         username.text = player.nickname; // 플레이어 이름 표시
         HPbar.value = player.hp; // 플레이어 HP 슬라이더 값 업데이트

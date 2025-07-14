@@ -64,7 +64,7 @@ namespace DataForm
     }
 
     [System.Serializable]
-    public class PlayerData
+    public class Game1PlayerData
     {
         //기본 수치
         public string id = ""; //플레이어 ID, 서버로부터 배정받음

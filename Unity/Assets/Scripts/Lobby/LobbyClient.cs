@@ -11,7 +11,7 @@ public class LobbyClient : WebSocketClient
 {
     private string lobbyServerUrl = "ws://localhost:7777"; // URL of the lobby server
 
-    public PlayerManager playerManager;
+    public LobbyPlayerManager playerManager;
 
     private void Awake()
     {

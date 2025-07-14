@@ -1,0 +1,181 @@
+using System.Collections;
+using DataForm;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class ResultUIManager : MonoBehaviour
+{
+
+    public static ResultUIManager Instance { get; private set; }
+
+    [Header("Effect & Main Panels")]
+    public Image screenEffectImage; //게임오버 이펙트용 이미지
+    public GameObject gameOverText; //게임오버 텍스트
+    public GameObject resultPanel;
+
+    [Header("Page 1 UI")]
+    public GameObject page1;
+    public TextMeshProUGUI stageText;
+    public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI goldText;
+    public Button nextPageButton;
+
+    [Header("Page 2 UI")]
+    public GameObject page2;
+    public GameObject sentenceItemPrefab;
+    public Transform sentenceListContent; //문장들 들어갈 Content
+    //public Button backToLobbyButton; //로비로 버튼
+    //public Button againButton; //한판더 버튼
+
+
+
+    private void Awake()
+    {
+        if(Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+        if(resultPanel != null)
+        {
+            resultPanel.SetActive(false);
+        }
+    }
+
+    private void Start()
+    {
+        //버튼 이벤트 연결
+        if (nextPageButton != null) nextPageButton.onClick.AddListener(ShowNextPage);
+        
+        //로비 버튼, 한판더 버튼 이벤트 연결
+
+    }
+
+    public void StartGameOverSequence(GameState finalState)
+    {
+        //게임 오버되면 인게임 UI 싹 끄기
+        if(UIManager.Instance != null)
+        {
+            UIManager.Instance.matchingRoomPanel.SetActive(false);
+            UIManager.Instance.playingPanel.SetActive(false);
+        }
+
+
+        //시작 시 모든 관련 UI를 끈 상태로 초기화
+        if(resultPanel != null) resultPanel.SetActive(false);
+        if(gameOverText != null) gameOverText.SetActive(false);
+        if (screenEffectImage != null) screenEffectImage.color = new Color(0, 0, 0, 0);
+
+        StartCoroutine(GameOverSequenceCoroutine(finalState));
+    }
+
+    private IEnumerator GameOverSequenceCoroutine(GameState finalState)
+    {
+
+        if (screenEffectImage != null) screenEffectImage.gameObject.SetActive(true);
+
+        //화면 연출
+        screenEffectImage.color = new Color(1, 1, 1, 0.5f);
+        yield return new WaitForSeconds(0.1f);
+
+        float fadeOutDuration = 0.5f;
+        float timer = 0f;
+        Color startColor = screenEffectImage.color;
+        Color targetColor = new Color(0.2f, 0.2f, 0.2f, 0.7f);
+
+        if (gameOverText != null) gameOverText.SetActive(false);
+
+        while (timer < fadeOutDuration)
+            {
+            timer += Time.deltaTime;
+            screenEffectImage.color = Color.Lerp(startColor, targetColor, timer/fadeOutDuration);
+            yield return null;
+
+            }
+        screenEffectImage.color = targetColor; //화면 잿빛으로
+
+        yield return new WaitForSeconds(1.0f); //1초 대기 후 Game Over 텍스트 표시
+
+        //Game Over 텍스트 띄우기
+        if (gameOverText != null) gameOverText.SetActive(true);
+        yield return new WaitForSeconds(1.5f);
+
+        //서서히 검은 화면으로(2.7초동안)
+        timer = 0f;
+        startColor = screenEffectImage.color;
+
+        fadeOutDuration = 2.7f;
+
+        if(gameOverText != null) gameOverText.SetActive(false);
+
+        while (timer < fadeOutDuration)
+        {
+            timer += Time.deltaTime;
+            screenEffectImage.color = Color.Lerp(startColor, Color.black, timer / fadeOutDuration);
+            yield return null;
+        }
+        screenEffectImage.color = Color.black;
+        yield return new WaitForSeconds(1.0f);
+
+        //결과창 보여주기
+        gameOverText.SetActive(false);
+        resultPanel.SetActive(true);
+        UpdateResultUI(finalState);
+        GameManager.Instance.NotifyResultVisible(); //결과창 뜸!
+    }
+
+    //결과창 내용 띄워주기
+    void UpdateResultUI(GameState finalState)
+    {
+        //페이지1 내용 채우기
+        if (stageText != null) stageText.text = $"CLEARED STAGE: {finalState.gameLevel - 1}";
+        if (scoreText != null) scoreText.text = $"TOTAL SCORE: {finalState.score}";
+        if (goldText != null) goldText.text = $"EARNED GOLD: {finalState.gold}";
+
+        //페이지2_문장 리스트 내용 채우기
+        //기존에 있던 리스트 삭제
+        if(sentenceListContent != null)
+        {
+            foreach (Transform child in sentenceListContent)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
+        //서버에서 받은 문장 목록으로 새로 생성
+        if(sentenceItemPrefab != null && finalState.completedSentences != null)
+        {
+            foreach (SentenceData sentence in finalState.completedSentences)
+            {
+                GameObject itemGO = Instantiate(sentenceItemPrefab, sentenceListContent);
+                //프리팹에 있는 Text 컴포넌트 찾아서 내용 채워넣기 (영문장 텍스트, 해설문 넣어주기)
+                TextMeshProUGUI[] texts = itemGO.GetComponentsInChildren<TextMeshProUGUI>();
+                if(texts.Length >= 2)
+                {
+                    texts[0].text = sentence.text;
+                    texts[1].text = sentence.meaning;
+                }
+            }
+        }
+
+        //초기엔 1페이지만 보여주기
+        if(page1 != null) page1.SetActive(true);
+        if(page2 != null) page2.SetActive(false);
+    }
+
+    //다음 페이지 보기 버튼
+    void ShowNextPage()
+    {
+        if(page1 != null) page1.SetActive(false);
+        if(page2 != null) page2.SetActive(true);
+    }
+
+    //로비로 돌아가기 버튼
+
+    //한 판 더 버튼
+}

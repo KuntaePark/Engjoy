@@ -26,7 +26,7 @@ public class NPCController : MonoBehaviour
         Debug.Log("Player has entered the NPC interaction area.");
         if(collision.CompareTag("Player"))
         {
-            PlayerController player = collision.GetComponent<PlayerController>();
+            LobbyPlayerController player = collision.GetComponent<LobbyPlayerController>();
             if(player.Id == DataManager.Instance.id)
             {
                 //trigger npc ui

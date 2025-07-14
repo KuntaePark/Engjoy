@@ -28,7 +28,7 @@ public class EntranceController : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        long id = other.GetComponent<PlayerController>().Id;
+        long id = other.GetComponent<LobbyPlayerController>().Id;
         if (other.CompareTag("Player") && id == DataManager.Instance.id)
         {
             //open entrance UI

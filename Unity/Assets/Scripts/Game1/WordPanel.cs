@@ -24,7 +24,7 @@ public class WordPanel : MonoBehaviour
         
     }
 
-    public void showWord(PlayerData myInfo)
+    public void showWord(Game1PlayerData myInfo)
     {
         int correctIdx = myInfo.correctIdx;
         if (correctIdx != -1)
