@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
     public PlayerManager playerManager;
     public KeywordManager keywordManager;
     public MonsterManager monsterManager;
+    public MapManager mapManager;
 
     public GameObject exitPrefab; //GameManager가 직접 Exit를 관리
     private ExitController exitController; //ExitController를 직접 관리
@@ -26,6 +27,7 @@ public class GameManager : MonoBehaviour
     public bool IsGameOver {  get; private set; }   //게임오버 상태
     public bool IsResultVisible { get; private set; } = false; // 결과창 활성화 신호_플레이어 빙글빙글 돌릴거임..
 
+    private string currentMapName = ""; //현재 맵 이름
 
     private const float INITIAL_MAX_TIME = 60f;
 
@@ -75,6 +77,7 @@ public class GameManager : MonoBehaviour
         playerManager = FindObjectOfType<PlayerManager>();
         keywordManager = FindObjectOfType<KeywordManager>();
         monsterManager = FindObjectOfType<MonsterManager>();
+        mapManager = FindObjectOfType<MapManager>();
     }
 
     //WSClient에 호출될 함수 : 플레이어 ID 설정
@@ -102,6 +105,13 @@ public class GameManager : MonoBehaviour
         {
             SceneManager.LoadScene(gameSceneName);
             return;
+        }
+
+        //맵 전환
+        if(mapManager != null && !string.IsNullOrEmpty(newState.mapName) && newState.mapName != currentMapName)
+        {
+            mapManager.SwitchMap(newState.mapName);
+            currentMapName = newState.mapName; //현재 맵 이름 업데이트
         }
 
         IsGameOver = newState.isGameOver;

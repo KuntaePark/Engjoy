@@ -4,6 +4,7 @@ const Exit = require("../packet/exit.js");
 const { generateId } = require("./utils.js");
 const { setupLevel } = require("./levelManager.js");
 const Physics = require("./physics.js");
+const { MonsterType } = require("../packet/monster.js");
 
 //공격 관련 상수
 const ATTACK_RANGE = Physics.colliderRadius * 10; //플레이어 충돌 범위의 3배
@@ -18,6 +19,7 @@ class GameState {
     this.exit = null; //출구는 단일객체로 관리
 
     this.gameLevel = 1;
+    this.mapName = "";
     this.timeLimit = 61;
     this.isGameOver = false;
 
@@ -248,6 +250,11 @@ class GameState {
     const player = this.players[playerId];
     if (!player) return; //플레이어가 없으면 아무것도 안함
 
+    //공격 쿨타임 중에는 아무것도 안함
+    if (player.attackCooldown > 0) {
+      return;
+    }
+
     console.log(
       `[Debug] Checking player ${playerId}. Holding keyword ID:`,
       player.holdingKeywordId,
@@ -292,7 +299,11 @@ class GameState {
     if (hitMonster) {
       hitMonster.hp -= ATTACK_DAMAGE;
 
-      hitMonster.hitStunTimer = 0.3; //몬스터가 아야! 하는 시간
+      if (hitMonster.type === MonsterType.RUNNER) {
+        hitMonster.hitFleeBoostTimer = 0.6; //돔황챠
+      } else {
+        hitMonster.hitStunTimer = 0.3; //체이서 피격 경직 타임
+      }
 
       console.log(
         `[Hit Success] Player ${player.id} hit monster ${hitMonster}`
@@ -322,6 +333,8 @@ class GameState {
     } else {
       console.log(`[Hit Fail] Player ${player.id}'s attack hit nothing.`);
     }
+
+    player.attackCooldown = player.isBuffed ? 0.1 : 0.2;
   }
   // ================= ▲▲▲ 플레이어 공격 ▲▲▲ =================
 
@@ -434,7 +447,7 @@ class GameState {
       }
     }
 
-    //HP가 0이 되면 전투 불능. (지금은 console.log()만)
+    //HP가 0이 되면 전투 불능.
     if (player.hp <= 0) {
       player.hp = 0;
       player.isDown = true;
@@ -573,6 +586,7 @@ class GameState {
         exit: exitPacket,
 
         gameLevel: this.gameLevel,
+        mapName: this.mapName,
         score: this.score,
         gold: this.gold,
         completedSentences: this.completedSentences,

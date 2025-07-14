@@ -43,8 +43,20 @@ async function setupLevel(gameState, gameLevel = 1) {
 
   gameState.monsters = {};
 
-  const mapName = "map1";
+  let mapName;
+  const availableMaps = ["map1", "map2", "map3", "map4"];
+
+  if (gameLevel === 1) {
+    mapName = availableMaps[0];
+  } else {
+    const randomMaps = availableMaps.slice(1);
+    const randomIndex = Math.floor(Math.random() * randomMaps.length);
+    mapName = randomMaps[randomIndex];
+  }
+
   loadMap(gameState, mapName);
+
+  gameState.mapName = mapName;
 
   //db에서 영문장 가져오기
   const sentenceData = await getRandomSentence(gameLevel);

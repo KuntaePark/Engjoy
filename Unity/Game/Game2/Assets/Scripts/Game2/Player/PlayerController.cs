@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
 {
 
     [Header("Sprites")]
-    public Sprite downedSprite; //전투불능 스프라이트
+    public Material hitFlashMaterial; //피격 시 머터리얼
     private Sprite originalSprite; //원래 스프라이트
 
     private bool isFacingRight = true;

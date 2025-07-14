@@ -23,7 +23,7 @@ class Player {
     this.hp = 3;
     this.baseSpeed = 7.0; //기본 이동 속도
     this.speed = 7.0; //현 이동 속도
-    this.attackSpeed = 1.0; //기본 공격 속도
+    this.attackCooldown = 0; //공격 쿨다운
 
     this.isBuffed = false;
     this.hasShield = false;
@@ -50,6 +50,8 @@ class Player {
 
       revivablePlayerId: this.revivablePlayerId,
       reviveProgress: this.reviveProgress,
+
+      attackCooldown: this.attackCooldown,
 
       hp: this.hp,
       maxHp: this.maxHp,

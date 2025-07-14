@@ -11,9 +11,10 @@ class Monster {
     this.y = y;
     this.hp = hp; //몬스터의 체력
     this.keywordData = keywordData; //키워드 정보 직접 저장
-    this.isActive = false;
+    this.isActive = false; //체이서-활성화 플래그
+    this.justTeleported = false; //체이서 순간이동 플래그
 
-    this.hitStunTimer = 0; //피격 시 경직 타이머
+    this.hitStunTimer = 0; //체이서 피격 시 경직 타이머
 
     if (this.type === MonsterType.RUNNER) {
       this.roamingTargetX = null; //로밍 X좌표
@@ -32,6 +33,7 @@ class Monster {
       y: this.y,
       hp: this.hp,
       isActive: this.isActive,
+      justTeleported: this.justTeleported, 
     };
   }
 }

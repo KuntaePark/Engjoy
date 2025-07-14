@@ -26,6 +26,7 @@ namespace DataForm
         public bool isGameOver; //게임오버
 
         public int gameLevel; //게임 레벨
+        public string mapName; //스폰맵
         public int score; //게임 점수
         public int gold; //게임 내 획득한 골드
         public List<SentenceData> completedSentences; //문장 정보

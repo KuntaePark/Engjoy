@@ -4186,6 +4186,7 @@ MonoBehaviour:
   playerManager: {fileID: 1790762026}
   keywordManager: {fileID: 2137907072}
   monsterManager: {fileID: 1983961210}
+  mapManager: {fileID: 0}
   exitPrefab: {fileID: 8116069061738283353, guid: b806b89a0387566488a83b4d1f8144c3, type: 3}
 --- !u!1 &1737050760
 GameObject:
