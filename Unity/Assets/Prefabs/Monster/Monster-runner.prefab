@@ -99,6 +99,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hpText: {fileID: 6794132764952471281}
+  flashMaterial: {fileID: 2100000, guid: c1276a1a507272740886dc1b1c8d3369, type: 2}
 --- !u!1 &5717542156613981026
 GameObject:
   m_ObjectHideFlags: 0

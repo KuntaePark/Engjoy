@@ -33,7 +33,7 @@ function updatePlayers(gameState) {
     const p = gameState.players[id];
 
     //공격 쿨다운
-    if(p.attackCooldown > 0) {
+    if (p.attackCooldown > 0) {
       p.attackCooldown -= deltaTime;
     }
 
@@ -290,35 +290,39 @@ function updateInteractionState(player, keywords) {
 function updateMonsterMovement(monster, gameState) {
   if (monster.hitStunTimer > 0) {
     monster.hitStunTimer -= deltaTime;
-    return; //경직 중에는 모든 행동 중지!
-  }
 
-  //러너, 체이서 타입에 따라 움직임 패턴 부여
+    return; //경직 중에는 모든 행동 중지!
+  } //러너, 체이서 타입에 따라 움직임 패턴 부여
+
   switch (monster.type) {
-    case MonsterType.RUNNER: //러너
-    {
+    case MonsterType.RUNNER: {
+      //러너
 
       let target = null;
       let closestDistSq = Infinity;
+
       for (const id in gameState.players) {
         const player = gameState.players[id];
+
         if (player.isDown) continue; // 쓰러진 플레이어 무시
-        
+
         const distSq = Physics.squareDistance(monster, player);
+
         if (distSq < closestDistSq) {
           closestDistSq = distSq;
+
           target = player;
         }
       }
-      
+
       const isFleeing = target && closestDistSq < RUNNER_FLEE_RANGE_SQ;
       const isBoosted = monster.hitFleeBoostTimer > 0;
-      
+
       let moveX = 0;
       let moveY = 0;
-      let currentSpeed = ROAMING_SPEED;
-      
-      //행동 결정: 도망, 부스트, 로밍
+
+      let currentSpeed = ROAMING_SPEED; //행동 결정: 도망, 부스트, 로밍
+
       if (isFleeing || isBoosted) {
         if (!target) {
           //부스트 상태지만 도망칠 대상이 없다면 로밍처럼 행동
@@ -326,54 +330,54 @@ function updateMonsterMovement(monster, gameState) {
           const dx = monster.x - target.x;
           const dy = monster.y - target.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          
           currentSpeed = RUNNER_SPEED;
+
           if (isBoosted) {
             monster.hitFleeBoostTimer -= deltaTime;
             currentSpeed *= 1.5; //부스트 시 러너 이속증가
           }
-           if (dist > 0) {
+
+          if (dist > 0) {
             moveX = (dx / dist) * currentSpeed * deltaTime;
             moveY = (dy / dist) * currentSpeed * deltaTime;
-            }
           }
-      }
-      
-      //일반 로밍 상태
+        }
+      } //일반 로밍 상태
+
       if (moveX === 0 && moveY === 0) {
         if (
           monster.roamingTargetX === null ||
           Physics.squareDistance(monster, {
             x: monster.roamingTargetX,
+
             y: monster.roamingTargetY,
           }) < 1
         ) {
           monster.roamingTargetX =
-          monster.x + (Math.random() - 0.5) * ROAM_AREA_SIZE;
+            monster.x + (Math.random() - 0.5) * ROAM_AREA_SIZE;
+
           monster.roamingTargetY =
-          monster.y + (Math.random() - 0.5) * ROAM_AREA_SIZE;
-        }
-        
-        //목표를 향해 이동
+            monster.y + (Math.random() - 0.5) * ROAM_AREA_SIZE;
+        } //목표를 향해 이동
+
         const dx = monster.roamingTargetX - monster.x;
         const dy = monster.roamingTargetY - monster.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (dist > 1) {
           moveX = (dx / dist) * ROAMING_SPEED * deltaTime;
           moveY = (dy / dist) * ROAMING_SPEED * deltaTime;
         }
-      }
-      
-      //이동 적용
+      } //이동 적용
+
       if (moveX !== 0 || moveY !== 0) {
         const y_offset = -0.7; //충돌 판정 y좌표 보정값
-        const OVER_COLLISION = 0.3;
-        
-        // X축 이동 시도
+        const OVER_COLLISION = 0.3; // X축 이동 시도
+
         if (moveX !== 0) {
           const newX = monster.x + moveX;
           const checkX = newX + Math.sign(moveX) * OVER_COLLISION;
+
           if (
             !gameState.colliders.has(
               `${Math.floor(checkX)}, ${Math.floor(monster.y + y_offset)}`
@@ -381,12 +385,12 @@ function updateMonsterMovement(monster, gameState) {
           ) {
             monster.x = newX;
           }
-        }
-        
-        // Y축 이동 시도
+        } // Y축 이동 시도
+
         if (moveY !== 0) {
           const newY = monster.y + moveY;
           const checkY = newY + Math.sign(moveY) * OVER_COLLISION;
+
           if (
             !gameState.colliders.has(
               `${Math.floor(monster.x)}, ${Math.floor(checkY + y_offset)}`
@@ -396,82 +400,106 @@ function updateMonsterMovement(monster, gameState) {
           }
         }
       }
-      
+
       break;
-      }
-      
-      case MonsterType.CHASER: {
+    }
+
+    case MonsterType.CHASER:
+      {
         //체이서
         let moveX = 0;
         let moveY = 0;
         monster.justTeleported = false;
 
-      //키워드 든 플레이어 있는지 찾기
-      let targetPlayer = null;
-      let isAnyPlayerHoldingKeyword = false;
-      for (const id in gameState.players) {
-        const player = gameState.players[id];
-        if (player.holdingKeywordId && !player.isDown) {
-          isAnyPlayerHoldingKeyword = true;
-          targetPlayer = player; //아무나 지정
-          break;
-        }
-      }
-
-      if(isAnyPlayerHoldingKeyword) {
-        if(!monster.isActive){
-          const teleportAngle = Math.random() * 2 * Math.PI;
-          monster.x = targetPlayer.x + Math.cos(teleportAngle) * CHASER_TELEPORT_RADIUS;
-          monster.y = targetPlayer.y + Math.sin(teleportAngle) * CHASER_TELEPORT_RADIUS;
-          monster.isActive = true;
-          monster.justTeleported = true;
+        //키워드를 든 모든 플레이어를 리스트에 저장
+        const keywordHolders = [];
+        for (const id in gameState.players) {
+          const player = gameState.players[id];
+          if (player.holdingKeywordId && !player.isDown) {
+            keywordHolders.push(player);
+          }
         }
 
-        //활성화 상태 - 플레이어에게 돌진
-        const dx = targetPlayer.x - monster.x;
-        const dy = targetPlayer.y - monster.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        //키워드를 든 플레이어가 한 명이라도 있을 경우
+        if (keywordHolders.length > 0) {
+          //각 체이서가 타겟 리스트에서 무작위로 한 명을 선택
+          const targetPlayer =
+            keywordHolders[Math.floor(Math.random() * keywordHolders.length)];
 
-        if(dist > 0) {
-          moveX = (dx / dist) * CHASER_SPEED * deltaTime;
-          moveY = (dy / dist) * CHASER_SPEED * deltaTime;
-        }
+          //비활성화 상태라면 타겟 근처로 순간이동하며 활성화되기
+          if (!monster.isActive) {
+            const teleportAngle = Math.random() * 2 * Math.PI;
 
-        //플레이어와 충돌 시 데미지
-        if(dist < MONSTER_COLLIDER_DISTANCE) {
-          gameState.monsterHitsPlayer(monster.id, targetPlayer.id);
-        }
-      } else {
-        //비활성화 상태로 전환
-        monster.isActive = false;
-        monster.teleportTime -= deltaTime;
+            monster.x =
+              targetPlayer.x + Math.cos(teleportAngle) * CHASER_TELEPORT_RADIUS;
 
-        if(monster.teleportTime <= 0) {
-          //타이머가 다된다면
-          let newX, newY;
-          let isSafe = false; //스폰되어도 괜찮은 위치인지 알려주는 플래그
-          let attempts = 0;
-          while (!isSafe && attempts < 50) {
-            newX = Math.random() * 15;
-            newY = Math.random() * 15;
-            if(!gameState.colliders.has(`${Math.floor(newX)}, ${Math.floor(newY)}`)){
-              isSafe = true;
+            monster.y =
+              targetPlayer.y + Math.sin(teleportAngle) * CHASER_TELEPORT_RADIUS;
+
+            monster.isActive = true;
+            monster.justTeleported = true;
+          }
+
+          //활성화 상태 - 타겟 플레이어를 찢으러 달려감
+          const dx = targetPlayer.x - monster.x;
+          const dy = targetPlayer.y - monster.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist > 0) {
+            moveX = (dx / dist) * CHASER_SPEED * deltaTime;
+            moveY = (dy / dist) * CHASER_SPEED * deltaTime;
+          }
+        } else {
+          //비활성화 상태로 전환
+          monster.isActive = false;
+          monster.teleportTime -= deltaTime;
+
+          if (monster.teleportTime <= 0) {
+            //타이머가 다된다면
+
+            let newX, newY;
+            let isSafe = false; //스폰되어도 괜찮은 위치인지 알려주는 플래그
+            let attempts = 0;
+
+            while (!isSafe && attempts < 50) {
+              newX = Math.random() * 15;
+              newY = Math.random() * 15;
+
+              if (
+                !gameState.colliders.has(
+                  `${Math.floor(newX)}, ${Math.floor(newY)}`
+                )
+              ) {
+                isSafe = true;
+              }
+              attempts++;
             }
-            attempts++;
-            }
-            if(isSafe) {
+
+            if (isSafe) {
               monster.x = newX;
               monster.y = newY;
             }
             monster.teleportTime = 2;
+          }
         }
-      }
-
+        //이동 적용
         if (!isNaN(monster.x + moveX)) monster.x += moveX;
         if (!isNaN(monster.y + moveY)) monster.y += moveY;
+
+        //피격 판정 로직
+        if (monster.isActive) {
+          for (const id in gameState.players) {
+            const player = gameState.players[id];
+            if (player.isDown) continue; //쓰러진 플레이어 무시
+
+            const distSq = Physics.squareDistance(monster, player);
+            if (distSq < MONSTER_COLLIDER_DISTANCE_SQ) {
+              gameState.monsterHitsPlayer(monster.id, player.id);
+            }
+          }
+        }
       }
       break;
-    
   }
 }
 
