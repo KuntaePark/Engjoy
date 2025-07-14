@@ -10,16 +10,6 @@ public class MatchClient : WebSocketClient
 
     public long id { get; set; }
     // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public void startConnection()
     {
@@ -29,7 +19,7 @@ public class MatchClient : WebSocketClient
     public override void handleOpen()
     {
         //인증 정보 전송
-        string message = JsonConvert.SerializeObject(DataManager.Instance.id);
+        string message = JsonConvert.SerializeObject(new { id = DataManager.Instance.id });
         Send("auth", message);
     }
 

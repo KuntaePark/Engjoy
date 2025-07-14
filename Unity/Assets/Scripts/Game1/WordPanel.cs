@@ -24,7 +24,7 @@ public class WordPanel : MonoBehaviour
         
     }
 
-    public void showWord(PlayerData myInfo)
+    public void showWord(Game1PlayerData myInfo)
     {
         int correctIdx = myInfo.correctIdx;
         if (correctIdx != -1)
@@ -33,8 +33,6 @@ public class WordPanel : MonoBehaviour
             word.text = words[correctIdx].word_text;
             for (int i = 0; i < 4; i++)
             {
-
-                Debug.Log($"{words[i].meaning}");
                 wordMeanings[i].text = words[i].meaning;
             }
         }

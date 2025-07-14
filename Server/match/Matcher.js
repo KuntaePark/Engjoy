@@ -3,6 +3,7 @@ const {makePacket} = require('../common/Packet');
 const { json } = require('express');
 
 const matchServerId = 'MATCHSERVER';
+const gameServerAddr = 'ws://localhost:7778';
 
 class Matcher {
     constructor() {
@@ -12,11 +13,11 @@ class Matcher {
 
     connectToGameServer() {
         //게임 서버 연결
-        const game1ws = new WebSocket('ws://localhost:7778');
+        const game1ws = new WebSocket(gameServerAddr);
 
         game1ws.on('open',() => {
             console.log('connection to game 1 server successful.');
-            game1ws.send(makePacket('auth',matchServerId));
+            game1ws.send(makePacket('auth',{id: matchServerId}));
         });
 
         game1ws.on('message',(message) => {
@@ -24,14 +25,25 @@ class Matcher {
         });
 
         game1ws.on('close', (code, reason) => {
-
+            console.log(`connection to game server has been closed.`);
+            this.tryReconnect();
         });
 
         game1ws.on('error', (err) => {
-
+            console.log(`error occurred while connecting to game server.`);
         });
 
         return game1ws;
+    }
+
+
+    //연결 종료 시 5초마다 연결 재시도
+    tryReconnect() {
+        console.log(`try reconnect in 5 seconds...`)
+        setTimeout(() => {
+            console.log(`trying reconnect...`);
+            this.game1ws = this.connectToGameServer();
+        }, 5000);
     }
 
     findMatch(ws) {

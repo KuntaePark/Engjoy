@@ -7,7 +7,6 @@ using UnityEngine.UI;
 public class EntranceController : MonoBehaviour
 {
     public GameObject entranceUI; // Reference to the UI GameObject
-    public LobbyClient lobbyClient; // Reference to the WebSocket client
     public GameStartUI gameStartUI;
 
     // Start is called before the first frame update
@@ -29,8 +28,8 @@ public class EntranceController : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        string id = other.GetComponent<PlayerController>().Id;
-        if (other.CompareTag("Player") && id == lobbyClient.PlayerId)
+        long id = other.GetComponent<LobbyPlayerController>().Id;
+        if (other.CompareTag("Player") && id == DataManager.Instance.id)
         {
             //open entrance UI
             Debug.Log("Entrance Triggered by Player");

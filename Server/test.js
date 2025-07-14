@@ -1,1 +1,1 @@
-console.log(Date.now());
+console.log(`${JSON.stringify(JSON.stringify("1"))}`)

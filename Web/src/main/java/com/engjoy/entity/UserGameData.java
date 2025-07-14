@@ -17,6 +17,9 @@ public class UserGameData {
     private int gold;
     private Long ranking;
     private float rankingPercent;
+
+    private int bodyTypeIndex;
+    private int weaponTypeIndex;
     @OneToOne
     @MapsId
     @JoinColumn(name="account_id")

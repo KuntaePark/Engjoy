@@ -54,79 +54,86 @@ public class Game1InputController : MonoBehaviour
             //입력 딜레이가 걸려있으면 무시
             return;
         }
-
-        float axisH = Input.GetAxisRaw("Horizontal");
-        float axisV = Input.GetAxisRaw("Vertical");
-       
-        bool isActionSelected = game1Manager.checkActionSelected(); //액션 선택 상태
-
-        //입력 처리, input.type 종류: chargeMana, actionSelect, actionCancel, wordSelect 
-        if (!isActionSelected)
+        try
         {
-            //행동 미선택 상태에서의 입력 처리
-            if (Input.GetButton("Fire2"))
+            float axisH = Input.GetAxisRaw("Horizontal");
+            float axisV = Input.GetAxisRaw("Vertical");
+
+            bool isActionSelected = game1Manager.checkActionSelected(); //액션 선택 상태
+
+            //입력 처리, input.type 종류: chargeMana, actionSelect, actionCancel, wordSelect 
+            if (!isActionSelected)
             {
-                //마나 충전
-                gameClient.Send("input", JsonConvert.SerializeObject(new { type = "chargeMana" }));
-            }
-            if (axisH == -1.0f)
-            {
-                if (actionType != ActionType.ATTACK)
+                //행동 미선택 상태에서의 입력 처리
+                if (Input.GetKey(KeyCode.X))
                 {
-                    Debug.Log("Action to left");
-                    actionType--;
-                    uiController.setAction((int)actionType);
+                    //마나 충전
+                    gameClient.Send("input", JsonConvert.SerializeObject(new { type = "chargeMana" }));
+                }
+                if (axisH == -1.0f)
+                {
+                    if (actionType != ActionType.ATTACK)
+                    {
+                        Debug.Log("Action to left");
+                        actionType--;
+                        uiController.setAction((int)actionType);
+                        lastInputTime = Time.time; //입력 시간 갱신
+                    }
+                }
+                if (axisH == 1.0f)
+                {
+                    if (actionType != ActionType.SPECIAL)
+                    {
+                        Debug.Log("Action to right");
+                        actionType++;
+                        uiController.setAction((int)actionType);
+                        lastInputTime = Time.time; //입력 시간 갱신
+                    }
+                }
+                //액션 결정
+                if (Input.GetKeyDown(KeyCode.Z))
+                {
+                    Debug.Log("Action selected: " + actionType.ToString());
+                    gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionSelect", action = actionType.ToString() }));
+                    isActionSelected = true; //상태 변경
                     lastInputTime = Time.time; //입력 시간 갱신
                 }
             }
-            if (axisH == 1.0f)
+            else
             {
-                if (actionType != ActionType.SPECIAL)
+                //행동 선택 상태에서의 입력 처리
+                if (Input.GetKeyDown(KeyCode.Z))
                 {
-                    Debug.Log("Action to right");
-                    actionType++;
-                    uiController.setAction((int)actionType);
+
+                    //행동 시전
+                    Debug.Log("Action confirm");
+                    gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionConfirm" }));
+                    lastInputTime = Time.time; //입력 시간 갱신
+                }
+
+                //행동 취소
+                if (Input.GetKeyDown(KeyCode.X))
+                {
+                    Debug.Log("Action cancelled");
+                    gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionCancel" }));
+                    isActionSelected = false; //상태 변경
+                    lastInputTime = Time.time; //입력 시간 갱신
+                }
+
+                //단어 뜻 선택
+                if (directionIndexMap.TryGetValue(new Vector2(axisH, axisV), out int index))
+                {
+                    //방향 입력에 따라 단어 선택
+                    Debug.Log("Selecting word at index: " + index);
+                    gameClient.Send("input", JsonConvert.SerializeObject(new { type = "wordSelect", idx = index }));
                     lastInputTime = Time.time; //입력 시간 갱신
                 }
             }
-            //액션 결정
-            if (Input.GetButtonDown("Fire1"))
-            {
-                Debug.Log("Action selected: " + actionType.ToString());
-                gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionSelect", action = actionType.ToString() }));
-                isActionSelected = true; //상태 변경
-                lastInputTime = Time.time; //입력 시간 갱신
-            }
-        }
-        else
+        } catch (System.Exception e)
         {
-            //행동 선택 상태에서의 입력 처리
-            if (Input.GetButtonDown("Fire1"))
-            {
-
-                //행동 시전
-                Debug.Log("Action confirm");
-                gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionConfirm" }));
-                lastInputTime = Time.time; //입력 시간 갱신
-            }
-
-            //행동 취소
-            if (Input.GetButtonDown("Fire2"))
-            {
-                Debug.Log("Action cancelled");
-                gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionCancel" }));
-                isActionSelected = false; //상태 변경
-                lastInputTime = Time.time; //입력 시간 갱신
-            }
-
-            //단어 뜻 선택
-            if(directionIndexMap.TryGetValue(new Vector2(axisH, axisV), out int index))
-            {
-                //방향 입력에 따라 단어 선택
-                Debug.Log("Selecting word at index: " + index);
-                gameClient.Send("input", JsonConvert.SerializeObject(new { type = "wordSelect", idx = index }));
-                lastInputTime = Time.time; //입력 시간 갱신
-            }
+            Debug.LogError("Error in Game1InputController: " + e.Message);
+            return; //예외 발생 시 입력 처리 중단
         }
+        
     }
 }

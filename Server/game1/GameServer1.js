@@ -12,7 +12,6 @@ const wss = new WebSocket.Server({ port: 7778 },()=>{
 
 //매칭 서버 아이디
 const matchServerId = 'MATCHSERVER';
-let matchWs = null;
 
 //허가된 유저 저장, id - sessionId
 const authorizedMap = new Map();
@@ -36,6 +35,15 @@ wss.on('connection', function connection(ws) {
     ws.on('close', () => {
         console.log("connection closed");
         //todo - 세션 퇴장 처리 필요
+        if(ws.id !== matchServerId) {
+            //세션에서 해당 플레이어 제거
+            const sessionId = ws['sessionId'];
+            if(sessionId) {
+                const session = sessions.get(sessionId);
+                session.close();
+            }
+        }
+        
     })
 });
 
@@ -45,16 +53,14 @@ function createSession(id1, id2) {
     const session = new Session(id1, id2);
     sessions.set(session.id, session);
     console.log(`session ${session.id} created`);
-
-    //테스트를 위해 바로 게임 시작
-    // session.gameStart();
     return session.id;
 }
 
 //수신 패킷 처리
 const PacketHandler = {
     'auth': (ws, payload) => {
-        const id = JSON.parse(payload);
+        const data = JSON.parse(payload);
+        const id = data.id;
         if(matchServerId === id) {
             console.log('match server connected.');
             ws['id'] = matchServerId;
@@ -69,10 +75,11 @@ const PacketHandler = {
             session.setPlayerConnection(id, ws);
         } else {
             console.log(`auth rejected of ${id}`);
-            ws.send('auth_reject','auth_unauthorized');
+            ws.send(makePacket('auth_reject','auth_unauthorized'));
             ws.close();
         }
     },
+
     'create_session': (ws,payload) => {
         if(ws['id'] !== matchServerId) return;
         //payload의 아이디로 세션 생성
@@ -85,9 +92,8 @@ const PacketHandler = {
             authorizedMap.set(Number(id), sessionId);
             console.log(`${id} added to auth map`);
         }
-        
-
     },
+
     'input' : (ws, payload) => {
         if(ws.sessionId) handleInput(ws, payload);
     }

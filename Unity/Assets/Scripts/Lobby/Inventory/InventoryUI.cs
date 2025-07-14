@@ -5,11 +5,11 @@ using UnityEngine;
 
 public class InventoryUI : MonoBehaviour
 {
-    //¾ÆÀÌÅÛ ¸Ş´º
+    //ì•„ì´í…œ ë©”ë‰´
     public GameObject InventoryMenu;
     private bool menuActivated;
     
-    //¾ÆÀÌÅÛ ¼³¸í¶õ
+    //ì•„ì´í…œ ì„¤ëª…ë€
     public InventoryDesc ItemDesc;
 
     public ItemSlot[] itemSlots; // Array to hold item slots
@@ -31,16 +31,13 @@ public class InventoryUI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetButtonDown("Inventory"))
-        {
-            Debug.Log("Inventory pressed");
-        }
         if(Input.GetButtonDown("Inventory") && !menuActivated)
         {
             // Toggle the inventory menu
+            Debug.Log("Inventory open");
+            loadInventory();
             InventoryMenu.SetActive(true);
             menuActivated = true;
-            loadInventory();
         }
         else if(Input.GetButtonDown("Inventory") && menuActivated)
         {

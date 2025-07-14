@@ -3,15 +3,15 @@ package com.engjoy.control;
 
 import com.engjoy.dto.UserGameDataDto;
 import com.engjoy.service.GameService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class GameController {
         return "game";
     }
 
-    @GetMapping("/game/test")
+    @GetMapping("/game/user/data")
     @ResponseBody
     public ResponseEntity<UserGameDataDto> getUserGameData(Principal principal) {
         String email = principal.getName();
@@ -32,18 +32,27 @@ public class GameController {
         return ResponseEntity.ok(dto);
     }
 
-    @PostMapping("/game/test")
+    @PostMapping("/game/user/customization")
     @ResponseBody
-    public ResponseEntity<String> testPost() {
-
-        return ResponseEntity.ok("testing post.");
+    public ResponseEntity<UserGameDataDto> saveCustomizationData(Principal principal, @RequestBody HashMap<String, Integer> data) {
+        String email = principal.getName();
+        UserGameDataDto dto = gameService.saveCustomizationData(email, data);
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping("/game/match/join")
-    public ResponseEntity<String> matchJoin(Principal principal) {
+    public ResponseEntity<String> matchJoin(Principal principal) throws JsonProcessingException {
         //매칭 큐에 해당 플레이어 추가, 인증되지 않은 유저라면 403 뜸
         String email = principal.getName();
         Long id = gameService.allowMatch(email);
+        return ResponseEntity.ok(id.toString());
+    }
+
+
+    @PostMapping("/game/lobby/join")
+    public ResponseEntity<String> lobbyJoin(Principal principal) throws JsonProcessingException {
+        String email = principal.getName();
+        Long id = gameService.allowLobby(email);
         return ResponseEntity.ok(id.toString());
     }
 }
