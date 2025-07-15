@@ -67,7 +67,7 @@ class GameState {
       );
     }
 
-    //Player 객체 생성 시 ID만 전달
+    //Player 객체 생성
     const player = new Player(newPlayerId, spawnX, spawnY);
 
     //우선은 inventory에 테스트용으로 최대 세팅
