@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DataForm;
+using TMPro;
 
 public class UIController : MonoBehaviour
 {
@@ -16,11 +17,10 @@ public class UIController : MonoBehaviour
 
     //시간
     public Slider TimeBar;
-    public Text TimeText;
+    public TextMeshProUGUI TimeText;
 
     public GameObject gameOverPanel;
-    public Text gameOverText; //게임 오버 텍스트
-    public Text scoreText;
+    public TextMeshProUGUI gameOverText; //게임 오버 텍스트
 
     //게임 오버 버튼
     public Button lobbyButton;

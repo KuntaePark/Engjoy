@@ -4,6 +4,9 @@ using UnityEngine.UI;
 using DataForm;
 using Newtonsoft.Json;
 
+using UnityEngine.Rendering.Universal.Internal;
+using TMPro;
+
 public abstract class GameStartUI : MonoBehaviour
 {
     private BrowserRequest browserRequest;
@@ -13,7 +16,10 @@ public abstract class GameStartUI : MonoBehaviour
 
     //UI 요소
     public Button gameStartButton;
-    public Text gameStartButtonText;
+
+    public TextMeshProUGUI gameStartButtonText;
+    public Text scoreText;
+    public Text rankingText;
 
     private bool inMatch = false;
 
