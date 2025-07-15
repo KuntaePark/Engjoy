@@ -75,6 +75,7 @@ class Room {
     }, deltaTime * 1000);
     return intervalId;
   }
+  
 }
 
 module.exports = { Room };
