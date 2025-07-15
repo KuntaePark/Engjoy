@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
@@ -17,9 +17,9 @@ public class PlayerController : MonoBehaviour
 
     private bool isFacingRight = true;
 
-    public string Id { get; private set; }
+    public long Id { get; private set; } = -1;
     public bool IsHoldingKeyword { get; private set; }
-    private bool IsMine => !string.IsNullOrEmpty(Id) && Id == GameManager.Instance.MyPlayerId;
+    private bool IsMine => (Id >= 0) && Id == GameManager.Instance.MyPlayerId;
 
     private bool isEscaped = false;
     private bool isDown = false;
@@ -28,6 +28,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Camera playerCamera;
     [SerializeField] private AudioListener audioListener;
 
+    [SerializeField]
+    private CharacterRenderer characterRenderer;
 
     //변수 지정
     public int maxHP = 3; //최대 HP
@@ -43,7 +45,7 @@ public class PlayerController : MonoBehaviour
 
 
     //sprite 컴포넌트
-    private SpriteRenderer spriteRenderer;
+    public SpriteRenderer spriteRenderer;
     public Animator ani; //player에게 적용시킬 animator
 
 
@@ -60,22 +62,19 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        ani = GetComponentInChildren<Animator>();
-        originalSprite = spriteRenderer.sprite; //시작할 떄 원래 스프라이트
+        
     }
 
     // ============================== 초기화 (PlayerManager에서 호출) ============================== 
 
-    public void Initialize(string id, PlayerData initialData, float lerpFactor)
+    public void Initialize(long id, PlayerData initialData, float lerpFactor)
 
     {
+        Debug.Log($"id : {id}");
 
         Id = id;
         positionLerpFactor = lerpFactor;
 
-        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        // animator = GetComponent<Animator>();
         if (playerCamera == null) playerCamera = gameObject.GetComponentInChildren<Camera>();
         if (audioListener == null) audioListener = GetComponentInChildren<AudioListener>();
 
@@ -85,6 +84,14 @@ public class PlayerController : MonoBehaviour
 
         transform.position = new Vector3(initialData.x, initialData.y, 0);
         targetPosition = transform.position;
+
+        characterRenderer.SetBody(initialData.bodyTypeIndex);
+        characterRenderer.SetWeapon(initialData.weaponTypeIndex);
+
+        ani = characterRenderer.bodyAnimator;
+
+        spriteRenderer = characterRenderer.bodyInstance.GetComponent<SpriteRenderer>();
+        originalSprite = spriteRenderer.sprite; //시작할 떄 원래 스프라이트
 
         if (IsMine)
         {
@@ -112,21 +119,27 @@ public class PlayerController : MonoBehaviour
         //    Debug.Log($"<color=cyan>[PlayerController] {this.Id} processing inputH: {data.inputH}</color>");
         //}
 
-        if (ani != null)
+        if(data.isDown)
         {
-            ani.SetBool("isDown", data.isDown);
+            ani.SetTrigger("dead");
+        }
 
-            float speed = new Vector2(data.inputH, data.inputV).magnitude;
-            ani.SetFloat("Speed", speed);
+        float speed = new Vector2(data.inputH, data.inputV).magnitude;
+        if(speed > 0.01f)
+        {
+            ani.SetBool("isRunning", true);
+        } else
+        {
+            ani.SetBool("isRunning", false);
         }
 
         if (data.inputH < 0)
         {
-            isFacingRight = false;
+            gameObject.transform.localScale = new Vector3( -1, 1, 1 );
         }
         else if (data.inputH > 0)
         {
-            isFacingRight = true;
+            gameObject.transform.localScale = new Vector3( 1, 1, 1);
         }
 
         //목표 위치 갱신
@@ -167,7 +180,7 @@ public class PlayerController : MonoBehaviour
                     CameraController camConttroller = playerCamera.GetComponentInChildren<CameraController>();
                     if (camConttroller != null)
                     {
-                        bool shouldZoom = !string.IsNullOrEmpty(data.revivablePlayerId);
+                        bool shouldZoom = data.revivablePlayerId >= 0;
                         camConttroller.SetReviveZoom(shouldZoom);
                     }
                 }
@@ -257,12 +270,12 @@ public class PlayerController : MonoBehaviour
             if(!IsHoldingKeyword)
             {
 
-            //서버에 플레이어 공격 요청 전송
-            WsClient.Instance.Send("playerAttack", "");
-            //즉각적인 시각적 효과를 위한 코루틴
-            StartCoroutine(AttackEffectCoroutine());
+                //서버에 플레이어 공격 요청 전송
+                WsClient.Instance.Send("playerAttack", "");
+                //즉각적인 시각적 효과를 위한 코루틴
+                characterRenderer.weaponAnimator.SetTrigger("Swing");
 
-            Debug.Log("Attack input sent to server.");
+                Debug.Log("Attack input sent to server.");
             }
             else
             {
@@ -290,31 +303,5 @@ public class PlayerController : MonoBehaviour
             WsClient.Instance.Send("useItem", JsonConvert.SerializeObject(payload));
             Debug.Log("Sent request to use Shield");
         }
-
      }
-
-    private IEnumerator AttackEffectCoroutine()
-    {
-        if (spriteRenderer != null)
-        {
-            Color originalColor = spriteRenderer.color;
-
-            //시각적인 효과
-            spriteRenderer.color = Color.red;
-
-            yield return new WaitForSeconds(0.15f);
-
-            //원래 색상으로 복원
-            spriteRenderer.color = originalColor;
-        }
-
-    }
-
-    private void LateUpdate()
-    {
-        if(spriteRenderer != null)
-        {
-            spriteRenderer.flipX = !isFacingRight;
-        }
-    }
 }

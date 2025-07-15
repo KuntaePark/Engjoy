@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using DataForm;
 using TMPro;
@@ -50,7 +50,7 @@ public class KeywordController : MonoBehaviour
     public void UpdateState(KeywordData data)
     {
        //플레이어가 키워드 들고 있는지 확인
-       if (!string.IsNullOrEmpty(data.carrierId))
+       if (data.carrierId >= 0)
         {
             PlayerController carrier = PlayerManager.Instance.GetPlayerObjectById(data.carrierId);
             if(carrier != null)

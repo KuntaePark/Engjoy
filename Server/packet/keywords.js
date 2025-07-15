@@ -5,7 +5,7 @@ class Keyword {
     this.x = x;
     this.y = y;
     this.isAnswer = isAnswer; //Exit의 정답 플래그
-    this.carrierId = null; //상호작용중인 플레이어 ID
+    this.carrierId = -1; //상호작용중인 플레이어 ID
   }
 
   toPacket() {
