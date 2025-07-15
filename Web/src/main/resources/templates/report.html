@@ -89,7 +89,7 @@
 }
 
   #cal-heatmap .ch-domain-text {
-    font-size: 11px !important;
+    font-size: 14px !important;
     font-weight: 500;
   }
 
@@ -135,7 +135,7 @@
                     },
                     domainDynamicDimension: false,  // ← 도메인(월) 블록 너비를 가장 큰 달과 동일하게 고정
                     domain: { type: 'month', gutter: 5, label: {position: 'top', align: 'center', offset: { x: 0, y: 0 }} },
-                    subDomain: { type: 'day', radius: 2, width: 13, height: 13 ,cellPadding: 2, gutter: 2 },
+                    subDomain: { type: 'day', radius: 2, width: 18, height: 18 ,cellPadding: 2, gutter: 2 },
                     itemSelector: '#cal-heatmap'
                 },
                 [
@@ -244,8 +244,8 @@
 <th:block layout:fragment="main">
 
 
-    <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div class="rounded-xl w-full max-w-6xl p-10 space-y-10 flex flex-col items-start gap-x-6">
+    <div class="min-h-screen items-start justify-center bg-gray-50 p-4 sm:p-6 lg:p-8">
+        <div class="rounded-xl w-full max-w-6xl p-10 space-y-10 flex flex-col items-start gap-x-20">
 
                     <div class="flex items-center gap-3">
                         <div class="w-2 h-7 bg-blue-500 rounded"></div>
@@ -272,16 +272,16 @@
             </div>
 
             <div class="h-5"></div>
-                    <section class="mt-[400px]">
+                    <section >
                         <div class="bg-gray-100 rounded-lg p-4">
                             <div class="flex items-end space-x-4 ">
-                                <div style="writing-mode: vertical-rl;transform: rotate(180deg);font-size: 45px;line-height: 11px; height: 77px; /* 11px * 7줄 */
+                                <div style="writing-mode: vertical-rl;transform: rotate(180deg);font-size: 50px;line-height: 11px; height: 77px; /* 11px * 7줄 */
                                 color: #4b5563; margin-right: 20px; user-select: none;">
                                     <span th:text="${#dates.format(new java.util.Date(), 'yyyy')}"></span>
                                 </div>
 
                                 <div>
-                                    <div class="grid grid-rows-7 gap-[4px] text-center text-xs text-gray-600 flex-shrink-0"
+                                    <div class="grid grid-rows-7 gap-[10px] text-center text-md text-gray-600 flex-shrink-0"
                                          style="grid-template-rows: repeat(7, 12px); width: 14px;">
                                         <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
                                     </div>

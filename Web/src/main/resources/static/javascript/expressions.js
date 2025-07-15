@@ -400,15 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
 
-                    // 결과가 있는 경우, 기존 로직대로 화면을 렌더링
-                    if (isDictionaryView) {
-                        renderDictionary(rawData);
-                        isLastPage = !!rawData.last;
-                    } else {
-                        renderStudyLog(rawData);
-                        isLastPage = Object.keys(rawData).length === 0;
-                    }
-
                     if (!isLastPage) {
                         currentPage++;
                         loadMoreBtn?.classList.remove('hidden');
@@ -564,23 +555,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentPlayingAudio.play();
             }
 
+            // 즐겨찾기 토글
             function toggleFavorite(button) {
-                const exprId = button.dataset.exprId;
-                const icon = button.querySelector('.favorite-icon');
-                const token = document.querySelector("meta[name='_csrf']")?.content;
-                const header = document.querySelector("meta[name='_csrf_header']")?.content;
-                const headers = { 'Content-Type': 'application/json' };
-                if (token && header) headers[header] = token;
+              const exprId = button.dataset.exprId;
+              const icon   = button.querySelector('.favorite-icon');
+              const token  = document.querySelector("meta[name='_csrf']")?.content;
+              const header = document.querySelector("meta[name='_csrf_header']")?.content;
+              const headers = {};
+              if (token && header) headers[header] = token;
 
-                fetch(`/expressions/favorite/${exprId}`, { method: 'POST', headers: headers })
-                    .then(res => res.ok ? res.json() : Promise.reject(`Favorite toggle failed: ${res.status}`))
-                    .then(isFavorite => {
-                        icon.classList.toggle('fa-solid', isFavorite);
-                        icon.classList.toggle('fa-regular', !isFavorite);
-                        icon.classList.toggle('active', isFavorite);
-                    })
-                    .catch(console.error);
+              fetch(`/expressions/favorite/${exprId}`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: headers
+              })
+                .then(res => {
+                  if (!res.ok) throw new Error(res.status);
+                  return res.json();      // 서버가 { favorite: true/false } 를 JSON 으로 반환
+                })
+                .then(data => {
+                  const isFav = data.favorite;
+                  console.log('즐겨찾기 응답:', data);
+
+                  // 서버 응답 값에 따라 on/off 토글
+                  icon.classList.toggle('fa-solid',  isFav);
+                  icon.classList.toggle('fa-regular', !isFav);
+                  icon.classList.toggle('active',     isFav);
+
+                  // 즐겨찾기 모드(onlyFavorites)라면, 목록도 다시 갱신
+                  if (onlyFavorites) {
+                    applyFiltersToCurrentView();
+                  }
+                })
+                .catch(err => console.error('Favorite toggle failed:', err));
             }
+
 
             function openDetailModal(wordInfo) {
                 if(!detailModalOverlay) return;
@@ -647,4 +656,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- 페이지 실행 ---
             initializePage();
+
+            // 1) 디바운스용 타이머 변수
+            let searchDebounce;
+
+            // 2) 키워드 인풋에 input 이벤트 리스너 등록
+            keywordInput.addEventListener('input', () => {
+              clearTimeout(searchDebounce);
+              searchDebounce = setTimeout(() => {
+                // 새 검색이므로 페이지 초기화
+                // 현재 뷰(study_log 또는 dictionary)에 맞춰 자동 검색 실행
+                fetchAndRender({ isNewSearch: true, view: currentView });
+              }, 300);
+            });
+
         });

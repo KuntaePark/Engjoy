@@ -5,6 +5,9 @@ import com.engjoy.dto.ExpressionSearchDto;
 import com.engjoy.dto.IncorrectExprDto;
 import com.engjoy.dto.WordInfoDto;
 import com.engjoy.entity.Account;
+import com.engjoy.entity.Expression;
+import com.engjoy.repository.AccountRepository;
+import com.engjoy.repository.ExpressionRepository;
 import com.engjoy.service.ExpressionService;
 import com.engjoy.service.QuizService;
 import lombok.RequiredArgsConstructor;
@@ -13,43 +16,44 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Repository;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/expressions")
 @RequiredArgsConstructor
 public class ExpressionController {
     private final ExpressionService expressionService;
-//    private final AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
+    private final ExpressionRepository expressionRepository;
 
     @GetMapping
     public String getExpressions(Principal principal,
                                  @ModelAttribute ExpressionSearchDto searchDto,
                                  @PageableDefault(size = 10, sort = "id") Pageable pageable,
                                  Model model) {
-//        if (principal == null) {
-//            return "redirect:/login";
-//        }
-        // Principal에서 username을 얻어 Account 엔티티를 조회
-//        Account account = accountRepository.findByUsername(principal.getName())
-//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-//        Account account = new Account();
-//        account.setId(1L);
-//        account.setName(principal.getName());
-
-        Long testAccountId = 1L;
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
 
         Sort stableSort = Sort.by(Sort.Direction.DESC, "usedTime").and(Sort.by(Sort.Direction.DESC, "id"));
         Pageable initialPageable = PageRequest.of(0, 20, stableSort);
 
-        Map<String, List<ExpressionDto>> studyLogData = expressionService.getStudyLog(testAccountId, searchDto, initialPageable);
+        Map<String, List<ExpressionDto>> studyLogData = expressionService.getStudyLog(accountId, searchDto, initialPageable);
 
         model.addAttribute("studyLogData", studyLogData);
         model.addAttribute("searchDto", searchDto);
@@ -64,13 +68,19 @@ public class ExpressionController {
             @RequestParam(value = "sort", defaultValue = "usedTime,desc") String sort,
             Principal principal) {
 
-        Long testAccountId = 1L;
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
 
         if ("dictionary".equals(view)) {
             String[] sortParams = sort.split(",");
             Sort dictionarySort = Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]);
             Pageable pageable = PageRequest.of(page, 12, dictionarySort);
-            Page<ExpressionDto> expressionPage = expressionService.getExpressions(testAccountId, searchDto, pageable);
+            Page<ExpressionDto> expressionPage = expressionService.getExpressions(accountId, searchDto, pageable);
             return ResponseEntity.ok(expressionPage);
 
         } else { //study_log 뷰
@@ -93,7 +103,7 @@ public class ExpressionController {
 
             // 최종적으로 만들어진 정렬 기준을 사용
             Pageable pageable = PageRequest.of(page, 20, requestedSort);
-            Map<String, List<ExpressionDto>> studyLog = expressionService.getStudyLog(testAccountId, searchDto, pageable);
+            Map<String, List<ExpressionDto>> studyLog = expressionService.getStudyLog(accountId, searchDto, pageable);
             return ResponseEntity.ok(studyLog);
         }
     }
@@ -102,18 +112,28 @@ public class ExpressionController {
     // 오늘의 추천 단어를 제공하는 API 엔드포인트 추가
     @GetMapping("/api/recommendations")
     public ResponseEntity<List<ExpressionDto>> getRecommendations(Principal principal) {
-        // Long accountId = Long.parseLong(principal.getName()); // 실제 로그인 구현 시 사용
-        Long testAccountId = 1L; // 테스트용 ID
+        if (principal == null) {
+            return ResponseEntity.ok().build();
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
 
-        List<ExpressionDto> recommendations = expressionService.getDailyRecommendations(testAccountId);
+        List<ExpressionDto> recommendations = expressionService.getDailyRecommendations(accountId);
 
         return ResponseEntity.ok(recommendations);
     }
 
     @PostMapping("/recommendations/{expressionId}/hide")
     public ResponseEntity<Void> hideRecommendation(@PathVariable Long expressionId, Principal principal) {
-        // 실제 로그인된 사용자 ID를 가져오는 로직
-        Long accountId = 1L; // 예시 ID
+        if (principal == null) {
+            return ResponseEntity.ok().build();
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
 
         expressionService.hideRecommendationForToday(accountId, expressionId);
         return ResponseEntity.ok().build();
@@ -128,28 +148,28 @@ public class ExpressionController {
 
     @PostMapping("/favorite/{exprId}")
     @ResponseBody
-    public ResponseEntity<Boolean> toggleFavoriteStatus(Principal principal,
-                                                        @PathVariable Long exprId) {
+    public Map<String, Boolean> toggleFavoriteStatus(Principal principal,
+                                                     @PathVariable Long exprId) {
         if (principal == null) {
-            return ResponseEntity.status(401).build(); // 401 Unauthorized
+            return Collections.singletonMap("favorite", false);
         }
-//        Account account = accountRepository.findByUsername(principal.getName())
-//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        Account account = new Account();
-        account.setId(1L);
-        account.setName(principal.getName());
-
-        boolean isFavorite = expressionService.toggleFavoriteStatus(account.getId(), exprId);
-        return ResponseEntity.ok(isFavorite);
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        boolean isFav = expressionService.toggleFavoriteStatus(account.getId(), exprId);
+        return Collections.singletonMap("favorite", isFav);
     }
 
     @GetMapping("/api/wrong-answers")
     public ResponseEntity<List<IncorrectExprDto>> getWrongAnswers(Principal principal) {
-        //        Account account = accountRepository.findByUsername(principal.getName())
-//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        Long testAccountId = 1L;
+        if (principal == null) {
+            return ResponseEntity.ok().build();
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
 
-        List<IncorrectExprDto> incorrectExpressions = expressionService.getIncorrectExpressionsAsList(testAccountId);
+        List<IncorrectExprDto> incorrectExpressions = expressionService.getIncorrectExpressionsAsList(accountId);
 
         return ResponseEntity.ok(incorrectExpressions);
     }

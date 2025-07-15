@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Repository
@@ -53,4 +54,5 @@ public interface ExpressionRepository extends JpaRepository<Expression, Long> {
 
     @Query("SELECT e.wordText FROM Expression e WHERE e.exprType = :exprType")
     List<String> findWordTextsByType(@Param("exprType") EXPRTYPE exprType);
+
 }
