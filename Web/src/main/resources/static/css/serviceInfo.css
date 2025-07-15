@@ -54,10 +54,37 @@
     text-decoration:none;
 }
 
-
-
-
-
-    .moving{
+.moving{
         color:white
-    }
+}
+
+.container{
+        width: 25%;
+        margin: 0 auto;
+        padding : 20px;
+        background-color: whitesmoke;
+        border-radius: 10px;
+        justify-content: center;
+        display: flex;
+        flex-direction: column;
+   }
+
+.wrapper{
+     justify-content: center;
+      align-items: center;
+      height: 100vh;
+      display:flex;
+}
+
+h2{
+color: red;
+}
+
+#end{
+ font-weight: bold;
+}
+
+#member{
+    font-weight: bold;
+    color: green;
+}

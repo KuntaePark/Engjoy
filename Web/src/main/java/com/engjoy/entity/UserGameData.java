@@ -24,4 +24,10 @@ public class UserGameData {
     @MapsId
     @JoinColumn(name="account_id")
     private Account account;
+
+    public void setBodyTypeIndex(Integer bodyTypeIndex) {
+    }
+
+    public void setWeaponTypeIndex(Integer weaponTypeIndex) {
+    }
 }
