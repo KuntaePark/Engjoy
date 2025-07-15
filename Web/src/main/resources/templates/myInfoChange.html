@@ -52,7 +52,7 @@
                 <button class="btn" id="nicknameCheckBtn" onclick="nicknameCheck()">중복확인</button><br>
                 <span id="nicknameCheckResult"></span>
             </div>
-            <br>
+            <br><br>
             <div>
                 <label>내 이메일</label>
                 <input type="text" name="email" id="emailInput">
@@ -65,11 +65,13 @@
                 <span id="emailCheckResult"></span>
             </div>
             <br><br>
-            <a th:href="@{/passwordChange}">비밀번호 변경하기 이동</a>
-            <br><br>
+            <div>
+                <button id="pwChange" onclick="location.href='/passwordChange'">비밀번호 변경하기 이동</button>
+            </div>
+            <br>
             <div id="submit">
-                <input type="button" value="저장" id="save" onclick="saveInfo()">
-                <button type="button" id="cancel" onclick="location.href='myPage.html'">취소</button>
+                <input type="button" value="저장" class="btn" onclick="saveInfo()">
+                <button type="button" class="btn" onclick="location.href='myPage.html'">취소</button>
             </div>
         </div>
 

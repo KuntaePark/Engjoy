@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: com.itextpdf:commons:8.0.4" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="com.itextpdf" artifactId="commons" version="8.0.4" baseVersion="8.0.4" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.itextpdf/commons/8.0.4/cf80f3a9403d10aac34652882ad45f200fcc236b/commons-8.0.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
