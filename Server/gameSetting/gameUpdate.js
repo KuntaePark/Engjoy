@@ -496,26 +496,5 @@ function updateMonsterMovement(monster, gameState) {
   }
 }
 
-// =================================================================
-// ## 루프 시작 함수
-// =================================================================
-function startGameUpdate(gameState, broadcast) {
-  const intervalId = setInterval(() => {
-    //게임 로직 업데이트 실행!
 
-    if (Object.keys(gameState.players).length === 0 || gameState.isGameOver) {
-      console.log(`game end. remove interval.`);
-      clearInterval(intervalId);
-      return;
-    }
-
-    update(gameState); //업데이트된 전체 상태를 모든 클라이언트에게 브로드캐스트!
-
-    const packet = gameState.getFullStatePacket();
-    broadcast(JSON.stringify(packet));
-
-    gameState.resetPlayerInputs();
-  }, deltaTime * 1000);
-}
-
-module.exports = { startGameUpdate };
+module.exports = { update , deltaTime };

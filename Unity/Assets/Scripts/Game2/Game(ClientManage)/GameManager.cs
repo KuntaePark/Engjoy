@@ -33,7 +33,7 @@ public class GameManager : MonoBehaviour
 
     private bool isGameOverSequenceStarted = false;
 
-
+    private bool isLoading = false;
 
     private void Awake()
     {
@@ -90,9 +90,9 @@ public class GameManager : MonoBehaviour
 
     //Game 내에 있는 플레이어와 키워드에게 작업 분배
     public void UpdateGameState(GameState newState)
-    {
+    {        
         // MyPlayerId가 설정되기 전까지는 아무 처리도 하지 않음
-        if (MyPlayerId < 0)
+        if (MyPlayerId < 0 || isLoading)
         {
             return; // 즉시 함수를 종료하여 아래 코드가 실행되지 않게 함
         }
@@ -102,9 +102,11 @@ public class GameManager : MonoBehaviour
         //서버는 인게임 상태인데 현재 씬이 인게임이 아닐 경우
         if(newState.status == "PLAY" && currentSceneName != gameSceneName)
         {
+            isLoading = true;
             SceneController.Instance.loadScene(gameSceneName, () =>
             {
                 FindManagers();
+                isLoading = false;
             });
             return;
         }

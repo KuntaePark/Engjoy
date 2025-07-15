@@ -21,7 +21,8 @@ public class CharacterRenderer : MonoBehaviour
     public int bodyTypeIndex = 0; //몸통 타입 인덱스
     public int weaponTypeIndex = 0; //무기 타입 인덱스
 
-
+    public GameObject bodyInstance;
+    public GameObject weaponInstance;
 
     // Start is called before the first frame update
     void Start()
@@ -54,6 +55,7 @@ public class CharacterRenderer : MonoBehaviour
             this.bodyTypeIndex = bodyTypeIndex; // Update body type index
             GameObject bodyObject = Instantiate(bodyPrefab, Vector3.zero, Quaternion.identity);
             bodyObject.transform.SetParent(BodyPlacer.transform, false);
+            bodyInstance = bodyObject;
             bodyAnimator = bodyObject.GetComponent<Animator>();
         }
     }
@@ -77,6 +79,7 @@ public class CharacterRenderer : MonoBehaviour
             this.weaponTypeIndex = weaponTypeIndex; // Update weapon type index
             GameObject weaponObject = Instantiate(weaponPrefab, Vector3.zero, Quaternion.identity);
             weaponObject.transform.SetParent(WeaponPlacer.transform, false);
+            weaponInstance = weaponObject;
             weaponAnimator = weaponObject.GetComponent<Animator>();
         }
     }

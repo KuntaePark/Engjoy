@@ -10,7 +10,7 @@ class RoomManager {
   //새 매칭룸 생성
   createRoom() {
     const roomId = this.nextRoomId++;
-    const newRoom = new Room(roomId);
+    const newRoom = new Room(roomId, this);
     this.rooms[roomId] = newRoom;
 
     newRoom.startGame();
@@ -49,6 +49,11 @@ class RoomManager {
   //특정 방을 ID 로 찾기
   getRoom(roomId) {
     return this.rooms[roomId];
+  }
+  
+  removeRoom(roomId) {
+    console.log(`removing room ${roomId}.`);
+    delete this.rooms[roomId];
   }
 }
 

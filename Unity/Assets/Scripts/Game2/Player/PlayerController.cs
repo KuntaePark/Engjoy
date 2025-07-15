@@ -45,7 +45,7 @@ public class PlayerController : MonoBehaviour
 
 
     //sprite 컴포넌트
-    private SpriteRenderer spriteRenderer;
+    public SpriteRenderer spriteRenderer;
     public Animator ani; //player에게 적용시킬 animator
 
 
@@ -62,8 +62,7 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        originalSprite = spriteRenderer.sprite; //시작할 떄 원래 스프라이트
+        
     }
 
     // ============================== 초기화 (PlayerManager에서 호출) ============================== 
@@ -71,6 +70,7 @@ public class PlayerController : MonoBehaviour
     public void Initialize(long id, PlayerData initialData, float lerpFactor)
 
     {
+        Debug.Log($"id : {id}");
 
         Id = id;
         positionLerpFactor = lerpFactor;
@@ -89,6 +89,9 @@ public class PlayerController : MonoBehaviour
         characterRenderer.SetWeapon(initialData.weaponTypeIndex);
 
         ani = characterRenderer.bodyAnimator;
+
+        spriteRenderer = characterRenderer.bodyInstance.GetComponent<SpriteRenderer>();
+        originalSprite = spriteRenderer.sprite; //시작할 떄 원래 스프라이트
 
         if (IsMine)
         {
@@ -270,7 +273,7 @@ public class PlayerController : MonoBehaviour
                 //서버에 플레이어 공격 요청 전송
                 WsClient.Instance.Send("playerAttack", "");
                 //즉각적인 시각적 효과를 위한 코루틴
-                ani.SetTrigger("attack");
+                characterRenderer.weaponAnimator.SetTrigger("Swing");
 
                 Debug.Log("Attack input sent to server.");
             }
@@ -300,22 +303,5 @@ public class PlayerController : MonoBehaviour
             WsClient.Instance.Send("useItem", JsonConvert.SerializeObject(payload));
             Debug.Log("Sent request to use Shield");
         }
-
      }
-
-    private IEnumerator AttackEffectCoroutine()
-    {
-        if (spriteRenderer != null)
-        {
-            Color originalColor = spriteRenderer.color;
-
-            //시각적인 효과
-            spriteRenderer.color = Color.red;
-
-            yield return new WaitForSeconds(0.15f);
-
-            //원래 색상으로 복원
-            spriteRenderer.color = originalColor;
-        }
-    }
 }
