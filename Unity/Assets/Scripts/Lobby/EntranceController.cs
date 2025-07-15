@@ -6,13 +6,12 @@ using UnityEngine.UI;
 
 public class EntranceController : MonoBehaviour
 {
+    public GameObject entranceUI; // Reference to the UI GameObject
     public GameStartUI gameStartUI;
-    private GameObject entranceUI; // Reference to the UI GameObject
 
     // Start is called before the first frame update
     void Start()
     {
-        entranceUI = gameStartUI.gameObject;
         entranceUI.SetActive(false); // Ensure the UI is hidden at the start   
     }
 

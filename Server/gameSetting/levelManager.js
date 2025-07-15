@@ -3,7 +3,9 @@ const Exit = require("../packet/exit.js");
 const { Monster, MonsterType } = require("../packet/monster.js");
 const { generateId } = require("./utils.js");
 const { getRandomSentence, getRandomWords } = require("../db/dbUtils.js");
-const { loadMapFromFile } = require("../common/MapLoader.js");
+
+const fs = require("fs");
+const path = require("path");
 
 //랜덤 정수 생성 헬퍼
 function getRandomInt(min, max) {
@@ -13,7 +15,14 @@ function getRandomInt(min, max) {
 // ================= ▼▼▼ 맵 세팅 ▼▼▼ =================
 function loadMap(gameState, mapName) {
   try {
-    gameState.colliders = loadMapFromFile(mapName);
+    const mapPath = path.join(__dirname, "..", "maps", `${mapName}.json`);
+    const mapFileContent = fs.readFileSync(mapPath, "utf8");
+    const mapData = JSON.parse(mapFileContent);
+
+    gameState.colliders = new Set(
+      mapData.colliders.map((c) => `${c.x}, ${c.y}`)
+    );
+
     console.log(
       `[Map] Successfully loaded map: ${mapName}. ${gameState.colliders.size} colliders registered.`
     );

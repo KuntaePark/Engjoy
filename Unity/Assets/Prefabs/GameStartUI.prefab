@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 125757928331144214}
   - component: {fileID: 2763414270164523995}
   - component: {fileID: 4859017775891958731}
+  - component: {fileID: 2530856713635350398}
   m_Layer: 5
   m_Name: GameStartUI
   m_TagString: Untagged

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using DataForm;
 using UnityEngine;
@@ -23,7 +23,7 @@ public class GameManager : MonoBehaviour
     public GameObject exitPrefab; //GameManager가 직접 Exit를 관리
     private ExitController exitController; //ExitController를 직접 관리
 
-    public long MyPlayerId { get; private set; } = -1;
+    public string MyPlayerId { get; private set; }
     public bool IsGameOver {  get; private set; }   //게임오버 상태
     public bool IsResultVisible { get; private set; } = false; // 결과창 활성화 신호_플레이어 빙글빙글 돌릴거임..
 
@@ -33,7 +33,7 @@ public class GameManager : MonoBehaviour
 
     private bool isGameOverSequenceStarted = false;
 
-    private bool isLoading = false;
+
 
     private void Awake()
     {
@@ -49,16 +49,17 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
         //씬이 로드될 때마다 매니저들 찾게 하기
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     //GameManager 오브젝트 파괴될 때 등록 해제
     private void OnDestroy()
     {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void Start()
     {
-        MyPlayerId = DataManager.Instance.id;
         FindManagers();
     }
 
@@ -80,7 +81,7 @@ public class GameManager : MonoBehaviour
     }
 
     //WSClient에 호출될 함수 : 플레이어 ID 설정
-    public void SetMyPlayerId(long id)
+    public void SetMyPlayerId(string id)
     {
         MyPlayerId = id;
         Debug.Log($"<color=green>GameManager: My ID is set to {MyPlayerId}</color>");
@@ -90,9 +91,9 @@ public class GameManager : MonoBehaviour
 
     //Game 내에 있는 플레이어와 키워드에게 작업 분배
     public void UpdateGameState(GameState newState)
-    {        
+    {
         // MyPlayerId가 설정되기 전까지는 아무 처리도 하지 않음
-        if (MyPlayerId < 0 || isLoading)
+        if (string.IsNullOrEmpty(MyPlayerId))
         {
             return; // 즉시 함수를 종료하여 아래 코드가 실행되지 않게 함
         }
@@ -102,12 +103,7 @@ public class GameManager : MonoBehaviour
         //서버는 인게임 상태인데 현재 씬이 인게임이 아닐 경우
         if(newState.status == "PLAY" && currentSceneName != gameSceneName)
         {
-            isLoading = true;
-            SceneController.Instance.loadScene(gameSceneName, () =>
-            {
-                FindManagers();
-                isLoading = false;
-            });
+            SceneManager.LoadScene(gameSceneName);
             return;
         }
 
@@ -203,7 +199,9 @@ public class GameManager : MonoBehaviour
     {
         IsResultVisible = true;
     }
-}
+
+
+    }
 
 
 
