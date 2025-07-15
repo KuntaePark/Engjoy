@@ -86,7 +86,7 @@ public class UIManager : MonoBehaviour
         //countdownValue > 0 : 서버에서 카운트다운 시작
         if(countdownValue > 0)
         {
-            countdownText.text = Mathf.CeilToInt(countdownValue).ToString();
+            countdownText.text = "Start after : " + Mathf.CeilToInt(countdownValue).ToString() + " Seconds";
         }
         else
         {

@@ -67,7 +67,7 @@ class GameState {
       );
     }
 
-    //Player 객체 생성 시 ID만 전달
+    //Player 객체 생성
     const player = new Player(newPlayerId, spawnX, spawnY);
 
     //우선은 inventory에 테스트용으로 최대 세팅
@@ -380,14 +380,14 @@ class GameState {
       console.log(
         `[Correct] Player ${player.id} submitted correct keyword: ${keyword.text}`
       );
-      this.score += 50; //[정답] 50점 추가
+      this.score += 500; //[정답] 500점 추가
       delete this.keywords[holdingKeywordId];
     } else {
       console.log(
         `[Incorrect] Player ${player.id} submitted wrong keyword: ${keyword.text}. Deleting it.`
       );
 
-      this.score -= 25; //[오답] -25점 감점
+      this.score -= 200; //[오답] -200점 감점
       // if (score <= 0) score = 0; //점수 0점 이하로 떨어지지 않게
       delete this.keywords[holdingKeywordId];
     } //플레이어의 키워드 홀딩 상태 해제

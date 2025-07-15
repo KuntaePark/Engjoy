@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using DataForm;
 using Newtonsoft.Json;
 using UnityEngine.Rendering.Universal.Internal;
+using TMPro;
 
 public class GameStartUI : MonoBehaviour
 {
@@ -12,7 +13,7 @@ public class GameStartUI : MonoBehaviour
     
     //UI 요소
     public Button gameStartButton;
-    public Text gameStartButtonText;
+    public TextMeshProUGUI gameStartButtonText;
     public Text scoreText;
     public Text rankingText;
 

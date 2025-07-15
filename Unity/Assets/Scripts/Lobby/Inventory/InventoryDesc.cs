@@ -1,13 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class InventoryDesc : MonoBehaviour
 {
     public Image ItemImage; // 아이템 이미지
-    public Text ItemName; // 아이템 이름 텍스트
-    public Text ItemDesc; // 아이템 설명 텍스트
+    public TextMeshProUGUI ItemName; // 아이템 이름 텍스트
+    public TextMeshProUGUI ItemDesc; // 아이템 설명 텍스트
 
 
     // Start is called before the first frame update

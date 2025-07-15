@@ -1,9 +1,11 @@
 /*
  * 게임 세션 정보 저장 클래스.
  */
-const {Player} = require('./Player');
+const {Player, userDataDB} = require('./Player');
 const {deltaTime} = require('./GameLogic');
 const {makePacket} = require('../common/Packet');
+const {preciseSetInterval, clearPreciseInterval} = require('../common/PreciseInterval');
+
 
 const CUTSCENE_LENGTH = 0; //in milliseconds, 게임 시작 전 컷씬 시간
 const COUNTDOWN_LENGTH = 4000; //in milliseconds
@@ -23,6 +25,9 @@ class Session {
 
         //게임 상태 관련
         this.startTime = null; //게임 시작 시간
+        //게임 상태 업데이트 여부 확인용
+        this.hasChange = false;
+
 
         //게임 상태: ready: 대기, countdown: 카운트다운, running: 게임중, end: 게임종료
         this.state = "ready";
@@ -78,7 +83,7 @@ class Session {
         //게임 컷씬 및 타이머 계산 시간 이후 게임 시작
         setTimeout(() => {
             console.log('game start');
-            this.intervalId = setInterval(() => this.tick(), deltaTime * 1000);
+            this.intervalId = preciseSetInterval(() => this.tick(), deltaTime * 1000);
             this.state = "start";
             this.broadcast(makePacket('gameState', this));
         }, CUTSCENE_LENGTH + COUNTDOWN_LENGTH);
@@ -86,6 +91,7 @@ class Session {
 
     //프레임 당 연산
     tick() {
+        this.hasChange = false;
         for(const player of this.players) {
             //딜레이 스킬 발동
             player.activateDelayedSkill();
@@ -107,9 +113,14 @@ class Session {
                     player.doAction();
                 }
             }
+            
+            this.checkGameEnd();
         }
+
+
         //게임 상태 브로드캐스트
-        this.broadcast(makePacket('gameState',this));
+        if(this.hasChange)
+            this.broadcast(makePacket('gameState',this));
         
 
     }
@@ -147,12 +158,39 @@ class Session {
         }
         if(winner >= 0) {
             console.log("game end");
-            clearInterval(this.intervalId);
-            this.intervalId = null;
+            this.broadcast(makePacket('gameState',this));
             this.state = 'end';
+            clearPreciseInterval(this.intervalId);
+            this.intervalId = null;
+
+            this.announceScore(winner);
+            
             const message = makePacket('gameEnd', winner);
             this.broadcast(message);
             this.close();
+        }
+    }
+
+    announceScore(winnerIdx) {
+        //승리 시 25점, 패배 시 - 25점
+        for(let i = 0; i < 2; i++) {
+            const player = this.players[i];
+            let diff = 0;
+            if(2 === winnerIdx) {
+                //비겼을 시 둘 다 10점
+                diff = 10;
+            }
+            else {
+                if(i === winnerIdx) {
+                    //+25점
+                    diff = 25;
+                } else {
+                    diff = -25;
+                }                
+            }
+            player.userScore += diff;
+            userDataDB.updateUserPoint(player.userScore, player.id);
+            player.socket.send(makePacket('gameEnd', {winner: winnerIdx, score: player.userScore, diff}))
         }
     }
 
@@ -166,7 +204,7 @@ class Session {
 
     close() {
         console.log(`closing session ${this.id}`);
-        if(this.intervalId) clearInterval(this.intervalId);
+        if(this.intervalId) clearPreciseInterval(this.intervalId);
         sessions.delete(this.id);
         
     }

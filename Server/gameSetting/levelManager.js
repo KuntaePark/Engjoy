@@ -34,6 +34,38 @@ function loadMap(gameState, mapName) {
   }
 }
 // ================= ▲▲▲ 맵 세팅 ▲▲▲ =================
+// ================= ▼▼▼ 스폰 함수 ▼▼▼ =================
+function getSafeSpawnPoint(colliders, maxX, maxY) {
+  let isSpawnPointSafe = false;
+  let spawnX, spawnY;
+  let attempts = 0;
+  const maxAttempts = 50;
+
+  while (attempts < maxAttempts && !isSpawnPointSafe) {
+    const randomX = Math.random() * maxX;
+    const randomY = Math.random() * maxY;
+
+    const tileX = Math.floor(randomX);
+    const tileY = Math.floor(randomY);
+
+    if (!colliders.has(`${tileX}, ${tileY}`)) {
+      spawnX = randomX;
+      spawnY = randomY;
+      isSpawnPointSafe = true;
+    }
+    attempts++;
+  }
+
+  if (!isSpawnPointSafe) {
+    console.warn(
+      `[LevelManager] Could not find a safe spawn point in ${maxAttempts} attempts.`
+    );
+    return { x: 0, y: 0 };
+  }
+
+  return { x: spawnX, y: spawnY };
+}
+// ================= ▲▲▲ 스폰 함수 ▲▲▲ =================
 
 // ================= ▼▼▼ 레벨 세팅 ▼▼▼ =================
 async function setupLevel(gameState, gameLevel = 1) {
@@ -128,12 +160,13 @@ async function setupLevel(gameState, gameLevel = 1) {
   //키워드를 가진 Runner몬스터 스폰
   allKeywordTexts.forEach((keywordInfo) => {
     const monsterId = generateId(new Set(Object.keys(gameState.monsters)));
+    const { x, y } = getSafeSpawnPoint(gameState.colliders, 16, 22);
 
     const newMonster = new Monster(
       monsterId,
       MonsterType.RUNNER,
-      getRandomInt(0, 15),
-      getRandomInt(0, 15),
+      x,
+      y,
       3,
       keywordInfo
     );
@@ -144,13 +177,9 @@ async function setupLevel(gameState, gameLevel = 1) {
   const dummyRunnerCount = allKeywordTexts.length / 2;
   for (let i = 0; i < dummyRunnerCount; i++) {
     const monsterId = generateId(new Set(Object.keys(gameState.monsters)));
-    const newMonster = new Monster(
-      monsterId,
-      MonsterType.RUNNER,
-      getRandomInt(0, 15),
-      getRandomInt(0, 15),
-      3
-    );
+    const { x, y } = getSafeSpawnPoint(gameState.colliders, 16, 22);
+
+    const newMonster = new Monster(monsterId, MonsterType.RUNNER, x, y, 3);
     gameState.monsters[monsterId] = newMonster;
   }
 
@@ -171,9 +200,10 @@ async function setupLevel(gameState, gameLevel = 1) {
   //출구 위치도 랜덤으로 생성해주기
 
   //출구 생성 및 gameState에 추가
+  const { x: exitX, y: exitY } = getSafeSpawnPoint(gameState.colliders, 6, 10);
   const newExit = new Exit(
-    7.5, //x
-    7.5, //y
+    exitX,
+    exitY,
     sentenceData.word_text, //원본 문장 전달
     answerTexts, //정답 단어들의 배열
     sentenceData.meaning, //해설문

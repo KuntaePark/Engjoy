@@ -28,7 +28,6 @@
         </nav>
 
         <div class="nav-right" sec:authorize="isAuthenticated()">
-            <span th:text="'닉네임: ' + ${nickname}"></span>
             <a th:href="@{/myPage}">마이페이지</a>
             <a th:href="@{/logout}">로그아웃</a>
         </div>

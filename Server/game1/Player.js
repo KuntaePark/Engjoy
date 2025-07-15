@@ -22,12 +22,13 @@ class Player {
         this.session = session;
         this.inputData = null;
         this.nickname = ""; //닉네임, 초기값은 빈 문자열
+        this.userScore = 0;
 
         //기본 수치
         this.hp = 100;                  //체력
         this.mp = 0;                    //마나
-        this.unitMana = 4;              //초당 마나 회복량
-        this.atk = 5;                   //기초공
+        this.unitMana = 7.5;              //초당 마나 회복량
+        this.atk = 10;                   //기초공
         this.strengthLevel = 0;         //현재 행동 강도
         this.skillId = "heal";          //선택 스킬 종류, 기본값 회복
         
@@ -44,6 +45,7 @@ class Player {
         this.isCharging = false;
         this.isCasting = false;
         this.castEnd = false;
+        this.castFail = false;
 
         //특수 플래그
         this.shieldRate = 0.0;          //방어 데미지 감소율, 한턴 유효
@@ -62,6 +64,7 @@ class Player {
                 console.log(`User data loaded for id ${id}`);
                 console.log(data);
                 this.nickname = data.nickname;
+                this.userScore = data.game1score;
                 this.bodyTypeIndex = data['body_type_index'];
                 this.weaponTypeIndex = data['weapon_type_index'];
             } else {
@@ -112,7 +115,18 @@ class Player {
                 //틀림으로 인한 강제 발동 진입 시 상황
                 console.log('failed to use skill!');
                 //즉시 마나 회수
-                this.mp = Math.max(0, this.mp - skill.minMana);
+                this.mp = Math.max(0, this.mp - skill.minMana) - 1;
+                //체력 페널티
+                this.hp = Math.max(0, this.hp - 5);
+
+                this.strengthLevel = 0; //강도 초기화
+                this.isActionSelected = false;
+                this.resetWords();
+                this.isCasting = false; //애니메이션 플래그
+                this.castEnd = true; //애니메이션 플래그
+                this.castFail = true;
+                
+                this.session.hasChange = true;
                 return;
         } else {
             //스킬 발동
@@ -129,6 +143,7 @@ class Player {
             this.resetWords();
             this.isCasting = false; //애니메이션 플래그
             this.castEnd = true; //애니메이션 플래그
+            this.session.hasChange = true;
         }
         
     }
@@ -146,13 +161,24 @@ class Player {
         const skillBehavior = skillBehaviors[skill.behavior];
         skillBehavior(this, opponent, skill);
         this.delaySkillId = null; //딜레이 스킬 초기화
+        this.session.hasChange = true;
     }
     
 
     clearAnimFlag() {
         //단발성 트리거의 경우 매 프레임 초기화
-        this.isCharging = false;
-        this.castEnd = false;
+        if(this.isCharging) {
+            this.isCharging = false;
+            this.session.hasChange = true;
+        }
+        if(this.castEnd) {
+            this.castEnd = false;
+            this.session.hasChange = true;
+        }
+        if(this.castFail) {
+            this.castFail = false;
+            this.session.hasChange = true;
+        }
     }
 
     //딜레이 연산용 스냅샷
@@ -173,6 +199,7 @@ class Player {
             isCharging: this.isCharging,
             isCasting: this.isCasting,
             castEnd: this.castEnd,
+            castFail: this.castFail,
 
             bodyTypeIndex: this.bodyTypeIndex,
             weaponTypeIndex: this.weaponTypeIndex
@@ -196,6 +223,7 @@ class Player {
             isCharging: this.isCharging,
             isCasting: this.isCasting,
             castEnd: this.castEnd,
+            castFail: this.castFail,
 
             bodyTypeIndex: this.bodyTypeIndex,
             weaponTypeIndex: this.weaponTypeIndex,
@@ -213,6 +241,7 @@ const inputActions = {
         console.log(`user ${user.id} charged mana : ${user.mp}`)
         
         user.isCharging = true; //애니메이션 플래그
+        user.session.hasChange = true;
     },
 
     'actionSelect': (user) => {
@@ -232,6 +261,7 @@ const inputActions = {
         user.loadWords();
 
         user.isCasting = true; //애니메이션 플래그
+        user.session.hasChange = true;
     },
 
     'actionConfirm': (user) => {
@@ -255,6 +285,7 @@ const inputActions = {
         user.isActionSelected = false;
         user.resetWords();
         user.isCasting = false; //애니메이션 플래그
+        user.session.hasChange = true;
     },
 
     'wordSelect': (user) => {
@@ -275,6 +306,7 @@ const inputActions = {
                 user.activateSkill();
             } else {
                 user.loadWords(user.strengthLevel);
+                user.session.hasChange = true;
             }
         } else {
             //틀리거나, 강도가 10에 도달하거나, 강도가 사용 가능한 최대 마나일 경우 행동 계산
@@ -283,4 +315,4 @@ const inputActions = {
     }
 }
 
-module.exports = {Player};
+module.exports = {Player, userDataDB};

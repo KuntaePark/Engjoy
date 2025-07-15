@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.lang.reflect.Member;
 import java.security.Principal;
 import java.util.Optional;
 
@@ -50,14 +51,14 @@ public class MyPageController {
         return "passwordSearch";
     }
 
-    @PostMapping("/passwordSearch")
-    public String passwordSearch(@RequestParam("email") String email, Model model) {
-        Optional<Account> optionalAccount = accountRepository.findByEmail(email);
-        return "passwordSearch";
-    }
 
     @GetMapping("/passwordChange")
-    public String passwordChangePage(Model model) {
+    public String passwordChangePage(Model model, Principal principal) {
+        String email = principal.getName();
+        Account account = accountRepository.findByEmail(email).orElseThrow();
+        model.addAttribute("nickname", account.getNickname());
+
+
         return "passwordChange";
     }
 

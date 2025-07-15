@@ -15,16 +15,26 @@ public class MonsterController : MonoBehaviour
     public string Type {  get; private set; }
     public bool isActive { get; private set; }
 
+
     [SerializeField] private TextMeshPro hpText; // ◀◀◀ HP를 표시할 텍스트 (테스트용_후에 HP바로 변경)
     private SpriteRenderer spriteRenderer;
 
     private Vector3 targetPosition;
     private float positionLerpFactor = 15f;
 
+    private Coroutine takeDamageCoroutine;
+    [SerializeField] private Material flashMaterial;
+    private Material originalMaterial; 
+
 
     public void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        if(spriteRenderer != null)
+        {
+            originalMaterial = spriteRenderer.material; 
+        }
     }
 
 
@@ -42,25 +52,34 @@ public class MonsterController : MonoBehaviour
     {
         //서버로부터 받은 새 위치를 목표 위치로 설정
         targetPosition = new Vector3(data.x, data.y, 0);
+        bool isChaserBecomingActive = (this.Type == "chaser" && !this.isActive && data.isActive);
+
 
         //HP상태 업데이트
-        if(data.hp < this.Hp)
+        if (data.hp < this.Hp)
         {
+            if(takeDamageCoroutine != null)
+                StopCoroutine(takeDamageCoroutine);
             //피격 판정의 시각적 효과
-            StartCoroutine(TakeDamageEffect());
+            takeDamageCoroutine = StartCoroutine(TakeDamageEffect());
         }
 
         
         this.Hp = data.hp;
         if(hpText != null)
         {
-            hpText.text = ""+this.Hp;
+            hpText.text = this.Hp.ToString();
         }
 
-
-        
         Type = data.type;
         isActive = data.isActive;
+
+        Vector3 newPosition = new Vector3(data.x, data.y, 0);
+        targetPosition = newPosition;
+        if(isChaserBecomingActive)
+        {
+            transform.position = newPosition;
+        }
 
         UpdateVisibility();
     }
@@ -80,11 +99,32 @@ public class MonsterController : MonoBehaviour
 
     private IEnumerator TakeDamageEffect()
     {
-        if(spriteRenderer == null) yield break;
+        float duration = 0.14f;
+        float bounceAmount = 1.2f;
+        Vector3 originalScale = transform.localScale;
 
-        spriteRenderer.color = Color.red;
-        yield return new WaitForSeconds(0.15f);
-        spriteRenderer.color = Color.white;
+        if(flashMaterial != null)
+        {
+            spriteRenderer.material = flashMaterial;
+        }
+
+        //이펙트
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = elapsed / duration;
+
+            float bounce = Mathf.Sin(progress * Mathf.PI);
+            transform.localScale = Vector3.Lerp(originalScale, originalScale * bounceAmount, bounce);
+
+            yield return null;
+        }
+
+        //이펙트 종료: 원래 상태로 복구
+        transform.localScale = originalScale;
+        spriteRenderer.material = originalMaterial; 
     }
 
     private void Update()
