@@ -107,7 +107,7 @@ public class Game1Manager : MonoBehaviour
         //게임 끝 연출 재생
         if(winnerIdx != 2)
         {
-         
+            uiController.gameObject.SetActive(false);
             StartCoroutine(camAnimator.finalBlowCameraMovement(characterRenderers[1 - winnerIdx].bodyAnimator, 1 - winnerIdx, () => { uiController.showGameOver(winnerIdx,score,diff); }));
         }
         else

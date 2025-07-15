@@ -1,6 +1,6 @@
 const { MonsterType, Monster } = require("../packet/monster.js");
 const { setupLevel } = require("./levelManager.js");
-const Physics = require("../common/Physics.js");
+const Physics = require("./physics.js");
 
 const deltaTime = 1 / 40; //40 FPS _ 프레임
 
@@ -45,11 +45,16 @@ function updatePlayers(gameState) {
     let isCollidingWithMap = false;
 
     if (gameState.colliders && gameState.colliders.size > 0) {
-      isCollidingWithMap = Physics.checkMapCollision(
-        gameState.colliders,
-        newX,
-        newY
-      );
+      const y_offset = -0.7;
+
+      const checkX = newX; //x축
+      const checkY = newY + y_offset; //축
+
+      const targetTileX = Math.floor(checkX);
+      const targetTileY = Math.floor(checkY);
+      if (gameState.colliders.has(`${targetTileX}, ${targetTileY}`)) {
+        isCollidingWithMap = true;
+      }
     }
 
     //충돌 체크 로직 - 플레이어
@@ -148,6 +153,7 @@ function updateCountdown(gameState) {
     }
   }
 }
+// ================= ▲▲▲ [대기방]카운트다운 동기화 ▲▲▲ =================
 
 // =================================================================
 // ## 메인 업데이트
@@ -168,6 +174,7 @@ function update(gameState) {
     updateCountdown(gameState);
   }
 }
+// ================= ▲▲▲ 게임2 동기화! ▲▲▲ =================
 
 // =================================================================
 // ## 헬퍼 함수들
@@ -175,13 +182,13 @@ function update(gameState) {
 // ------ 플레이어 부활 함수 ------
 function updateRevive(player, gameState) {
   if (player.isDown || gameState.isGameOver) {
-    player.revivablePlayerId = -1;
+    player.revivablePlayerId = null;
     player.reviveProgress = 0;
     return;
   }
 
   //부활 대상 찾기
-  let closestDownPlayerId = -1;
+  let closestDownPlayerId = null;
   let closestDistSq = Physics.interactionDistSq;
 
   for (const id in gameState.players) {
@@ -202,7 +209,7 @@ function updateRevive(player, gameState) {
   //   `[REVIVE CONFIRM] Player: ${player.id}, rivived: ${player.revivablePlayerId}`
   // );
 
-  if (player.revivablePlayerId >= 0 && player.isHoldingInteract) {
+  if (player.revivablePlayerId && player.isHoldingInteract) {
     player.reviveProgress += deltaTime;
 
     console.log(
@@ -262,7 +269,7 @@ function updateInteractionState(player, keywords) {
 
     //다른 사람이 들고 있는 키워드는 무시하세요.
     //남의 포켓몬을 빼앗으면 도둑!
-    if (keyword.carrierId >= 0) continue;
+    if (keyword.carrierId) continue;
 
     const distSq = Physics.squareDistance(
       { x: player.x, y: player.y },
@@ -496,5 +503,24 @@ function updateMonsterMovement(monster, gameState) {
   }
 }
 
+// =================================================================
+// ## 루프 시작 함수
+// =================================================================
+function startGameUpdate(gameState, broadcast) {
+  setInterval(() => {
+    //게임 로직 업데이트 실행!
 
-module.exports = { update , deltaTime };
+    if (Object.keys(gameState.players).length === 0 || gameState.isGameOver) {
+      return;
+    }
+
+    update(gameState); //업데이트된 전체 상태를 모든 클라이언트에게 브로드캐스트!
+
+    const packet = gameState.getFullStatePacket();
+    broadcast(JSON.stringify(packet));
+
+    gameState.resetPlayerInputs();
+  }, deltaTime * 1000);
+}
+
+module.exports = { startGameUpdate };

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro; //TextMeshPro에 필요
@@ -54,7 +54,7 @@ public class UIManager : MonoBehaviour
     private Image reviveProgressBarInstance;
 
 
-    private Dictionary<long, PlayerStatusUI> otherPlayerUIs = new Dictionary<long, PlayerStatusUI>();
+    private Dictionary<string, PlayerStatusUI> otherPlayerUIs = new Dictionary<string, PlayerStatusUI>();
 
     private void Awake()
     {
@@ -135,9 +135,9 @@ public class UIManager : MonoBehaviour
 
 
     //부활 업데이트
-    public void UpdateReviveUI(long targetId, float progress)
+    public void UpdateReviveUI(string targetId, float progress)
     {
-       if(targetId >= 0)
+       if(!string.IsNullOrEmpty(targetId))
         {
             if(reviveUIInstance == null)
             {
@@ -206,12 +206,12 @@ public class UIManager : MonoBehaviour
     }
 
 
-    public void UpdateOtherPlayersUI(Dictionary<long, PlayerData> allPlayers)
+    public void UpdateOtherPlayersUI(Dictionary<string, PlayerData> allPlayers)
     {
         //서버에 있는데 클라이언트에는 없는 UI 생성
         foreach (var pair in allPlayers)
         {
-            long playerId = pair.Key;
+            string playerId = pair.Key;
             PlayerData playerData = pair.Value;
 
             //내 정보는 여기에서 안그림
@@ -230,8 +230,8 @@ public class UIManager : MonoBehaviour
         }
 
         //서버에서는 나갔는데 클라이언트에 UI가 남아있는 경우 삭제
-        List<long> disconnectedIds = new List<long>();
-        foreach(long existingId in otherPlayerUIs.Keys)
+        List<string> disconnectedIds = new List<string>();
+        foreach(string existingId in otherPlayerUIs.Keys)
         {
             if(!allPlayers.ContainsKey(existingId))
             {
@@ -239,7 +239,7 @@ public class UIManager : MonoBehaviour
             }
         }
 
-        foreach(long id in disconnectedIds)
+        foreach(string id in disconnectedIds)
         {
             Destroy(otherPlayerUIs[id].gameObject);
             otherPlayerUIs.Remove(id);

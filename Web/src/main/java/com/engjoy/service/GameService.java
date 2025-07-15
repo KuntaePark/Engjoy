@@ -39,11 +39,10 @@ public class GameService{
         return UserGameDataDto.from(userGameDataRepository.findByAccount_Email(email));
     }
 
-    public Long allowMatch(String email, Integer gameId) throws JsonProcessingException {
+    public Long allowMatch(String email) throws JsonProcessingException {
         Long id = accountRepository.findByEmail(email).get().getId();
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Long> map = new HashMap<>();
         map.put("id", id);
-        map.put("gameId", gameId);
         ObjectMapper mapper = new ObjectMapper();
         String payload = mapper.writeValueAsString(map);
         matchServerSocket.sendPacket("auth_allow", payload);
@@ -51,7 +50,6 @@ public class GameService{
     }
 
     public Long allowLobby(String email) throws JsonProcessingException {
-        System.out.println(email);
         Long id = accountRepository.findByEmail(email).get().getId();
         UserGameData userGameData = userGameDataRepository.findByAccount_Email(email);
         ObjectMapper mapper = new ObjectMapper();

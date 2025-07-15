@@ -1,8 +1,6 @@
 const WebSocket = require('ws');
 const {makePacket} = require('../common/Packet');
-const {Matcher, ServerSocket} = require('./Matcher');
-
-const gameServerAddr = ['ws://localhost:7778', 'ws://localhost:7780'];
+const {Matcher} = require('./Matcher');
 
 const wss = new WebSocket.Server({port: 7779}, () => {
     console.log('MATCH SERVER STARTED AT 7779');
@@ -11,14 +9,12 @@ const wss = new WebSocket.Server({port: 7779}, () => {
 /* 웹 서버 고유 아이디, 임시 아이디 적용 */
 const webServerId = 'WEBSERVER';
 
-const matcher = new Matcher(gameServerAddr[0]);
-
-const game2Socket = new ServerSocket(gameServerAddr[1]);
+const matcher = new Matcher();
 
 const authorizedMap = new Map();
 
 //웹 서버에서 인증받은 아이디들
-const authByWebServer = new Map();
+const authByWebServer = new Set();
 
 wss.on('connection', function connection(ws) {
 
@@ -55,7 +51,7 @@ wss.on('connection', function connection(ws) {
 const PacketHandler = {
     'auth': (ws, payload) => {
         /*
-            {type: 'auth', payload: {id: [id], gameId: [gameId]}
+            {type: 'auth', payload: {id: [id]}
          */
         const authData = JSON.parse(payload);
         console.log(authData);
@@ -69,26 +65,13 @@ const PacketHandler = {
             authorizedMap.set(ws, true);
         }
         else if(authByWebServer.has(id)) {
-            const gameId = authByWebServer.get(id);
-
             //client, allow match
             console.log(`user with id ${id} authenticated for match.`)
             authorizedMap.set(ws, true);
             //인증 완료됐으므로 웹 인증 목록에서 제거
             authByWebServer.delete(id);
             ws['id'] = id;
-            if(gameId === 0) {
-                //game 1
-                console.log("game 1 match.");
-                matcher.findMatch(ws);
-            }
-            else {
-                //game 2
-                console.log("game 2 match.");
-                game2Socket.send(makePacket('auth_allow', {id}));
-                // ** 주의 ** 게임 서버 쪽 허용이 종료되기 전에 접속할 가능성 있음
-                ws.send(makePacket('match_success', 1));
-            }
+            matcher.findMatch(ws);
 
         } else {
             //reject
@@ -100,8 +83,8 @@ const PacketHandler = {
         if(ws['id'] !== webServerId) return; //웹 서버가 아닐 경우 차단
         else {
             const data = JSON.parse(payload);
-            console.log(`user with id ${data.id} for game ${data.gameId} allowed to match.`)
-            authByWebServer.set(Number(data.id), Number(data.gameId)); //해당 아이디를 허가 명단에 추가
+            console.log(`user with id ${payload} allowed to match.`)
+            authByWebServer.add(data.id); //해당 아이디를 허가 명단에 추가
         }
     },
     'match_cancel' : (ws, _) => {
