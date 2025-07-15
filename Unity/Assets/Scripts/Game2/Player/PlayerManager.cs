@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ public class PlayerManager : MonoBehaviour
     public float positionLerpFactor = 15.0f;
 
     //씬에 활성화된 플레이어 오브젝트들 관리
-    private readonly Dictionary<string, PlayerController> playerControllers = new Dictionary<string, PlayerController>();
+    private readonly Dictionary<long, PlayerController> playerControllers = new Dictionary<long, PlayerController>();
 
 
 
@@ -37,16 +37,16 @@ public class PlayerManager : MonoBehaviour
 
 
     //WSClient -> GameManager를 통해 호출될 메인 함수
-    public void UpdatePlayers(Dictionary<string, PlayerData> playersData)
+    public void UpdatePlayers(Dictionary<long, PlayerData> playersData)
     {
         //플레이어 생성 및 업데이트
-        HashSet<string> serverPlayerIds = new HashSet<string>(playersData.Keys);
+        HashSet<long> serverPlayerIds = new HashSet<long>(playersData.Keys);
 
 
 
         foreach (var playerPair in playersData)
         {
-            string playerId = playerPair.Key;
+           long playerId = playerPair.Key;
            PlayerData playerData = playerPair.Value;
 
 
@@ -89,9 +89,9 @@ public class PlayerManager : MonoBehaviour
 
 
         //서버에 없는데 로컬에 남아있는 플레이어 삭제
-        List<string> disconnectedIds = new List<string>();
+        List<long> disconnectedIds = new List<long>();
 
-        foreach (string clientId in playerControllers.Keys)
+        foreach (long clientId in playerControllers.Keys)
         {
             if (!serverPlayerIds.Contains(clientId))
             {
@@ -101,7 +101,7 @@ public class PlayerManager : MonoBehaviour
 
 
 
-        foreach (string id in disconnectedIds)
+        foreach (long id in disconnectedIds)
         {
             if (playerControllers.TryGetValue(id, out PlayerController controllerToDestroy))
             {
@@ -119,7 +119,7 @@ public class PlayerManager : MonoBehaviour
 
     //다른 스크립트에서 플레이어 오브젝트 참조용 메서드
 
-    public PlayerController GetPlayerObjectById(string playerId)
+    public PlayerController GetPlayerObjectById(long playerId)
     {
         playerControllers.TryGetValue(playerId, out PlayerController controller);
 

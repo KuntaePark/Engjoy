@@ -5,8 +5,6 @@ class RoomManager {
   constructor() {
     this.rooms = {};
     this.nextRoomId = 1;
-
-    this.createRoom();
   }
 
   //새 매칭룸 생성

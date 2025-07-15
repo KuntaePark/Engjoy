@@ -23,7 +23,7 @@ class Room {
 
   // ================= ▼▼▼ 플레이어 생성 & 삭제 ▼▼▼ =================
   addPlayer(ws) {
-    const player = this.gameState.addPlayer();
+    const player = this.gameState.addPlayer(ws.id);
     this.players[player.id] = ws;
     return player;
   }

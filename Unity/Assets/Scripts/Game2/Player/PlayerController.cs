@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
@@ -17,9 +17,9 @@ public class PlayerController : MonoBehaviour
 
     private bool isFacingRight = true;
 
-    public string Id { get; private set; }
+    public long Id { get; private set; } = -1;
     public bool IsHoldingKeyword { get; private set; }
-    private bool IsMine => !string.IsNullOrEmpty(Id) && Id == GameManager.Instance.MyPlayerId;
+    private bool IsMine => (Id >= 0) && Id == GameManager.Instance.MyPlayerId;
 
     private bool isEscaped = false;
     private bool isDown = false;
@@ -67,7 +67,7 @@ public class PlayerController : MonoBehaviour
 
     // ============================== 초기화 (PlayerManager에서 호출) ============================== 
 
-    public void Initialize(string id, PlayerData initialData, float lerpFactor)
+    public void Initialize(long id, PlayerData initialData, float lerpFactor)
 
     {
 
@@ -167,7 +167,7 @@ public class PlayerController : MonoBehaviour
                     CameraController camConttroller = playerCamera.GetComponentInChildren<CameraController>();
                     if (camConttroller != null)
                     {
-                        bool shouldZoom = !string.IsNullOrEmpty(data.revivablePlayerId);
+                        bool shouldZoom = data.revivablePlayerId >= 0;
                         camConttroller.SetReviveZoom(shouldZoom);
                     }
                 }

@@ -1,6 +1,6 @@
 const { MonsterType, Monster } = require("../packet/monster.js");
 const { setupLevel } = require("./levelManager.js");
-const Physics = require("./physics.js");
+const Physics = require("../common/Physics.js");
 
 const deltaTime = 1 / 40; //40 FPS _ 프레임
 
@@ -45,16 +45,11 @@ function updatePlayers(gameState) {
     let isCollidingWithMap = false;
 
     if (gameState.colliders && gameState.colliders.size > 0) {
-      const y_offset = -0.7;
-
-      const checkX = newX; //x축
-      const checkY = newY + y_offset; //축
-
-      const targetTileX = Math.floor(checkX);
-      const targetTileY = Math.floor(checkY);
-      if (gameState.colliders.has(`${targetTileX}, ${targetTileY}`)) {
-        isCollidingWithMap = true;
-      }
+      isCollidingWithMap = Physics.checkMapCollision(
+        gameState.colliders,
+        newX,
+        newY
+      );
     }
 
     //충돌 체크 로직 - 플레이어
@@ -182,13 +177,13 @@ function update(gameState) {
 // ------ 플레이어 부활 함수 ------
 function updateRevive(player, gameState) {
   if (player.isDown || gameState.isGameOver) {
-    player.revivablePlayerId = null;
+    player.revivablePlayerId = -1;
     player.reviveProgress = 0;
     return;
   }
 
   //부활 대상 찾기
-  let closestDownPlayerId = null;
+  let closestDownPlayerId = -1;
   let closestDistSq = Physics.interactionDistSq;
 
   for (const id in gameState.players) {
@@ -209,7 +204,7 @@ function updateRevive(player, gameState) {
   //   `[REVIVE CONFIRM] Player: ${player.id}, rivived: ${player.revivablePlayerId}`
   // );
 
-  if (player.revivablePlayerId && player.isHoldingInteract) {
+  if (player.revivablePlayerId >= 0 && player.isHoldingInteract) {
     player.reviveProgress += deltaTime;
 
     console.log(
@@ -269,7 +264,7 @@ function updateInteractionState(player, keywords) {
 
     //다른 사람이 들고 있는 키워드는 무시하세요.
     //남의 포켓몬을 빼앗으면 도둑!
-    if (keyword.carrierId) continue;
+    if (keyword.carrierId >= 0) continue;
 
     const distSq = Physics.squareDistance(
       { x: player.x, y: player.y },

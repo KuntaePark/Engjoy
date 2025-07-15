@@ -10,7 +10,7 @@ class Player {
 
     this.holdingKeywordId = null; //들고 있는 키워드 ID
     this.interactableKeywordId = null; //상호작용 가능한 키워드 ID
-    this.revivablePlayerId = null; //부활시킬 수 있는 플레이어 ID
+    this.revivablePlayerId = -1; //부활시킬 수 있는 플레이어 ID
 
     this.isReady = false; //플레이어 준비 완료 플래그
     this.isEscaped = false; //플레이어 탈출 플래그

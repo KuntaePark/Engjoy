@@ -1,6 +1,8 @@
 const WebSocket = require('ws')
 const {makePacket} = require('../common/Packet')
-const Physics = require('./physics')
+const {loadMapFromFile} = require('../common/MapLoader')
+const Physics = require('../common/Physics')
+
 
 const perLobbyMax = 4;
 const lobbies = new Map(); //lobbyId : Lobby
@@ -38,6 +40,7 @@ class Player {
 
 class Lobby {
     static lobbyIndexCount = 0;
+    static lobbyMapColliders = loadMapFromFile('lobbyMap'); //로비 맵 충돌체 로드
 
     constructor() {
         this.id = Lobby.lobbyIndexCount++;
@@ -105,33 +108,20 @@ class Lobby {
             const p = this.members[id];
             const dX = p.inputH * deltaTime * speed;
             const dY = p.inputV * deltaTime * speed;
-    
-            //마을 내 캐릭 충돌 비활성화
-            //check collision
-            // let colliding = false;
-            // let isRunning = false;
-    
-            // for(let others in players) {
-            //    if(others === id) continue;
-                
-            //    const o = players[others];
-            //    const myLoc = new Physics.Vector2(p.x + dX, p.y + dY);
-            //    const otherLoc = new Physics.Vector2(o.x, o.y);
-                
-            //    if(Physics.checkCollision(myLoc, otherLoc)) {
-            //       console.log("colliding");
-            //       colliding = true; break;
-            //    }
-            // }
-    
-            // if(!colliding)
-            // {
-            //    //update only when not colliding
-            // }
-            p.x += dX;
-            p.y += dY;
+            const newX = p.x + dX;
+            const newY = p.y + dY;
+            //맵 충돌 체크
+            const mapColliding = Physics.checkMapCollision(
+                Lobby.lobbyMapColliders, newX, newY
+            );
+
+            if(!mapColliding)
+            {
+               //update only when not colliding
+               p.x += dX;
+               p.y += dY;
+            }
             
-    
             // console.log(p.x, p.y)
             p.inputH = 0; p.inputV = 0;
         }

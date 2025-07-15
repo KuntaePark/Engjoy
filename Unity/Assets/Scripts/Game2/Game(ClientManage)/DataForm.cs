@@ -10,7 +10,7 @@ namespace DataForm
     [System.Serializable]
     public class GameState
     {
-        public Dictionary<string, PlayerData> players; //플레이어 딕셔너리
+        public Dictionary<long, PlayerData> players; //플레이어 딕셔너리
         public Dictionary<string, KeywordData> keywords; //키워드 딕셔너리
         public Dictionary<string, MonsterData> monsters; //몬스터 딕셔너리
         public ExitData exit; //출구 딕셔너리
@@ -63,7 +63,7 @@ namespace DataForm
         public bool isReady; //matchingRoom - ready flag
         public bool isEscaped; //excaped flag
         public bool isDown;
-        public string revivablePlayerId;
+        public long revivablePlayerId = -1;
         public float reviveProgress;
 
         public int hp;
@@ -81,7 +81,7 @@ namespace DataForm
         public string text;
         public float x;
         public float y;
-        public string carrierId; //interacting player's id (if !carrierId, null)
+        public long carrierId = -1; //interacting player's id (if !carrierId, null)
     }
 
 

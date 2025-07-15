@@ -6,6 +6,8 @@ import com.engjoy.service.GameService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,17 +42,22 @@ public class GameController {
         return ResponseEntity.ok(dto);
     }
 
-    @PostMapping("/game/match/join")
-    public ResponseEntity<String> matchJoin(Principal principal) throws JsonProcessingException {
+    @PostMapping("/game/match/join/{gameId}")
+    public ResponseEntity<String> matchJoin(Principal principal, @PathVariable("gameId") int gameId) throws JsonProcessingException {
         //매칭 큐에 해당 플레이어 추가, 인증되지 않은 유저라면 403 뜸
         String email = principal.getName();
-        Long id = gameService.allowMatch(email);
+        Long id = gameService.allowMatch(email, gameId);
         return ResponseEntity.ok(id.toString());
     }
 
 
     @PostMapping("/game/lobby/join")
     public ResponseEntity<String> lobbyJoin(Principal principal) throws JsonProcessingException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("Auth: " + auth);
+        System.out.println("Principal: " + auth.getPrincipal());
+        System.out.println("Name: " + auth.getName());
+
         String email = principal.getName();
         Long id = gameService.allowLobby(email);
         return ResponseEntity.ok(id.toString());

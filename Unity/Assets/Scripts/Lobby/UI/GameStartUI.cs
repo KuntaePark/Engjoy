@@ -3,18 +3,17 @@ using UnityEngine;
 using UnityEngine.UI;
 using DataForm;
 using Newtonsoft.Json;
-using UnityEngine.Rendering.Universal.Internal;
 
-public class GameStartUI : MonoBehaviour
+public abstract class GameStartUI : MonoBehaviour
 {
     private BrowserRequest browserRequest;
     public MatchClient matchClient;
-    
+
+    public int gameId;
+
     //UI 요소
     public Button gameStartButton;
     public Text gameStartButtonText;
-    public Text scoreText;
-    public Text rankingText;
 
     private bool inMatch = false;
 
@@ -39,7 +38,7 @@ public class GameStartUI : MonoBehaviour
             else
             {
                 inMatch = true;
-                int requestId = browserRequest.StartRequest("POST", "/game/match/join");
+                int requestId = browserRequest.StartRequest("POST", "/game/match/join/"+ gameId);
                 StartCoroutine(browserRequest.waitForResponse(requestId, 5.0f, (response) =>
                 {
                     if (response != null)
@@ -69,7 +68,7 @@ public class GameStartUI : MonoBehaviour
             if (userGameData != null)
             {
                 //유저의 게임 시작 UI 설정
-                setGameStartUI(userGameData.game1Score, userGameData.ranking);
+                setGameStartUI(userGameData);
             }
             else
             {
@@ -78,9 +77,6 @@ public class GameStartUI : MonoBehaviour
         }));
     }
 
-    private void setGameStartUI(int score, long ranking)
-    {
-        scoreText.text = score.ToString();
-        rankingText.text = ranking.ToString();
-    }
+    public abstract void setGameStartUI(UserGameData userGameData);
+    
 }
