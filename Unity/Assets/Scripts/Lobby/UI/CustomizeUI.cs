@@ -1,6 +1,7 @@
 using DataForm;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,14 +24,14 @@ public class CustomizeUI : MonoBehaviour
     [SerializeField]
     private Button prevBodyButton; // 이전 바디 타입 버튼
     [SerializeField]
-    private Text bodyTypeText;
+    private TextMeshProUGUI bodyTypeText;
 
     [SerializeField]
     private Button nextWeaponButton;
     [SerializeField]
     private Button prevWeaponButton;
     [SerializeField]
-    private Text weaponTypeText;
+    private TextMeshProUGUI weaponTypeText;
 
     [SerializeField]
     private Button saveButton;

@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -25, y: -99.00004}
+  m_AnchoredPosition: {x: 2, y: -117.9}
   m_SizeDelta: {x: 800, y: 140}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8425344412048569222
@@ -74,8 +74,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281545545
-  m_fontColor: {r: 0.28627452, g: 0.20000002, b: 0.20000002, a: 1}
+    rgba: 4281811600
+  m_fontColor: {r: 0.5647059, g: 0.25882354, b: 0.21568628, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -168,7 +168,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 427, y: -223.00006}
+  m_AnchoredPosition: {x: 500, y: -241.90002}
   m_SizeDelta: {x: 800, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &587219583783402758
@@ -201,8 +201,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uC548\uB155 \uD574\uC124\uBB38."
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 338e3befd134553409f861ca7a63d299, type: 2}
-  m_sharedMaterial: {fileID: 5445007916819676839, guid: 338e3befd134553409f861ca7a63d299, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: cbb5adf8eae00ff49a6ac9c679f2a4e6, type: 2}
+  m_sharedMaterial: {fileID: 5445007916819676839, guid: cbb5adf8eae00ff49a6ac9c679f2a4e6, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -305,7 +305,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 900, y: 300}
+  m_SizeDelta: {x: 1000, y: 350}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2268259054816304517
 CanvasRenderer:
@@ -335,7 +335,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 9d00f3a7321c04244884441adb5ca625, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 8d655dfb5da1e42469653aee470826fa, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1

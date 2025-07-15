@@ -3,19 +3,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using DataForm;
 using UnityEngine.UI;
+using TMPro;
 
 public class PlayerPanel : MonoBehaviour
 {
     //각 플레이어 패널
-    public Text username;
+    public TextMeshProUGUI username;
     
     //hp
     public Slider HPbar;
-    public Text HpText;
+    public TextMeshProUGUI HpText;
 
     //mp
     public Slider MPbar;
-    public Text MpText;
+    public TextMeshProUGUI MpText;
 
     //strengthLevel
     public Slider StrBar;
@@ -23,7 +24,7 @@ public class PlayerPanel : MonoBehaviour
     public RectTransform[] actionPanels = new RectTransform[3]; // 액션 패널 이미지 배열 (공격, 방어, 스페셜)
     public int selected = 0;
 
-    public Text[] buttonTexts = new Text[2]; //키 버튼 텍스트
+    public TextMeshProUGUI[] buttonTexts = new TextMeshProUGUI[2]; //키 버튼 텍스트
 
     [SerializeField]
     private RectTransform selector;
