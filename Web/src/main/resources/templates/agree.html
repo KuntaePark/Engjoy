@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" th:href="@{/css/agree.css}">
+</th:block>
+
+<th:block layout:fragment="script"></th:block>
+
+
+<th:block layout:fragment="main">
+    <header class="navbar">
+        <div class="nav-left">
+            <a th:href="@{/mainPage}" class="logo">EngJoy</a>
+        </div>
+
+        <nav class="menu">
+            <a th:href="@{#}">게임</a>
+            <a th:href="@{#}">단어장</a>
+            <a th:href="@{/serviceInfo}">서비스 소개</a>
+            <a th:href="@{/gameInfo}">게임 소개</a>
+        </nav>
+
+        <div class="nav-right" sec:authorize="isAuthenticated()">
+            <a th:href="@{/myPage}">마이페이지</a>
+            <a th:href="@{/logout}">로그아웃</a>
+        </div>
+        <div class="nav-right" sec:authorize="isAnonymous()">
+            <a th:href="@{/login}">로그인</a>
+        </div>
+    </header>
+    <div id="wrapper">
+        <form th:action="@{/signUp}" method="post">
+            <div id="container">
+                <div>
+                    <h3>※서비스 약관 동의</h3>
+                </div>
+                <div>
+                    <div>
+                        <input type="checkbox" name="termsAgree" required><label>이용약관</label>
+                    </div>
+                    <div>
+                      <textarea name="termsContent" cols="25" rows="3" readonly>회원님께서는 저희 EngJoy 회사의 다음과 같은 규칙을 따라주셔야 합니다.
+                         상호 존중, 기본 예의 등등</textarea>
+                    </div>
+                </div>
+                <br><br>
+                <div>
+                    <div>
+                        <input type="checkbox" name="privacyAgree" required><label>개인 정보 수집 및 이용</label>
+                    </div>
+                    <div>
+                        <textarea cols="25" rows="3" readonly>본인의 개인 정보 수집에 동의하십니까? </textarea>
+                    </div>
+
+                </div>
+                <br>
+                <div>
+                    <button class="btn" type="submit">다음</button>
+                </div>
+
+            </div>
+        </form>
+
+
+    </div>
+</th:block>
+</html>

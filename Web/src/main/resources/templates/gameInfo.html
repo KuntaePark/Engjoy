@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" th:href="@{/css/gameInfo.css}">
+</th:block>
+<th:block layout:fragment="script"></th:block>
+
+
+<th:block layout:fragment="main">
+    <header class="navbar">
+        <div class="nav-left">
+            <a th:href="@{/mainPage}" class="logo">EngJoy</a>
+        </div>
+
+        <nav class="menu">
+            <a th:href="@{#}">게임</a>
+            <a th:href="@{#}">단어장</a>
+            <a th:href="@{/serviceInfo}">서비스 소개</a>
+            <a th:href="@{/gameInfo}">게임 소개</a>
+        </nav>
+
+        <div class="nav-right" sec:authorize="isAuthenticated()">
+            <span th:text="'닉네임: ' + ${nickname}"></span>
+            <a th:href="@{/myPage}">마이페이지</a>
+            <a th:href="@{/logout}">로그아웃</a>
+        </div>
+        <div class="nav-right" sec:authorize="isAnonymous()">
+            <a th:href="@{/login}">로그인</a>
+        </div>
+    </header>
+
+    <div id="wrapper">
+        <div class="gameIntro">
+            <div class="card-container">
+                <div class="card">
+                    <img src="https://via.placeholder.com/150" alt="items">
+                    <p>첫째! 다양한 아이템 사서!</p>
+                </div>
+            <br>
+            <div>
+                <div class="card">
+                    <img src="" alt="battle">
+                    <p>둘째! 유저들끼리 팀을 이뤄 배틀을 통해 영어 실력도 끌러올리고!</p>
+                </div>
+            </div>
+            <br>
+            <div>
+                <div class="card">
+                    <img src="https://via.placeholder.com/150" alt="calendar">
+                    <p>셋째! 그날 배운 것 복습하는 기회까지!!</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+</th:block>
+</html>

@@ -19,4 +19,11 @@ public class ExprFavorites {
     @ManyToOne
     @JoinColumn(name = "expr_id")
     private Expression expression;
+
+    public static ExprFavorites of(Account account, Expression expression){
+        ExprFavorites favorites = new ExprFavorites();
+        favorites.setAccount(account);
+        favorites.setExpression(expression);
+        return favorites;
+    }
 }

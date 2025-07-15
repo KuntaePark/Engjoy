@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" th:href="@{/css/signUp.css}">
+</th:block>
+
+
+<th:block layout:fragment="script">
+    <script th:src="@{/js/signUp.js}"></script>
+</th:block>
+
+
+<th:block layout:fragment="main">
+    <header class="navbar">
+        <div class="nav-left">
+            <a th:href="@{/mainPage}" class="logo">EngJoy</a>
+        </div>
+
+        <nav class="menu">
+            <a th:href="@{#}">게임</a>
+            <a th:href="@{#}">단어장</a>
+            <a th:href="@{/serviceInfo}">서비스 소개</a>
+            <a th:href="@{/gameInfo}">게임 소개</a>
+        </nav>
+
+        <div class="nav-right" sec:authorize="isAuthenticated()">
+            <a th:href="@{/myPage}">마이페이지</a>
+            <a th:href="@{/logout}">로그아웃</a>
+        </div>
+        <div class="nav-right" sec:authorize="isAnonymous()">
+            <a th:href="@{/login}">로그인</a>
+        </div>
+    </header>
+    <div id="wrapper">
+
+        <div id="container">
+            <h2>회원 가입</h2>
+
+            <form id="passwordSetting" th:action="@{/signUp}" method="post">
+                <div>
+                    <label for="nickname">닉네임:</label>
+                    <input type="text" id="nickname" name="nickname" required>
+                    <button type="button" onclick="checkNickname()" class="btn">중복확인</button>
+                    <span id="nicknameResult"></span>
+                </div>
+                <br><br>
+                <div>
+                    <label for="name">이름:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <br><br>
+                <div>
+                    <label for="birth">생년월일:</label>
+                    <input type="date" id="birth" name="birth" required>
+                </div>
+                <br><br>
+                <div>
+                    <label for="email">이메일:</label>
+                    <input type="email" id="email" name="email" required>
+                    <button type="button" onclick="checkEmail()" class="btn">중복확인</button>
+                    <span id="emailResult"></span>
+                </div>
+                <br><br>
+                <div>
+                    <label>비밀번호</label>
+                    <input type="password" id="password1" name="password" required>
+                </div>
+                <br>
+                <div>
+                    <label>비밀번호 확인</label>
+                    <input type="password" placeholder="다시 한번 입력해주세요" id="password2">
+                    <button class="btn" type="button" onclick="checkPassword()">확인</button>
+                    <p id="result" style="color:red; font-size:14px;"></p>
+                </div>
+
+                <br>
+                <div class="button-wrapper">
+                    <button type="submit" id="joinBtn" class="btn" onclick="join()">가입하기</button>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+</th:block>
+</html>

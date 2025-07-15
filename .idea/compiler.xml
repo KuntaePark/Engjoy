@@ -10,5 +10,6 @@
         <module name="com.Engjoy.main" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="17" />
   </component>
 </project>

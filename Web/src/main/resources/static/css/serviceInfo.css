@@ -1,0 +1,90 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2f3e46;
+  height: 90px;
+  padding: 0 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
+
+.menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 80px;
+}
+
+.menu a {
+  text-decoration: none;
+  color: white;
+  font-size: 16px;
+  line-height: 90px;
+}
+
+.nav-right {
+  padding-right: 90px;
+  text-align: right;
+}
+
+.nav-right a, .nav-right span {
+  color: white;
+  text-decoration: underline;
+  margin-left: 10px;
+  font-size: 16px;
+  line-height: 90px;
+}
+
+.login a{
+    color: white;
+    text-decoration:none;
+}
+
+.moving{
+        color:white
+}
+
+.container{
+        width: 25%;
+        margin: 0 auto;
+        padding : 20px;
+        background-color: whitesmoke;
+        border-radius: 10px;
+        justify-content: center;
+        display: flex;
+        flex-direction: column;
+   }
+
+.wrapper{
+     justify-content: center;
+      align-items: center;
+      height: 100vh;
+      display:flex;
+}
+
+h2{
+color: red;
+}
+
+#end{
+ font-weight: bold;
+}
+
+#member{
+    font-weight: bold;
+    color: green;
+}

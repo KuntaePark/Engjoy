@@ -131,19 +131,6 @@ class Lobby {
             p.x += dX;
             p.y += dY;
             
-            //out of boundary
-            if(p.x >= 9 - Physics.colliderRadius) {
-                p.x = 8.99 - Physics.colliderRadius;
-            }
-            if(p.x <= -9 + Physics.colliderRadius) {
-                p.x = -8.99 + Physics.colliderRadius;
-            }
-            if(p.y >= 5 - Physics.colliderRadius) {
-                p.y = 4.99 - Physics.colliderRadius;
-            }
-            if(p.y <= -5 + Physics.colliderRadius) {
-                p.y = -4.99 + Physics.colliderRadius;
-            }
     
             // console.log(p.x, p.y)
             p.inputH = 0; p.inputV = 0;

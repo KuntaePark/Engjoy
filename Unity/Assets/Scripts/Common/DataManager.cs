@@ -21,7 +21,7 @@ public class DataManager : MonoBehaviour
 
     //마지막 로드로부터 지난 시간
     private float lastLoadTime = 0.0f;
-    private float loadInterval = 300.0f; // 5 minutes in seconds
+    private float loadInterval = 60.0f; // 1 minutes in seconds
 
     public static DataManager Instance { get; private set; }
 
@@ -55,6 +55,11 @@ public class DataManager : MonoBehaviour
     void Update()
     {
         
+    }
+
+    public void resetUserData()
+    {
+        Instance.userGameData = null;
     }
 
     //유저 데이터 로드 후 callback 실행

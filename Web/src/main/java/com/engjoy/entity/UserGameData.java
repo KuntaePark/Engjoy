@@ -13,7 +13,7 @@ public class UserGameData {
     private Long id;
     private String charImgUrl;
     private int game1Score;
-    private int game2Score;
+    private int game2HighScore;
     private int gold;
     private Long ranking;
     private float rankingPercent;
@@ -24,4 +24,10 @@ public class UserGameData {
     @MapsId
     @JoinColumn(name="account_id")
     private Account account;
+
+    public void setBodyTypeIndex(Integer bodyTypeIndex) {
+    }
+
+    public void setWeaponTypeIndex(Integer weaponTypeIndex) {
+    }
 }

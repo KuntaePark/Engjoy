@@ -19,7 +19,7 @@ public class UserGameDataDto {
         UserGameDataDto dto = new UserGameDataDto();
         dto.nickname = userGameData.getAccount().getNickname();
         dto.game1Score = userGameData.getGame1Score();
-        dto.game2Score = userGameData.getGame2Score();
+        dto.game2Score = userGameData.getGame2HighScore();
         dto.gold = userGameData.getGold();
         dto.ranking = userGameData.getRanking();
         dto.rankingPercent = userGameData.getRankingPercent();

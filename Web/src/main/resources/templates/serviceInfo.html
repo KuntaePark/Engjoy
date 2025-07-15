@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" th:href="@{/css/serviceInfo.css}">
+</th:block>
+
+
+
+<th:block layout:fragment="script"></th:block>
+
+
+<th:block layout:fragment="main">
+    <header class="navbar">
+        <div class="nav-left">
+            <a th:href="@{/mainPage}" class="logo">EngJoy</a>
+        </div>
+
+        <nav class="menu">
+            <a th:href="@{#}">게임</a>
+            <a th:href="@{#}">단어장</a>
+            <a th:href="@{/serviceInfo}">서비스 소개</a>
+            <a th:href="@{/gameInfo}">게임 소개</a>
+        </nav>
+
+        <div class="nav-right" sec:authorize="isAuthenticated()">
+            <span th:text="'닉네임: ' + ${nickname}"></span>
+            <a th:href="@{/myPage}">마이페이지</a>
+            <a th:href="@{/logout}">로그아웃</a>
+        </div>
+        <div class="nav-right" sec:authorize="isAnonymous()">
+            <a th:href="@{/login}">로그인</a>
+        </div>
+    </header>
+    <div class="wrapper">
+        <div class="container">
+            <h2>※서비스 소개</h2>
+            <div class="box">
+                <p>영어 공부.. 하긴 해야 하는데 어렵고 그로 인해 자주 포기하시나요?<br><br>
+                    저희 EngJoy 서비스는 여러분들이 영어공부를 단순히 공부로 접근
+                    하는 것이 아닌 게임을 통하여 영어 학습에 재미를 붙이는 방법을
+                    고안했습니다. <br>회원가입 후 다른 유저와 배틀 및 그날 학습된 단어들
+                    까먹지 않도록 복습까지 할 수 있도록 단어장까지 준비했습니다. <br><br>
+                    <span id="end">마지막으로..</span> 여러분이 영어 고수가 되는 그날까지 열심히 돕겠습니다. 감사합니다.<br><br>
+                    <span id="member">EngJoy 팀원 박건태, 김석진, 곽찬양, 김현진 올림.</span>
+                </p>
+
+            </div>
+        </div>
+
+    </div>
+
+</th:block>
+</html>

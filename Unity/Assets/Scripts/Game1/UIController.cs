@@ -51,7 +51,10 @@ public class UIController : MonoBehaviour
                 {
                     Debug.Log("Lobby enter successful: " + response.body);
                     //로비 요청 승인 완료, 로비 접속 시도
-                    SceneController.Instance.loadScene("LobbyScene");
+                    //데이터 강제 로드 위해 데이터 초기화
+                    DataManager.Instance.resetUserData();
+                    StartCoroutine(DataManager.Instance.getUserData((userGameData) => { SceneController.Instance.loadScene("LobbyScene"); }));
+                    ;
                 }
                 else
                 {
@@ -88,55 +91,48 @@ public class UIController : MonoBehaviour
 
         if (game1Manager.gameState.state == "start")
         {
-            try
+            countdownUI.SetActive(false); //카운트다운 UI 비활성화
+            var players = game1Manager.gameState.players;
+            for (int i = 0; i < 2; i++)
             {
-                countdownUI.SetActive(false); //카운트다운 UI 비활성화
-                var players = game1Manager.gameState.players;
-                for (int i = 0; i < 2; i++)
+                playerPanels[i].showPlayerInfo(players[i]);
+                if (i != game1Manager.myIdx)
                 {
-                    playerPanels[i].showPlayerInfo(players[i]);
-                    if (i != game1Manager.myIdx)
+                    //상대방의 액션 선택은 서버와 동기화
+                    string action = players[i].currentAction;
+                    switch (action)
                     {
-                        //상대방의 액션 선택은 서버와 동기화
-                        string action = players[i].currentAction;
-                        switch (action)
-                        {
-                            case "ATTACK":
-                                playerPanels[i].selected = 0; //공격
-                                break;
-                            case "DEFENSE":
-                                playerPanels[i].selected = 1; //방어
-                                break;
-                            case "SPECIAL":
-                                playerPanels[i].selected = 2; //스페셜
-                                break;
-                            default:
-                                playerPanels[i].selected = 0; //선택 안함
-                                break;
-                        }
+                        case "ATTACK":
+                            playerPanels[i].selected = 0; //공격
+                            break;
+                        case "DEFENSE":
+                            playerPanels[i].selected = 1; //방어
+                            break;
+                        case "SPECIAL":
+                            playerPanels[i].selected = 2; //스페셜
+                            break;
+                        default:
+                            playerPanels[i].selected = 0; //선택 안함
+                            break;
                     }
                 }
-
-                TimeBar.value = game1Manager.getTimesLeft();
-                TimeText.text = $"{game1Manager.getTimesLeft() / 1000}";
-
-                //단어 선택 UI
-                var myInfo = players[game1Manager.myIdx];
-                if (myInfo.isActionSelected)
-                {
-                    wordPanel.activateOptions();
-                    wordPanel.showWord(myInfo);
-                    playerPanels[game1Manager.myIdx].setButtonText(true);
-                }
-                else
-                {
-                    wordPanel.deactivateOptions();
-                    playerPanels[game1Manager.myIdx].setButtonText(false);
-                }
             }
-            catch (System.Exception e)
+
+            TimeBar.value = game1Manager.getTimesLeft();
+            TimeText.text = $"{game1Manager.getTimesLeft() / 1000}";
+
+            //단어 선택 UI
+            var myInfo = players[game1Manager.myIdx];
+            if (myInfo.isActionSelected)
             {
-                Debug.LogError("Error in UIController Update: " + e.Message);
+                wordPanel.activateOptions();
+                wordPanel.showWord(myInfo);
+                playerPanels[game1Manager.myIdx].setButtonText(true);
+            }
+            else
+            {
+                wordPanel.deactivateOptions();
+                playerPanels[game1Manager.myIdx].setButtonText(false);
             }
         }
     }
@@ -146,7 +142,7 @@ public class UIController : MonoBehaviour
         playerPanels[game1Manager.myIdx].selected = selected;
     }
 
-    public void showGameOver(int winnerIdx)
+    public void showGameOver(int winnerIdx, int score, int diff)
     {
         gameOverPanel.SetActive(true);
         if (winnerIdx == game1Manager.myIdx)
@@ -161,5 +157,7 @@ public class UIController : MonoBehaviour
         {
             gameOverText.text = "패배!";
         }
+
+        scoreText.text = $"{score}({(diff > 0 ? "+" : "")}{diff})";
     }
 }
