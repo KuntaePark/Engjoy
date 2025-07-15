@@ -21,6 +21,7 @@ public class UIController : MonoBehaviour
 
     public GameObject gameOverPanel;
     public TextMeshProUGUI gameOverText; //게임 오버 텍스트
+    public Text scoreText;
 
     //게임 오버 버튼
     public Button lobbyButton;

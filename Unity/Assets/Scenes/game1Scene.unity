@@ -12904,6 +12904,7 @@ MonoBehaviour:
   TimeText: {fileID: 783180846}
   gameOverPanel: {fileID: 1387733014}
   gameOverText: {fileID: 111180833}
+  scoreText: {fileID: 909444132}
   lobbyButton: {fileID: 929926275}
   countdownUI: {fileID: 2079916265}
   countdownText: {fileID: 1415984244}
@@ -13180,10 +13181,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wordMeanings:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 2122237900}
+  - {fileID: 915192847}
+  - {fileID: 918063695}
+  - {fileID: 2024937756}
   word: {fileID: 260903176}
   optionGroup: {fileID: 700192112}
 --- !u!1660057539 &9223372036854775807
