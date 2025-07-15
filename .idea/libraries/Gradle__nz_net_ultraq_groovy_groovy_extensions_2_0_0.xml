@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: nz.net.ultraq.groovy:groovy-extensions:2.0.0" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="nz.net.ultraq.groovy" artifactId="groovy-extensions" version="2.0.0" baseVersion="2.0.0" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/nz.net.ultraq.groovy/groovy-extensions/2.0.0/110e17da777095f87bc500fc3c827c5e5da6130/groovy-extensions-2.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
