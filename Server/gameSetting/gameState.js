@@ -45,6 +45,7 @@ class GameState {
     let attempts = 0;
     const maxAttempts = 50;
 
+    //스폰 가능한 위치를 찾을 때까지 루프
     while (attempts < maxAttempts && !isSpawnPointSafe) {
       const randomX =
         Math.random() * (spawnArea.maxX - spawnArea.minX) + spawnArea.minX;
@@ -82,6 +83,34 @@ class GameState {
 
     console.log(`Player ${newPlayerId} connected`);
     return player;
+  }
+
+  removePlayer(playerId) {
+    const player = this.players[playerId];
+
+    if (!player) return; //플레이어가 키워드를 들고 있었다면 해당 키워드 드랍 처리
+
+    if (player.holdingKeywordId) {
+      const heldKeyword = this.keywords[player.holdingKeywordId];
+
+      if (heldKeyword) {
+        heldKeyword.carrierId = -1;
+        heldKeyword.x = player.x;
+        heldKeyword.y = player.y;
+      }
+
+      console.log(
+        `Player ${playerId} disconnected, dropped keyword ${player.holdingKeywordId} at (${heldKeyword.x}, ${heldKeyword.y})`
+      );
+    }
+
+    delete this.players[playerId];
+    console.log(`Player ${playerId} disconnected`);
+
+    if (Object.keys(this.players).length === 0) {
+      this.monsters = {};
+      console.log("All players have disconnected. Deleting all monsters.");
+    }
   }
 
   playerInteracts(playerId) {
@@ -122,34 +151,6 @@ class GameState {
       }
       this.checkForLevelUp();
       return; // 행동 완료
-    }
-  }
-
-  removePlayer(playerId) {
-    const player = this.players[playerId];
-
-    if (!player) return; //플레이어가 키워드를 들고 있었다면 해당 키워드 드랍 처리
-
-    if (player.holdingKeywordId) {
-      const heldKeyword = this.keywords[player.holdingKeywordId];
-
-      if (heldKeyword) {
-        heldKeyword.carrierId = -1;
-        heldKeyword.x = player.x;
-        heldKeyword.y = player.y;
-      }
-
-      console.log(
-        `Player ${playerId} disconnected, dropped keyword ${player.holdingKeywordId} at (${heldKeyword.x}, ${heldKeyword.y})`
-      );
-    }
-
-    delete this.players[playerId];
-    console.log(`Player ${playerId} disconnected`);
-
-    if (Object.keys(this.players).length === 0) {
-      this.monsters = {};
-      console.log("All players have disconnected. Deleting all monsters.");
     }
   }
   // ================= ▲▲▲ 플레이어 생성 & 삭제 ▲▲▲ =================

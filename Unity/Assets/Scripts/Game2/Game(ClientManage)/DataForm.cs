@@ -66,6 +66,10 @@ namespace DataForm
         public long revivablePlayerId = -1;
         public float reviveProgress;
 
+        public string nickname = "";
+        public int bodyTypeIndex = 0;
+        public int weaponTypeIndex = 0;
+
         public int hp;
         public int maxHp;
         public bool isBuffed;

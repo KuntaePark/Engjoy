@@ -148,7 +148,6 @@ function updateCountdown(gameState) {
     }
   }
 }
-// ================= ▲▲▲ [대기방]카운트다운 동기화 ▲▲▲ =================
 
 // =================================================================
 // ## 메인 업데이트
@@ -169,7 +168,6 @@ function update(gameState) {
     updateCountdown(gameState);
   }
 }
-// ================= ▲▲▲ 게임2 동기화! ▲▲▲ =================
 
 // =================================================================
 // ## 헬퍼 함수들
@@ -502,10 +500,12 @@ function updateMonsterMovement(monster, gameState) {
 // ## 루프 시작 함수
 // =================================================================
 function startGameUpdate(gameState, broadcast) {
-  setInterval(() => {
+  const intervalId = setInterval(() => {
     //게임 로직 업데이트 실행!
 
     if (Object.keys(gameState.players).length === 0 || gameState.isGameOver) {
+      console.log(`game end. remove interval.`);
+      clearInterval(intervalId);
       return;
     }
 

@@ -18,6 +18,8 @@ public class SceneController : MonoBehaviour
 
     private bool sceneLoaded = false;
 
+    private Dictionary<string, Action> callbackMap = new Dictionary<string, Action>();
+
     private void Awake()
     {
         if(Instance == null)
@@ -33,13 +35,14 @@ public class SceneController : MonoBehaviour
     }
 
 
-    public void loadScene(string sceneName)
+    public void loadScene(string sceneName, Action callback = null)
     {
         Debug.Log("Loading scene: " + sceneName);
         gameObject.SetActive(true);
         sceneLoaded = false;
         loadSceneName = sceneName;
         SceneManager.sceneLoaded += LoadSceneEnd;
+        callbackMap.Add(sceneName, callback);
         StartCoroutine(Load(sceneName));
     }
 
@@ -72,6 +75,8 @@ public class SceneController : MonoBehaviour
         {
             sceneLoaded = true; // 씬이 로드되었음을 표시
             SceneManager.sceneLoaded -= LoadSceneEnd; // 이벤트 핸들러 제거
+            callbackMap[loadSceneName]?.Invoke();
+            callbackMap.Remove(loadSceneName);
         }
     }
 

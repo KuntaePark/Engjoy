@@ -9,9 +9,6 @@ class Room {
     this.status = "MATCHINGROOM"; //'MATCHINGROOM', 'PLAY'
     this.countdown = -1; //게임 시작 전 카운트다운 변수
 
-    //매칭룸 상태에서의 플레이어 데이터
-    this.matchingRoomPlayers = {};
-
     //게임 시작 시 사용
     this.gameState = new GameState();
     this.gameState.status = "MATCHINGROOM";
@@ -36,6 +33,7 @@ class Room {
       this.gameState.removePlayer(playerId);
     }
     console.log(`[Room-${this.id}] Player ${playerId} left.`);
+
   }
   // ================= ▲▲▲ 플레이어 생성 & 삭제 ▲▲▲ =================
   // ================= ▼▼▼ 게임 시작 ▼▼▼ =================

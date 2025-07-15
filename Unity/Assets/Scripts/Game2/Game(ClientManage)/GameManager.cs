@@ -102,7 +102,10 @@ public class GameManager : MonoBehaviour
         //서버는 인게임 상태인데 현재 씬이 인게임이 아닐 경우
         if(newState.status == "PLAY" && currentSceneName != gameSceneName)
         {
-            SceneManager.LoadScene(gameSceneName);
+            SceneController.Instance.loadScene(gameSceneName, () =>
+            {
+                FindManagers();
+            });
             return;
         }
 
@@ -198,9 +201,7 @@ public class GameManager : MonoBehaviour
     {
         IsResultVisible = true;
     }
-
-
-    }
+}
 
 
 
