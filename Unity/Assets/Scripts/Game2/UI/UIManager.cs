@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro; //TextMeshPro에 필요
@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 public class UIManager : MonoBehaviour
 {
 
-    public static UIManager Instance {  get; private set; }
+    public static UIManager Instance { get; private set; }
 
     [Header("UI Panels")]
     public GameObject matchingRoomPanel; //대기방 UI 패널
@@ -54,11 +54,11 @@ public class UIManager : MonoBehaviour
     private Image reviveProgressBarInstance;
 
 
-    private Dictionary<string, PlayerStatusUI> otherPlayerUIs = new Dictionary<string, PlayerStatusUI>();
+    private Dictionary<long, PlayerStatusUI> otherPlayerUIs = new Dictionary<long, PlayerStatusUI>();
 
     private void Awake()
     {
-        if(Instance == null)
+        if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(transform.root.gameObject);
@@ -84,7 +84,7 @@ public class UIManager : MonoBehaviour
         if (countdownText == null || readyButton == null) return;
 
         //countdownValue > 0 : 서버에서 카운트다운 시작
-        if(countdownValue > 0)
+        if (countdownValue > 0)
         {
             countdownText.text = Mathf.CeilToInt(countdownValue).ToString();
         }
@@ -94,7 +94,7 @@ public class UIManager : MonoBehaviour
         }
 
         //버튼 활성화, 비활성화 로직
-        if(countdownValue > 0 && countdownValue <= 5)
+        if (countdownValue > 0 && countdownValue <= 5)
         {
             readyButton.interactable = false;
         }
@@ -121,7 +121,7 @@ public class UIManager : MonoBehaviour
         WsClient.Instance.Send("ready", payload);
         Debug.Log($"Ready state changed to: {isPlayerReady}");
 
-        if(isPlayerReady)
+        if (isPlayerReady)
         {
             readyButton.image.sprite = readyBtnImage;
             if (buttonText != null) buttonText.text = "CANCEL";
@@ -135,11 +135,11 @@ public class UIManager : MonoBehaviour
 
 
     //부활 업데이트
-    public void UpdateReviveUI(string targetId, float progress)
+    public void UpdateReviveUI(long targetId, float progress)
     {
-       if(!string.IsNullOrEmpty(targetId))
+        if (targetId >= 0)
         {
-            if(reviveUIInstance == null)
+            if (reviveUIInstance == null)
             {
                 //프리팹 생성, UIManager의 자식으로 (왜만들지?)
                 reviveUIInstance = Instantiate(reviveUIPrefab, this.transform);
@@ -148,14 +148,14 @@ public class UIManager : MonoBehaviour
                 reviveProgressBarInstance = reviveUIInstance.transform.Find("progressBar").GetComponent<Image>();
             }
 
-            if(reviveProgressBarInstance != null)
+            if (reviveProgressBarInstance != null)
             {
                 reviveProgressBarInstance.fillAmount = progress / 3f;
             }
 
             //UI를 대상 플레이어의 머리 위로 이동
             PlayerController targetController = PlayerManager.Instance.GetPlayerObjectById(targetId);
-            if(targetController != null )
+            if (targetController != null)
             {
                 Vector3 screenPos = Camera.main.WorldToScreenPoint(targetController.transform.position);
                 reviveUIInstance.transform.position = screenPos + new Vector3(0, 60, 0);
@@ -175,9 +175,9 @@ public class UIManager : MonoBehaviour
     //HP 업데이트
     public void UpdateHP(int currentHp)
     {
-        for (int i=0; i <heartIcons.Count; i++)
+        for (int i = 0; i < heartIcons.Count; i++)
         {
-           if(i<currentHp)
+            if (i < currentHp)
             {
                 heartIcons[i].sprite = fullHeart;
             }
@@ -190,7 +190,7 @@ public class UIManager : MonoBehaviour
     //인벤토리 업데이트
     public void UpdateInventory(InventoryData inventory)
     {
-        if(inventory != null)
+        if (inventory != null)
         {
             potionCountText.text = inventory.potion.ToString();
             buffCOuntText.text = inventory.buff.ToString();
@@ -206,12 +206,12 @@ public class UIManager : MonoBehaviour
     }
 
 
-    public void UpdateOtherPlayersUI(Dictionary<string, PlayerData> allPlayers)
+    public void UpdateOtherPlayersUI(Dictionary<long, PlayerData> allPlayers)
     {
         //서버에 있는데 클라이언트에는 없는 UI 생성
         foreach (var pair in allPlayers)
         {
-            string playerId = pair.Key;
+            long playerId = pair.Key;
             PlayerData playerData = pair.Value;
 
             //내 정보는 여기에서 안그림
@@ -230,16 +230,16 @@ public class UIManager : MonoBehaviour
         }
 
         //서버에서는 나갔는데 클라이언트에 UI가 남아있는 경우 삭제
-        List<string> disconnectedIds = new List<string>();
-        foreach(string existingId in otherPlayerUIs.Keys)
+        List<long> disconnectedIds = new List<long>();
+        foreach (long existingId in otherPlayerUIs.Keys)
         {
-            if(!allPlayers.ContainsKey(existingId))
+            if (!allPlayers.ContainsKey(existingId))
             {
                 disconnectedIds.Add(existingId);
             }
         }
 
-        foreach(string id in disconnectedIds)
+        foreach (long id in disconnectedIds)
         {
             Destroy(otherPlayerUIs[id].gameObject);
             otherPlayerUIs.Remove(id);
@@ -248,15 +248,15 @@ public class UIManager : MonoBehaviour
 
     public void UpdateGameInfo(int level, float currentTime, float maxTime)
     {
-        if(levelText != null)
+        if (levelText != null)
         {
             levelText.text = $"Level: {level}";
         }
-        if(timerText != null)
+        if (timerText != null)
         {
             timerText.text = Mathf.CeilToInt(currentTime).ToString();
         }
-        if(timeBar != null && maxTime > 0)
+        if (timeBar != null && maxTime > 0)
         {
             float fillRatio = currentTime / maxTime;
             timeBar.fillAmount = Mathf.Clamp01(fillRatio);

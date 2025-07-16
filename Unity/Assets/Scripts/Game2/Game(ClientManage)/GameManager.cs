@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using DataForm;
 using UnityEngine;
@@ -23,8 +23,8 @@ public class GameManager : MonoBehaviour
     public GameObject exitPrefab; //GameManager가 직접 Exit를 관리
     private ExitController exitController; //ExitController를 직접 관리
 
-    public string MyPlayerId { get; private set; }
-    public bool IsGameOver {  get; private set; }   //게임오버 상태
+    public long MyPlayerId { get; private set; } = -1;
+    public bool IsGameOver { get; private set; }   //게임오버 상태
     public bool IsResultVisible { get; private set; } = false; // 결과창 활성화 신호_플레이어 빙글빙글 돌릴거임..
 
     private string currentMapName = ""; //현재 맵 이름
@@ -33,7 +33,7 @@ public class GameManager : MonoBehaviour
 
     private bool isGameOverSequenceStarted = false;
 
-
+    private bool isLoading = false;
 
     private void Awake()
     {
@@ -49,17 +49,16 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
         //씬이 로드될 때마다 매니저들 찾게 하기
-        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     //GameManager 오브젝트 파괴될 때 등록 해제
     private void OnDestroy()
     {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void Start()
     {
+        MyPlayerId = DataManager.Instance.id;
         FindManagers();
     }
 
@@ -81,7 +80,7 @@ public class GameManager : MonoBehaviour
     }
 
     //WSClient에 호출될 함수 : 플레이어 ID 설정
-    public void SetMyPlayerId(string id)
+    public void SetMyPlayerId(long id)
     {
         MyPlayerId = id;
         Debug.Log($"<color=green>GameManager: My ID is set to {MyPlayerId}</color>");
@@ -93,7 +92,7 @@ public class GameManager : MonoBehaviour
     public void UpdateGameState(GameState newState)
     {
         // MyPlayerId가 설정되기 전까지는 아무 처리도 하지 않음
-        if (string.IsNullOrEmpty(MyPlayerId))
+        if (MyPlayerId < 0 || isLoading)
         {
             return; // 즉시 함수를 종료하여 아래 코드가 실행되지 않게 함
         }
@@ -101,14 +100,19 @@ public class GameManager : MonoBehaviour
         string currentSceneName = SceneManager.GetActiveScene().name;
 
         //서버는 인게임 상태인데 현재 씬이 인게임이 아닐 경우
-        if(newState.status == "PLAY" && currentSceneName != gameSceneName)
+        if (newState.status == "PLAY" && currentSceneName != gameSceneName)
         {
-            SceneManager.LoadScene(gameSceneName);
+            isLoading = true;
+            SceneController.Instance.loadScene(gameSceneName, () =>
+            {
+                FindManagers();
+                isLoading = false;
+            });
             return;
         }
 
         //맵 전환
-        if(mapManager != null && !string.IsNullOrEmpty(newState.mapName) && newState.mapName != currentMapName)
+        if (mapManager != null && !string.IsNullOrEmpty(newState.mapName) && newState.mapName != currentMapName)
         {
             mapManager.SwitchMap(newState.mapName);
             currentMapName = newState.mapName; //현재 맵 이름 업데이트
@@ -128,70 +132,70 @@ public class GameManager : MonoBehaviour
 
 
 
-        if (UIManager.Instance != null )
-            {
-                UIManager.Instance.SetUIForGameState(newState.status);
-
-                if(newState.status == "MATCHINGROOM")
-                {
-                    UIManager.Instance.UpdateCountdown(newState.countdown);
-                }
-                
-                if(newState.status == "PLAY")
-                {
-                    UIManager.Instance.UpdateGameInfo(newState.gameLevel, newState.timeLimit, INITIAL_MAX_TIME);
-                }
-             }
-
-            //KeywordManager에는 키워드 데이터를 넘겨주기
-            if (keywordManager != null)
-            {
-            keywordManager.UpdateKeywords(newState.keywords);
-            }
-
-            //PlayerManager에는 플레이어 데이터 넘겨주기
-            if (playerManager != null)
-            {
-                playerManager.UpdatePlayers(newState.players);
-            }
-            if (newState.exit != null)
-            {
-                if (exitController == null)
-                {
-                    //출구가 씬에 없다면 새로 생성
-                    GameObject exitObject = Instantiate(exitPrefab);
-                    exitController = exitObject.GetComponent<ExitController>();
-
-                    //출구 UI키기
-                    ExitUIManager.Instance.ShowExitUI();
-
-                }
-                //출구 상태 업데이트
-                exitController.UpdateState(newState.exit);
-            }
-
-        if(monsterManager != null && newState.monsters != null)
+        if (UIManager.Instance != null)
         {
-           monsterManager.UpdateMonsters(newState.monsters);
+            UIManager.Instance.SetUIForGameState(newState.status);
+
+            if (newState.status == "MATCHINGROOM")
+            {
+                UIManager.Instance.UpdateCountdown(newState.countdown);
+            }
+
+            if (newState.status == "PLAY")
+            {
+                UIManager.Instance.UpdateGameInfo(newState.gameLevel, newState.timeLimit, INITIAL_MAX_TIME);
+            }
+        }
+
+        //KeywordManager에는 키워드 데이터를 넘겨주기
+        if (keywordManager != null)
+        {
+            keywordManager.UpdateKeywords(newState.keywords);
+        }
+
+        //PlayerManager에는 플레이어 데이터 넘겨주기
+        if (playerManager != null)
+        {
+            playerManager.UpdatePlayers(newState.players);
+        }
+        if (newState.exit != null)
+        {
+            if (exitController == null)
+            {
+                //출구가 씬에 없다면 새로 생성
+                GameObject exitObject = Instantiate(exitPrefab);
+                exitController = exitObject.GetComponent<ExitController>();
+
+                //출구 UI키기
+                ExitUIManager.Instance.ShowExitUI();
+
+            }
+            //출구 상태 업데이트
+            exitController.UpdateState(newState.exit);
+        }
+
+        if (monsterManager != null && newState.monsters != null)
+        {
+            monsterManager.UpdateMonsters(newState.monsters);
         }
         else if (exitController != null)
-         {
-          //서버에 출구가 없는데 클라이언트에 있다면 파괴
-          Destroy(exitController.gameObject);
-          exitController = null;
+        {
+            //서버에 출구가 없는데 클라이언트에 있다면 파괴
+            Destroy(exitController.gameObject);
+            exitController = null;
 
-           //출구가 없다면 UI 파괴
-           ExitUIManager.Instance.HideExitUI();
+            //출구가 없다면 UI 파괴
+            ExitUIManager.Instance.HideExitUI();
 
         }
 
-         if(newState.players.TryGetValue(MyPlayerId, out PlayerData myPlayerData))
-         {
-           if(UIManager.Instance != null)
-           {
-               UIManager.Instance.UpdateReviveUI(myPlayerData.revivablePlayerId, myPlayerData.reviveProgress);
-           }
-         }
+        if (newState.players.TryGetValue(MyPlayerId, out PlayerData myPlayerData))
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.UpdateReviveUI(myPlayerData.revivablePlayerId, myPlayerData.reviveProgress);
+            }
+        }
 
     }
 
@@ -199,9 +203,7 @@ public class GameManager : MonoBehaviour
     {
         IsResultVisible = true;
     }
-
-
-    }
+}
 
 
 

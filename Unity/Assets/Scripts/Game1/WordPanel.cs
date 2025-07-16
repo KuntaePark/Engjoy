@@ -5,10 +5,11 @@ using System.Text;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class WordPanel : MonoBehaviour
 {
-    public Text[] wordMeanings;
+    public TextMeshProUGUI[] wordMeanings;
     public Text word;
 
     public GameObject optionGroup;
