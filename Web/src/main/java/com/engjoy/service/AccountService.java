@@ -44,7 +44,8 @@ public class AccountService {
         System.out.println("이름: " + signUpDto.getName());
         System.out.println("닉네임: " + signUpDto.getNickname());
         System.out.println("생일: " + signUpDto.getBirth());
-        Account account = new Account();
+        Account account = accountRepository.findByEmail(signUpDto.getEmail()).orElse(new Account());
+
         account.setEmail(signUpDto.getEmail());
         account.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
         account.setNickname(signUpDto.getNickname());
@@ -53,7 +54,8 @@ public class AccountService {
 
         accountRepository.save(account);
 
-        UserGameData userGameData = new UserGameData();
+        UserGameData userGameData = userGameDataRepository.findByAccount_Email(signUpDto.getEmail());
+        if(userGameData == null) { userGameData = new UserGameData(); }
         userGameData.setAccount(account);
 
         userGameDataRepository.save(userGameData);
