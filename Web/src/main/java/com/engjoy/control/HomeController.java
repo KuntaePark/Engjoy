@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 
@@ -65,8 +67,19 @@ public class HomeController {
         return "mainPage";
     }
 
-    @GetMapping("/signUp")
-    public String signUpPage() {
+    @PostMapping("/agree")
+    public String agreeToPolicy(@RequestParam(required = false, value="agreed") List<String> agreed,
+                                Model model) {
+        if(agreed == null || agreed.size() < 2) {
+            //reject
+            model.addAttribute("error", "모든 약관에 동의하셔야 합니다.");
+            model.addAttribute("agreed", agreed);
+            return "agree";
+
+        }
+
+        //동의
+        model.addAttribute("signUpDto", new SignUpDto());
         return "signUp";
     }
 
@@ -75,27 +88,25 @@ public class HomeController {
                          BindingResult bindingResult,
                          Model model) {
 
+        if (accountService.existsByEmail(signUpDto.getEmail())) {
+            bindingResult.rejectValue("email","email.using","이미 사용중인 이메일입니다.");
+        }
+
+        if (accountService.existsByNickname(signUpDto.getNickname())) {
+            bindingResult.rejectValue("nickname","nickname.using", "이미 사용 중인 닉네임입니다.");
+        }
+
+        if(!signUpDto.getPassword().equals(signUpDto.getConfirmPassword())) {
+            bindingResult.rejectValue("confirmPassword","confirmPassword.mismatch", "비밀번호가 일치하지 않습니다.");
+        }
 
         if (bindingResult.hasErrors()) {
             return "signUp"; // signUp.html로 돌아감
         }
 
-
-        if (accountService.existsByEmail(signUpDto.getEmail())) {
-            model.addAttribute("error", "이미 사용 중인 이메일입니다.");
-            return "signUp";
-        }
-
-        if (accountService.existsByNickname(signUpDto.getNickname())) {
-            model.addAttribute("error", "이미 사용 중인 닉네임입니다.");
-            return "signUp";
-        }
-
         accountService.insert(signUpDto);
 
-
         return "redirect:/login";
-
     }
 
     @GetMapping("/agree")
