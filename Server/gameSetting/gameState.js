@@ -3,7 +3,7 @@ const { Keyword } = require("../packet/keywords.js");
 const Exit = require("../packet/exit.js");
 const { generateId } = require("./utils.js");
 const { setupLevel } = require("./levelManager.js");
-const Physics = require("./physics.js");
+const Physics = require("../common/Physics");
 const { MonsterType } = require("../packet/monster.js");
 
 //공격 관련 상수
@@ -29,12 +29,13 @@ class GameState {
 
     this.status = "MATCHINGROOM"; //"MATCHINGROOM", "PLAY"
     this.countdown = 60; //준비완료 상태
+
+    this.colliders = new Set(); //맵의 충돌체들. (x,y)좌표로 관리
   } //새 플레이어 추가
 
   // ================= ▼▼▼ 플레이어 생성 & 삭제 ▼▼▼ =================
-  addPlayer() {
-    const idSet = new Set(Object.keys(this.players));
-    const newPlayerId = generateId(idSet);
+  addPlayer(playerId) {
+    const newPlayerId = playerId;
 
     const spawnArea = { minX: 1.0, maxX: 4.0, minY: 8.0, maxY: 11.0 };
 
@@ -44,6 +45,7 @@ class GameState {
     let attempts = 0;
     const maxAttempts = 50;
 
+    //스폰 가능한 위치를 찾을 때까지 루프
     while (attempts < maxAttempts && !isSpawnPointSafe) {
       const randomX =
         Math.random() * (spawnArea.maxX - spawnArea.minX) + spawnArea.minX;
@@ -67,7 +69,7 @@ class GameState {
       );
     }
 
-    //Player 객체 생성
+    //Player 객체 생성 시 ID만 전달
     const player = new Player(newPlayerId, spawnX, spawnY);
 
     //우선은 inventory에 테스트용으로 최대 세팅
@@ -83,12 +85,40 @@ class GameState {
     return player;
   }
 
+  removePlayer(playerId) {
+    const player = this.players[playerId];
+
+    if (!player) return; //플레이어가 키워드를 들고 있었다면 해당 키워드 드랍 처리
+
+    if (player.holdingKeywordId) {
+      const heldKeyword = this.keywords[player.holdingKeywordId];
+
+      if (heldKeyword) {
+        heldKeyword.carrierId = -1;
+        heldKeyword.x = player.x;
+        heldKeyword.y = player.y;
+      }
+
+      console.log(
+        `Player ${playerId} disconnected, dropped keyword ${player.holdingKeywordId} at (${heldKeyword.x}, ${heldKeyword.y})`
+      );
+    }
+
+    delete this.players[playerId];
+    console.log(`Player ${playerId} disconnected`);
+
+    if (Object.keys(this.players).length === 0) {
+      this.monsters = {};
+      console.log("All players have disconnected. Deleting all monsters.");
+    }
+  }
+
   playerInteracts(playerId) {
     const player = this.players[playerId];
     if (!player || player.isDown || this.isGameOver) return;
 
     //[1순위] 다른 플레이어 부활시키기
-    if (player.revivablePlayerId) {
+    if (player.revivablePlayerId >= 0) {
       //부활은 상호작용키를 누르는 것으로 처리. 다른 동작 블락.
       return;
     }
@@ -121,34 +151,6 @@ class GameState {
       }
       this.checkForLevelUp();
       return; // 행동 완료
-    }
-  }
-
-  removePlayer(playerId) {
-    const player = this.players[playerId];
-
-    if (!player) return; //플레이어가 키워드를 들고 있었다면 해당 키워드 드랍 처리
-
-    if (player.holdingKeywordId) {
-      const heldKeyword = this.keywords[player.holdingKeywordId];
-
-      if (heldKeyword) {
-        heldKeyword.carrierId = null;
-        heldKeyword.x = player.x;
-        heldKeyword.y = player.y;
-      }
-
-      console.log(
-        `Player ${playerId} disconnected, dropped keyword ${player.holdingKeywordId} at (${heldKeyword.x}, ${heldKeyword.y})`
-      );
-    }
-
-    delete this.players[playerId];
-    console.log(`Player ${playerId} disconnected`);
-
-    if (Object.keys(this.players).length === 0) {
-      this.monsters = {};
-      console.log("All players have disconnected. Deleting all monsters.");
     }
   }
   // ================= ▲▲▲ 플레이어 생성 & 삭제 ▲▲▲ =================
@@ -349,7 +351,7 @@ class GameState {
 
       const keyword = this.keywords[keywordId]; //다른 사람이 키워드를 들고 있지 않은지 혹시 모르니 재차 확인 //(동시에 상호작용 버튼 눌렀을 때의 버그 방지)
 
-      if (keyword && !keyword.carrierId) {
+      if (keyword && keyword.carrierId < 0) {
         player.holdingKeywordId = keywordId;
         keyword.carrierId = playerId;
 
@@ -432,7 +434,7 @@ class GameState {
 
       if (droppedKeyword) {
         console.log(`Player dropped keyword ${droppedKeyword.text}`);
-        droppedKeyword.carrierId = null;
+        droppedKeyword.carrierId = -1;
 
         //키워드 드랍 위치
         const maxDropDistance = 2.0;

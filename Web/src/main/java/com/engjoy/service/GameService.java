@@ -39,10 +39,11 @@ public class GameService{
         return UserGameDataDto.from(userGameDataRepository.findByAccount_Email(email));
     }
 
-    public Long allowMatch(String email) throws JsonProcessingException {
+    public Long allowMatch(String email, Integer gameId) throws JsonProcessingException {
         Long id = accountRepository.findByEmail(email).get().getId();
-        Map<String, Long> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("id", id);
+        map.put("gameId", gameId);
         ObjectMapper mapper = new ObjectMapper();
         String payload = mapper.writeValueAsString(map);
         matchServerSocket.sendPacket("auth_allow", payload);
