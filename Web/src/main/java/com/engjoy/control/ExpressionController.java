@@ -57,6 +57,7 @@ public class ExpressionController {
 
         model.addAttribute("studyLogData", studyLogData);
         model.addAttribute("searchDto", searchDto);
+        model.addAttribute("nickname",account.getName());
         return "expressions";
     }
     @GetMapping("/api")
