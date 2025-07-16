@@ -54,7 +54,7 @@
                         분쟁 발생 시 관할 법원은 회사의 주소지를 관할하는 법원으로 합니다.<br>
                     </div>
                     <div>
-                        <input type="checkbox" name="agreed" value="agree1" class="mr-2"><label>동의합니다.</label>
+                        <input id="agreed1" type="checkbox" name="agreed" value="agree1" class="mr-2"><label for="agreed1">동의합니다.</label>
                     </div>
                 </div>
                 <div class="flex flex-col gap-2">
@@ -80,7 +80,7 @@
                         종이 문서 형태의 정보는 분쇄하거나 소각합니다.<br>
                     </div>
                     <div>
-                        <input type="checkbox" name="agreed" value="agree2" class="mr-2"><label>동의합니다.</label>
+                        <input id="agreed2" type="checkbox" name="agreed" value="agree2" class="mr-2"><label for="agreed2">동의합니다.</label>
                     </div>
                 </div>
                 <div th:if="${error != null}" th:text="${error}" class="text-red-600"></div>

@@ -2,29 +2,28 @@ package com.engjoy.service;
 
 import com.engjoy.dto.SignUpDto;
 import com.engjoy.entity.Account;
+import com.engjoy.entity.UserGameData;
 import com.engjoy.repository.AccountRepository;
+import com.engjoy.repository.UserGameDataRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+@RequiredArgsConstructor
 @Service
+@Transactional
 public class AccountService {
 
+    private final UserGameDataRepository userGameDataRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
-
-
-    public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
-        this.accountRepository = accountRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
 
     public Optional<Account> findByEmail(String email) {
         return accountRepository.findByEmail(email);
     }
-
 
     public boolean existsByEmail(String email) {
         return accountRepository.existsByEmail(email);
@@ -53,6 +52,11 @@ public class AccountService {
         account.setBirth(signUpDto.getBirth());
 
         accountRepository.save(account);
+
+        UserGameData userGameData = new UserGameData();
+        userGameData.setAccount(account);
+
+        userGameDataRepository.save(userGameData);
     }
 
     public boolean passwordCheck(Long id, String password){
