@@ -6,47 +6,89 @@
       layout:decorate="~{fragment/default}">
 
 <th:block layout:fragment="css">
-    <link rel="stylesheet" th:href="@{/css/agree.css}">
+<!--    <link rel="stylesheet" th:href="@{/css/agree.css}">-->
 </th:block>
 
 <th:block layout:fragment="script"></th:block>
 
 
 <th:block layout:fragment="main">
-    <div id="wrapper">
-        <form th:action="@{/signUp}" method="post">
-            <div id="container">
-                <div>
-                    <h3>※서비스 약관 동의</h3>
-                </div>
-                <div>
-                    <div>
-                        <input type="checkbox" name="termsAgree" required><label>이용약관</label>
-                    </div>
-                    <div>
-                      <textarea name="termsContent" cols="25" rows="3" readonly>회원님께서는 저희 EngJoy 회사의 다음과 같은 규칙을 따라주셔야 합니다.
-                         상호 존중, 기본 예의 등등</textarea>
-                    </div>
-                </div>
-                <br><br>
-                <div>
-                    <div>
-                        <input type="checkbox" name="privacyAgree" required><label>개인 정보 수집 및 이용</label>
-                    </div>
-                    <div>
-                        <textarea cols="25" rows="3" readonly>본인의 개인 정보 수집에 동의하십니까? </textarea>
-                    </div>
-
-                </div>
-                <br>
-                <div>
-                    <button class="btn" type="submit">다음</button>
-                </div>
-
+    <div id="wrapper" class="bg-black w-full h-full flex items-center justify-center">
+        <div id="box" class="bg-white w-[600px] m-auto rounded-lg flex flex-col gap-4 p-8">
+            <div id="box-title" class="text-3xl font-bold">
+                약관 동의
             </div>
-        </form>
-
-
+            <form id="box-contents" th:action="@{/agree}" method="post" class="flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <div class="text-xl">이용 약관</div>
+                    <div class="w-full h-[200px] border-2 rounded-md p-2 overflow-y-scroll">
+                        제1조 (목적)<br>
+                        이 약관은 (회사명)이 제공하는 서비스 (서비스명)의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.<br>
+                        제2조 (용어의 정의)<br>
+                        이 약관에서 사용하는 용어의 정의는 다음과 같습니다.<br>
+                        "회원"이라 함은 본 약관에 동의하고 회사가 제공하는 서비스를 이용하는 자를 말합니다.<br>
+                        "서비스"라 함은 회사가 제공하는 모든 온라인 서비스를 의미합니다.<br>
+                        제3조 (약관의 효력과 변경)<br>
+                        이 약관은 서비스 화면에 게시하거나 기타의 방법으로 공지함으로써 효력이 발생합니다.<br>
+                        회사는 필요하다고 인정되는 경우 이 약관을 변경할 수 있으며, 변경된 약관은 제1항과 같은 방법으로 공지함으로써 효력이 발생합니다.<br>
+                        제4조 (회원가입)<br>
+                        회원 가입은 온라인으로 진행되며, 회사가 정한 가입 절차에 따라 진행됩니다.<br>
+                        회원은 가입 신청 시 정확한 정보를 제공해야 합니다.<br>
+                        제5조 (서비스 이용)<br>
+                        회원은 본 약관 및 관련 법령을 준수하여 서비스를 이용해야 합니다.<br>
+                        회사는 서비스 내용과 운영정책을 변경할 수 있습니다.<br>
+                        제6조 (회원의 의무)<br>
+                        회원은 서비스 이용 시 타인의 권리를 침해해서는 안 됩니다.<br>
+                        회원은 서비스 이용 중 알게 된 정보를 무단으로 유출하거나 이용해서는 안 됩니다.<br>
+                        제7조 (회사의 의무)<br>
+                        회사는 안정적인 서비스를 제공하기 위해 노력합니다.<br>
+                        회사는 회원의 개인정보를 보호해야 합니다.<br>
+                        제8조 (계약해지)<br>
+                        회원은 언제든지 서비스 이용 계약을 해지할 수 있습니다.<br>
+                        회사는 회원이 약관을 위반하는 경우 서비스 이용을 제한하거나 계약을 해지할 수 있습니다.<br>
+                        제9조 (손해배상)<br>
+                        회사는 회원의 고의 또는 과실로 인해 발생한 손해에 대해 배상해야 합니다.<br>
+                        회원은 회사의 귀책사유로 손해를 입은 경우 손해배상을 청구할 수 있습니다.<br>
+                        제10조 (분쟁해결)<br>
+                        본 약관과 관련된 분쟁은 대한민국 법률에 따라 해결합니다.<br>
+                        분쟁 발생 시 관할 법원은 회사의 주소지를 관할하는 법원으로 합니다.<br>
+                    </div>
+                    <div>
+                        <input type="checkbox" name="agreed" value="agree1" class="mr-2"><label>동의합니다.</label>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="text-xl">개인 정보 수집 및 이용</div>
+                    <div class="w-full h-[200px] border-2 rounded-md p-2 overflow-y-scroll">
+                        제1조 (개인정보의 처리 목적)<br>
+                        (회사명)은 다음의 목적을 위해 개인정보를 처리합니다.<br>
+                        회원 가입 및 관리<br>
+                        서비스 제공 및 개선<br>
+                        마케팅 및 광고<br>
+                        제2조 (개인정보의 처리 및 보유 기간)<br>
+                        (회사명)은 법령에 따른 개인정보 보유·이용 기간 또는 정보주체로부터 개인정보를 수집 시 동의받은 개인정보 보유·이용 기간 내에서 개인정보를 처리·보유합니다.<br>
+                        개인정보의 처리 목적 달성, 해당 서비스의 폐지, 사업의 종료 등 개인정보가 불필요하게 되었을 때에는 지체 없이 해당 개인정보를 파기합니다.<br>
+                        제3조 (개인정보의 제3자 제공)<br>
+                        (회사명)은 정보주체의 개인정보를 원칙적으로 외부에 제공하지 않습니다.<br>
+                        다만, 다음의 경우에는 예외로 합니다.<br>
+                        정보주체의 동의를 받은 경우<br>
+                        법령의 규정에 의한 경우<br>
+                        제4조 (개인정보의 파기 절차 및 방법)<br>
+                        (회사명)은 개인정보 보유 기간의 경과, 처리 목적 달성 등 개인정보가 불필요하게 되었을 때에는 지체 없이 해당 개인정보를 파기합니다.<br>
+                        파기 방법은 다음과 같습니다.<br>
+                        전자 파일 형태의 정보는 복구 및 재생이 불가능하도록 삭제합니다.<br>
+                        종이 문서 형태의 정보는 분쇄하거나 소각합니다.<br>
+                    </div>
+                    <div>
+                        <input type="checkbox" name="agreed" value="agree2" class="mr-2"><label>동의합니다.</label>
+                    </div>
+                </div>
+                <div th:if="${error != null}" th:text="${error}" class="text-red-600"></div>
+                <div class="flex justify-end">
+                    <button type="submit" class="border-2 border-gray rounded-md py-2 px-4">다음</button>
+                </div>
+            </form>
+        </div>
     </div>
 </th:block>
 </html>

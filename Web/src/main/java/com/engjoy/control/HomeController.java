@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 
@@ -68,6 +70,21 @@ public class HomeController {
     @GetMapping("/signUp")
     public String signUpPage() {
         return "signUp";
+    }
+
+    @PostMapping("/agree")
+    public String agreeToPolicy(@RequestParam(required = false, value="agreed") List<String> agreed,
+                                Model model) {
+        if(agreed == null || agreed.size() < 2) {
+            //reject
+            model.addAttribute("error", "모든 약관에 동의하셔야 합니다.");
+            model.addAttribute("agreed", agreed);
+            return "agree";
+
+        }
+
+        //동의
+        return "redirect:/signUp";
     }
 
     @PostMapping("/signUp")
