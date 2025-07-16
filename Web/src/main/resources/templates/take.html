@@ -31,65 +31,95 @@
         <script th:inline="javascript">
           document.addEventListener('DOMContentLoaded', () => {
             // ─── 0) 페이지 이동 허용 여부 플래그 ─────────────────────────
-            let allowNavigation = false;
+            const question       = /*[[${question}]]*/ null;
+            const currentIndex   = /*[[${currentIndex}]]*/ 0;
+            const totalQuestions = /*[[${totalQuestions}]]*/ 0;
+            let allowNavigation = false; // 새로고침 이탈 깃발 변수
+            let shouldOpenExitModal = false; // 뒤로가기 깃발 변수
 
             // ─── 1) 새로고침 감지 & index=0 강제 리다이렉트 ─────────────
             const params    = new URLSearchParams(window.location.search);
             const idxParam  = params.get('index') || '0';
-            const navEntries = performance.getEntriesByType('navigation');
-            const navType    = navEntries.length
-                               ? navEntries[0].type
-                               : (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'other');
 
-            if (navType === 'reload' && idxParam !== '0') {
-              // 새로고침 후 index=0으로 돌아갈 때
-              allowNavigation = true;
-              window.location.replace('/quiz/take?index=0');
-              return;  //
-            }
+            function setupExitListeners(){
 
-            // ─── 2) 페이지 떠날 때 확인창(beforeunload) 등록 ──────────────
-            window.addEventListener('beforeunload', e => {
-              if (allowNavigation) return;
-              e.preventDefault();
-              e.returnValue = '퀴즈를 떠나시겠습니까? 진행 상황이 저장되지 않을 수 있습니다.';
-            });
-
-            // ─── 3) 뒤로가기·X버튼 모달 제어 ──────────────────────────
-            const exitTriggerBtn = document.getElementById('exit-quiz-trigger');
-            const exitModal      = document.getElementById('exit-confirm-modal');
-            const continueBtn    = document.getElementById('continue-quiz-btn');
-            const exitConfirmBtn = document.getElementById('exit-quiz-btn');
-
-            if (exitTriggerBtn && exitModal) {
-              history.pushState(null, '', location.href);
-              window.addEventListener('popstate', () => exitModal.classList.remove('hidden'));
-
-              exitTriggerBtn.addEventListener('click', e => {
-                e.preventDefault();
-                exitModal.classList.remove('hidden');
-              });
-              continueBtn.addEventListener('click', () => {
-                exitModal.classList.add('hidden');
-                history.pushState(null, '', location.href);
-              });
-              exitConfirmBtn.addEventListener('click', () => {
-                allowNavigation = true;
-                window.location.href = exitTriggerBtn.href;
-              });
-              exitModal.addEventListener('click', e => {
-                if (e.target === exitModal) {
-                  exitModal.classList.add('hidden');
-                  history.pushState(null, '', location.href);
+                // 새로고침 시 모달 상태 초기화
+                if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+                    history.replaceState(null, '', location.href);  // 초기화
                 }
-              });
+                const navEntries = performance.getEntriesByType('navigation');
+                const navType    = navEntries.length
+                                   ? navEntries[0].type
+                                   : (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'other');
+
+                if (navType === 'reload') {
+                  // 새로고침 후 index=0으로 돌아갈 때
+                  if( idxParam !== '0'){
+                      allowNavigation = true;
+                      window.location.replace('/quiz/take?index=0');
+                      return;
+                  }
+                  // 새로고침이지만 index=0인 경우에도 히스토리 상태를 초기화
+                  history.replaceState(null,'',location.href);
+                }
+
+                // ─── 2) 페이지 떠날 때 확인창(beforeunload) 등록 ──────────────
+                window.addEventListener('beforeunload', e => {
+                  if (allowNavigation) return;
+                  e.preventDefault();
+                  e.returnValue = '퀴즈를 떠나시겠습니까? 진행 상황이 저장되지 않을 수 있습니다.';
+                });
+
+                // ─── 3) 뒤로가기·X버튼 모달 제어 ──────────────────────────
+
+                const exitTriggerBtn = document.getElementById('exit-quiz-trigger');
+                const exitModal      = document.getElementById('exit-confirm-modal');
+                const continueBtn    = document.getElementById('continue-quiz-btn');
+                const exitConfirmBtn = document.getElementById('exit-quiz-btn');
+
+                if (exitTriggerBtn && exitModal && question) {
+                  let popstateInitialized = false;
+                  shouldOpenExitModal = true;
+                  history.pushState
+
+                   window.addEventListener('popstate', (event) => {
+                   // 처음 발생하는 popstate는 무시
+                    if(!popstateInitialized){
+                        popstateInitialized = true;
+                        return;
+                    }
+                    // 실제 뒤로가기인 경우에만 실행
+                    if (shouldOpenExitModal && event.state?.modal === true) {
+                      exitModal.classList.remove('hidden');
+                    }
+                });
+
+                  exitTriggerBtn.addEventListener('click', e => {
+                    e.preventDefault();
+                    history.pushState({modal:true},'',location.href);
+                    exitModal.classList.remove('hidden');
+                  });
+
+                  continueBtn.addEventListener('click', () => {
+                    exitModal.classList.add('hidden');
+                    history.back();
+                  });
+
+                  exitConfirmBtn.addEventListener('click', () => {
+                    allowNavigation = true;
+                    window.location.href = exitTriggerBtn.href;
+                  });
+
+                  exitModal.addEventListener('click', e => {
+                    if (e.target === exitModal) {
+                      exitModal.classList.add('hidden');
+                      history.back();
+                    }
+                  });
+                }
             }
 
             // ─── 4) 퀴즈 로직 초기화 ───────────────────────────────────
-            const question       = /*[[${question}]]*/ null;
-            const currentIndex   = /*[[${currentIndex}]]*/ 0;
-            const totalQuestions = /*[[${totalQuestions}]]*/ 0;
-
             const quizContainer = document.getElementById('quiz-container');
             const feedbackArea  = document.getElementById('feedback-area');
             const submitBtn     = document.getElementById('submitBtn');
@@ -102,6 +132,11 @@
             const pronAudioBtn = document.getElementById('pron-audio-btn');
             let selectedAnswer  = null;
             let currentPlayingAudio = null;
+
+            if(question){
+              setupExitListeners(); // 나가기/새로고침/뒤로가기 관련 기능 활성화
+              checkSubmitButtonState(); // 제출 버튼 초기 상태 설정
+            }
 
             // 진행바
             const progressBar = document.getElementById('progressBar');
@@ -149,31 +184,31 @@
                   }
 
                   function initializeSentenceQuiz() {
-                       // ✨ [수정] HTML에서 읽는 대신, JavaScript 변수(question)에서 직접 단어 목록을 가져와 초기화합니다.
+                       // HTML에서 읽는 대신, JavaScript 변수(question)에서 직접 단어 목록을 가져와 초기화
                       initialBankWords = (question.shuffledWords || []).map((wordText, index) => ({
                           id: index, text: wordText
                       }));
                       resetState();
                   }
+                    if(question){
+                      initializeSentenceQuiz();
 
-                  initializeSentenceQuiz();
+                      // 이벤트 리스너 (클릭으로 단어 이동)
+                      wordBank.addEventListener('click', (e) => moveWord(e, bankWords, answerWords, render));
+                      answerBoard.addEventListener('click', (e) => moveWord(e, answerWords, bankWords, render, true));
+                      resetBtn?.addEventListener('click', resetState);
 
-                  // 이벤트 리스너 (클릭으로 단어 이동)
-                  wordBank.addEventListener('click', (e) => moveWord(e, bankWords, answerWords, render));
-                  answerBoard.addEventListener('click', (e) => moveWord(e, answerWords, bankWords, render, true));
-                  resetBtn?.addEventListener('click', resetState);
-
-                  // 드래그앤드롭 (순서 변경)
-                  new Sortable(answerBoard, {
-                      animation: 150,
-                      ghostClass: 'sortable-ghost',
-                      onEnd: (evt) => {
-                          const movedItem = answerWords.splice(evt.oldIndex, 1)[0];
-                          answerWords.splice(evt.newIndex, 0, movedItem);
-                      }
-                  });
+                      // 드래그앤드롭 (순서 변경)
+                      new Sortable(answerBoard, {
+                          animation: 150,
+                          ghostClass: 'sortable-ghost',
+                          onEnd: (evt) => {
+                              const movedItem = answerWords.splice(evt.oldIndex, 1)[0];
+                              answerWords.splice(evt.newIndex, 0, movedItem);
+                          }
+                      });
+                  }
               }
-              // ✨ [수정] 중복되었던 else 블록을 하나로 합쳤습니다.
               else { // 단어 퀴즈 로직
                   const choicesArea = document.getElementById('choices-area');
                   if (choicesArea) {
@@ -220,7 +255,7 @@
                   submitAnswer(answeredDto);
               });
 
-              // ✨ [수정] skip과 next 버튼 모두 goToNextQuestion 함수를 호출하도록 통일
+              // skip과 next 버튼 모두 goToNextQuestion 함수를 호출하도록 통일
               skipBtn?.addEventListener('click', () => goToNextQuestion());
               nextBtn?.addEventListener('click', () => goToNextQuestion());
 
@@ -237,133 +272,138 @@
                   }
               }
 
+              function submitAnswer(answeredDto) {
+                  const token = document.querySelector("meta[name='_csrf']")?.content;
+                  const header = document.querySelector("meta[name='_csrf_header']")?.content;
+                  const headers = { 'Content-Type': 'application/json' };
+                  if (token && header) headers[header] = token;
 
-
-                          function submitAnswer(answeredDto) {
-                              const token = document.querySelector("meta[name='_csrf']")?.content;
-                              const header = document.querySelector("meta[name='_csrf_header']")?.content;
-                              const headers = { 'Content-Type': 'application/json' };
-                              if (token && header) headers[header] = token;
-
-                              fetch('/quiz/submit', { method: 'POST', headers: headers, body: JSON.stringify(answeredDto) })
-                                  .then(response => response.ok ? response.json() : response.text().then(text => Promise.reject(text)))
-                                  .then(gradedResult => {
-                                      showFeedback(gradedResult);
-                                      toggleActionButtons();
-                                  })
-                                  .catch(err => {
-                                      console.error("채점 오류:", err);
-                                      feedbackArea.innerHTML = `<p class="text-red-600">채점 중 오류가 발생했습니다.</p>`;
-                                  });
-                          }
-
-                          function showFeedback(gradedResult) {
-                              let messageText, messageColor, answerText = '';
-
-                              if (gradedResult.correct) {
-                                  messageText = '정답입니다! ';
-                                  messageColor = 'text-green-600'; // 정답일 때 초록색
-                              } else {
-                                  messageText = '오답입니다.';
-                                  messageColor = 'text-red-600'; // 오답일 때 빨간색
-                                  // 정답 텍스트를 준비
-                                  let correctAnswer = gradedResult.correctWordAnswer || (gradedResult.correctSentenceAnswer || []).join(' ') || '';
-                                  answerText = `<p class="text-lg font-medium text-gray-700 mt-1">정답: ${correctAnswer}</p>`;
-                              }
-
-                              // 정답/오답 모두 동일한 HTML 구조와 스타일을 사용
-                              feedbackArea.innerHTML = `
-                                  <div class="text-center">
-                                      <p class="text-2xl font-bold ${messageColor}">${messageText}</p>
-                                      ${answerText}
-                                  </div>
-                              `;
-                          }
-
-                          function toggleActionButtons() {
-                              // 제출 버튼은 숨기고, 다음 버튼은 그 자리에 표시
-                              if (submitBtn) submitBtn.classList.add('hidden');
-                              if (nextBtn) nextBtn.classList.remove('hidden');
-
-                              // 건너뛰기와 초기화 버튼을 비활성화
-                              if (skipBtn) {
-                                  skipBtn.disabled = true;
-                                  skipBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                              }
-                              if (resetBtn) {
-                                  resetBtn.disabled = true;
-                                  resetBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                              }
-                          }
-
-                          function disableAllAnswerButtons() {
-                              if (isSentenceQuiz) {
-                                  const sortableAnswer = Sortable.get(document.getElementById('answer-board'));
-                                  if (sortableAnswer) sortableAnswer.option('disabled', true);
-                                  wordBank.querySelectorAll('.word-btn').forEach(btn => btn.style.pointerEvents = 'none');
-                                  answerBoard.style.pointerEvents = 'none';
-                              } else {
-                                  document.querySelectorAll('.answer-btn').forEach(btn => {
-                                      btn.disabled = true;
-                                      btn.classList.add('cursor-not-allowed', 'opacity-70');
-                                  });
-                              }
-                          }
-
-                          function goToNextQuestion() {
-                              allowNavigation = true;
-                              if (currentIndex + 1 >= totalQuestions) {
-                                  fetch('/quiz/result').then(res => res.json()).then(showFinalResult);
-                              } else {
-                                  window.location.href = `/quiz/take?index=${currentIndex + 1}`;
-                              }
-                          }
-
-                          function showFinalResult(finalResult) {
-                              if (!quizContainer) return;
-
-                                // quizContainer(바깥 박스)의 배경/그림자 없애기
-                                  quizContainer.classList.remove('bg-white', 'rounded-lg', 'shadow-lg');
-                                  quizContainer.classList.add('bg-transparent', 'shadow-none');
-
-                                  // 결과 화면 HTML을 생성
-                                  quizContainer.innerHTML = `
-                                      <div class="max-w-md mx-auto bg-white border border-gray-300 border-2 rounded-lg shadow p-6 space-y-4">
-                                          <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">퀴즈 결과</h2>
-                                          <div class="space-y-2 text-lg font-semibold">
-                                              <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>총 문제</span><span class="font-bold">${finalResult.totalQuestions}</span></div>
-                                              <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>맞은 개수</span><span class="font-bold text-green-600">${finalResult.correctCount}</span></div>
-                                              <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>획득 골드 <span title="골드는 획득날짜와 오답횟수를 기준으로 차등 지급됩니다."> 💰</span></span><span class="font-bold text-yellow-500">${finalResult.rewardGold}</span></div>
-                                          </div>
-                                          <div class="mt-8">
-                                              <a id="back-to-expressions-btn" href="/expressions" class="w-full inline-block px-4 py-2 bg-[#8CCE47] hover:brightness-110 border-b-4 border-green-600 text-white rounded-xl font-bold text-base text-center uppercase transition-colors">단어장으로 돌아가기</a>
-                                          </div>
-                                       </div>
-                                  `;
-
-                                  // 동적으로 생성된 버튼을 찾아서 클릭 이벤트를 추가
-                                  const backToExpressionsBtn = document.getElementById('back-to-expressions-btn');
-                                  backToExpressionsBtn?.addEventListener('click', (e) => {
-                                      // a 태그의 기본 동작(즉시 이동)을 막기
-                                      e.preventDefault();
-
-                                      // 페이지를 떠나기 전에 '깃발'을 올려서 beforeunload 경고 막기
-                                      allowNavigation = true;
-
-                                      // JavaScript로 페이지를 이동
-                                      window.location.href = backToExpressionsBtn.href;
-                                  });
-
-
-                              // 하단의 액션 버튼들을 숨김
-                              const actionButtons = document.getElementById('action-buttons');
-                              if (actionButtons) actionButtons.style.display = 'none';
-                          }
-
-                          setupExitListeners(); // 나가기/새로고침/뒤로가기 관련 기능 활성화
-                          checkSubmitButtonState(); // 제출 버튼 초기 상태 설정
-
+                  fetch('/quiz/submit', { method: 'POST', headers: headers, body: JSON.stringify(answeredDto) })
+                      .then(response => response.ok ? response.json() : response.text().then(text => Promise.reject(text)))
+                      .then(gradedResult => {
+                          showFeedback(gradedResult);
+                          toggleActionButtons();
+                      })
+                      .catch(err => {
+                          console.error("채점 오류:", err);
+                          feedbackArea.innerHTML = `<p class="text-red-600">채점 중 오류가 발생했습니다.</p>`;
                       });
+              }
+
+              function showFeedback(gradedResult) {
+                  let messageText, messageColor, answerText = '';
+
+                  if (gradedResult.correct) {
+                      messageText = '정답입니다! ';
+                      messageColor = 'text-green-600'; // 정답일 때 초록색
+                  } else {
+                      messageText = '오답입니다.';
+                      messageColor = 'text-red-600'; // 오답일 때 빨간색
+                      // 정답 텍스트를 준비
+                      let correctAnswer = gradedResult.correctWordAnswer || (gradedResult.correctSentenceAnswer || []).join(' ') || '';
+                      answerText = `<p class="text-lg font-medium text-gray-700 mt-1">정답: ${correctAnswer}</p>`;
+                  }
+
+                  // 정답/오답 모두 동일한 HTML 구조와 스타일을 사용
+                  feedbackArea.innerHTML = `
+                      <div class="text-center">
+                          <p class="text-2xl font-bold ${messageColor}">${messageText}</p>
+                          ${answerText}
+                      </div>
+                  `;
+              }
+
+              function toggleActionButtons() {
+                  // 제출 버튼은 숨기고, 다음 버튼은 그 자리에 표시
+                  if (submitBtn) submitBtn.classList.add('hidden');
+                  if (nextBtn) nextBtn.classList.remove('hidden');
+
+                  // 건너뛰기와 초기화 버튼을 비활성화
+                  if (skipBtn) {
+                      skipBtn.disabled = true;
+                      skipBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                  }
+                  if (resetBtn) {
+                      resetBtn.disabled = true;
+                      resetBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                  }
+              }
+
+              function disableAllAnswerButtons() {
+                  if (isSentenceQuiz) {
+                      const sortableAnswer = Sortable.get(document.getElementById('answer-board'));
+                      if (sortableAnswer) sortableAnswer.option('disabled', true);
+                      wordBank.querySelectorAll('.word-btn').forEach(btn => btn.style.pointerEvents = 'none');
+                      answerBoard.style.pointerEvents = 'none';
+                  } else {
+                      document.querySelectorAll('.answer-btn').forEach(btn => {
+                          btn.disabled = true;
+                          btn.classList.add('cursor-not-allowed', 'opacity-70');
+                      });
+                  }
+              }
+
+              function goToNextQuestion() {
+                  allowNavigation = true;
+                  if (currentIndex + 1 >= totalQuestions) {
+                      fetch('/quiz/result').then(res => res.json()).then(showFinalResult);
+                  } else {
+                      window.location.href = `/quiz/take?index=${currentIndex + 1}`;
+                  }
+              }
+
+              function showFinalResult(finalResult) {
+                    if (!quizContainer) return;
+
+                    // 진행바 숨기기
+                    const progressWrapper = document.querySelector('.w-full.bg-gray-200.rounded-full.h-4');
+                    if (progressWrapper) progressWrapper.style.display = 'none';
+                    // 퀴즈 개수 숨기기
+                    const quizCountText = document.querySelector('.text-sm.font-medium.text-gray-600.text-right');
+                    if (quizCountText) quizCountText.style.display = 'none';
+                    // X 나가기 버튼 숨기기
+                    const exitBtn = document.getElementById('exit-quiz-trigger');
+                    if (exitBtn) exitBtn.style.display = 'none';
+
+                    // quizContainer(바깥 박스)의 배경/그림자 없애기
+                      quizContainer.classList.remove('bg-white', 'rounded-lg', 'shadow-lg');
+                      quizContainer.classList.add('bg-transparent', 'shadow-none');
+
+                      // 결과 화면 HTML을 생성
+                      quizContainer.innerHTML = `
+                          <div class="max-w-md mx-auto bg-white border border-gray-300 border-2 rounded-lg shadow p-6 space-y-4">
+                              <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">퀴즈 결과</h2>
+                              <div class="space-y-2 text-lg font-semibold">
+                                  <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>총 문제</span><span class="font-bold">${finalResult.totalQuestions}</span></div>
+                                  <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>맞은 개수</span><span class="font-bold text-green-600">${finalResult.correctCount}</span></div>
+                                  <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>획득 골드 <span title="골드는 획득날짜와 오답횟수를 기준으로 차등 지급됩니다."> 💰</span></span><span class="font-bold text-yellow-500">${finalResult.rewardGold}</span></div>
+                              </div>
+                              <div class="mt-8">
+                                  <a id="back-to-expressions-btn" href="/expressions" class="w-full inline-block px-4 py-2 bg-[#8CCE47] hover:brightness-110 border-b-4 border-green-600 text-white rounded-xl font-bold text-base text-center uppercase transition-colors">단어장으로 돌아가기</a>
+                              </div>
+                           </div>
+                      `;
+
+                      // 동적으로 생성된 버튼을 찾아서 클릭 이벤트를 추가
+                      const backToExpressionsBtn = document.getElementById('back-to-expressions-btn');
+                      backToExpressionsBtn?.addEventListener('click', (e) => {
+                          // a 태그의 기본 동작(즉시 이동)을 막기
+                          e.preventDefault();
+
+                          // 페이지를 떠나기 전에 '깃발'을 올려서 beforeunload 경고 막기
+                          allowNavigation = true;
+
+                          // JavaScript로 페이지를 이동
+                          window.location.href = backToExpressionsBtn.href;
+                      });
+
+
+                  // 하단의 액션 버튼들을 숨김
+                  const actionButtons = document.getElementById('action-buttons');
+                  if (actionButtons) actionButtons.style.display = 'none';
+              }
+
+          });
     </script>
 </th:block>
 

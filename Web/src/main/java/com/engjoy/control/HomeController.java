@@ -150,4 +150,8 @@ public class HomeController {
         return Map.of("exists", exists);
     }
 
+    @GetMapping("/intro")
+    public String introPage(){
+        return "intro";
+    }
 }

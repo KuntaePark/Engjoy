@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css"></th:block>
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+          const messages = document.querySelectorAll('.message');
+          messages.forEach((msg, index) => {
+            msg.style.opacity = '0';
+            msg.style.transform = 'translateY(20px)';
+            msg.style.transition = 'all 0.6s ease';
+            setTimeout(() => {
+              msg.style.opacity = '1';
+              msg.style.transform = 'translateY(0)';
+            }, index * 600); // 600ms 간격으로 순차 등장
+          });
+        });
+    </script>
+</th:block>
+
+
+<th:block layout:fragment="main">
+    <div class="max-w-4xl mx-auto p-6 space-y-12">
+
+        <!-- 🎮 게임 소개 -->
+        <div class="space-y-4">
+            <div class="observer-message flex items-start gap-3">
+                <img src="/images/game-preview.png" alt="게임 캐릭터" class="w-12 h-12 rounded-full shadow-md" />
+                <div class="bg-white rounded-2xl px-4 py-2 shadow text-gray-900 max-w-sm">
+                    여긴 마법 배틀장이야!<br>단어로 마법을 날리고, 문장으로 방어막을 만드는 곳이지!
+                </div>
+            </div>
+
+            <div class="observer-message flex items-start gap-3">
+                <img src="/images/game-preview.png" alt="게임 캐릭터" class="w-12 h-12 rounded-full invisible" />
+                <div class="bg-white rounded-2xl px-4 py-2 shadow text-gray-900 max-w-sm">
+                    맞춘 단어는 너의 무기!<br>어려운 단어일수록 더 강력한 공격을 쓸 수 있어!
+                </div>
+            </div>
+
+            <div class="observer-message flex items-start gap-3">
+                <img src="/images/game-preview.png" alt="게임 캐릭터" class="w-12 h-12 rounded-full invisible" />
+                <div class="bg-white rounded-2xl px-4 py-2 shadow text-gray-900 max-w-sm">
+                    1:1 PVP는 물론, 친구들과 힘을 합쳐 몬스터를 막아내는<br>협동 모드(PVE)도 준비되어 있어!
+                </div>
+            </div>
+        </div>
+
+        <!-- 📚 웹 복습 소개 -->
+        <div class="space-y-4">
+            <div class="observer-message flex justify-end items-start gap-3">
+                <div class="bg-yellow-300 rounded-2xl px-4 py-2 shadow text-gray-900 max-w-sm text-right">
+                    전투에서 쓴 단어들, 다 기억하고 있니?<br>걱정 마! 내가 정리해 줄게!
+                </div>
+                <img src="/images/vocab-review.png" alt="웹 캐릭터" class="w-12 h-12 rounded-full shadow-md" />
+            </div>
+
+            <div class="observer-message flex justify-end items-start gap-3">
+                <div class="bg-yellow-300 rounded-2xl px-4 py-2 shadow text-gray-900 max-w-sm text-right">
+                    단어장은 카드처럼 보기 쉽게 정리돼 있어.<br>뜻, 예문, 발음까지 다 확인할 수 있어!
+                </div>
+                <img src="/images/vocab-review.png" alt="웹 캐릭터" class="w-12 h-12 rounded-full invisible" />
+            </div>
+
+            <div class="observer-message flex justify-end items-start gap-3">
+                <div class="bg-yellow-300 rounded-2xl px-4 py-2 shadow text-gray-900 max-w-sm text-right">
+                    오늘 뭐 배웠는지 복습하고,<br>오답은 따로 모아두면 다음엔 절대 틀리지 않아!
+                </div>
+                <img src="/images/vocab-review.png" alt="웹 캐릭터" class="w-12 h-12 rounded-full invisible" />
+            </div>
+        </div>
+
+    </div>
+
+</th:block>
+</html>
