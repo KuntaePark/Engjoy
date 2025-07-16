@@ -89,10 +89,13 @@
 }
 
   #cal-heatmap .ch-domain-text {
-    font-size: 11px !important;
+    font-size: 14px !important;
     font-weight: 500;
   }
 
+html, body {
+  overflow-x: hidden;
+}
 
 
 
@@ -135,7 +138,7 @@
                     },
                     domainDynamicDimension: false,  // ← 도메인(월) 블록 너비를 가장 큰 달과 동일하게 고정
                     domain: { type: 'month', gutter: 5, label: {position: 'top', align: 'center', offset: { x: 0, y: 0 }} },
-                    subDomain: { type: 'day', radius: 2, width: 13, height: 13 ,cellPadding: 2, gutter: 2 },
+                    subDomain: { type: 'day', radius: 2, width: 18, height: 18 ,cellPadding: 2, gutter: 2 },
                     itemSelector: '#cal-heatmap'
                 },
                 [
@@ -243,22 +246,54 @@
 
 <th:block layout:fragment="main">
 
+    <!--오답 모달창-->
+    <div id="wrong-answer-modal" class="modal-overlay hidden">
+        <div class="modal-content !p-0 rounded-lg overflow-hidden w-full max-w-3xl">
 
-    <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div class="rounded-xl w-full max-w-6xl p-10 space-y-10 flex flex-col items-start gap-x-6">
+            <div class="modal-header relative flex justify-center items-center px-6 py-4 bg-[#8CCE47]">
+                <h4 class="font-bold text-xl text-white">오답 노트</h4>
+                <button class="close-modal-btn absolute top-1/2 right-4 -translate-y-1/2 text-white/70 hover:text-white text-4xl transition-colors">&times;</button>
+            </div>
 
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-7 bg-blue-500 rounded"></div>
-                        <h1 class="text-2xl font-bold text-gray-800">학습 레포트</h1>
-                    </div>
+            <div class="p-6">
+                <div class="mb-4 text-right space-x-2">
+                    <button data-sort="recent" class="wrong-sort-btn text-sm font-semibold text-blue-600">최근순</button>
+                    <button data-sort="frequency" class="wrong-sort-btn text-sm font-semibold text-gray-500">빈도순</button>
+                </div>
+
+                <div class="max-h-96 overflow-y-auto border rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-sm text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 whitespace-nowrap">단어/문장</th>
+                            <th scope="col" class="px-6 py-3 whitespace-nowrap">뜻</th>
+                            <th scope="col" class="px-2 py-1 text-center whitespace-nowrap ">오답 횟수</th>
+                            <th scope="col" class="px-6 py-3 text-right whitespace-nowrap">마지막 복습일</th>
+                        </tr>
+                        </thead>
+                        <tbody id="wrong-answer-list">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 items-start justify-center p-8 sm:p-6 lg:p-8  max-w-screen-xl mx-auto">
+        <div class="rounded-xl w-full max-w-6xl p-10 space-y-20 flex flex-col items-start gap-x-20 mx-auto">
+
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-7 bg-green-500 rounded"></div>
+                <h1 class="text-2xl font-bold text-gray-800">학습 레포트</h1>
+            </div>
 
             <div class="flex gap-6">
-                <div class="bg-blue-100 p-6 rounded-lg w-80">
+                <div class="bg-green-50 p-6 rounded-lg w-80">
                     <p class="text-gray-600 font-bold">주간 학습 수</p>
                     <strong id="weekly-review-count" class="text-3xl font-bold text-blue-800" th:text="${report.weekReviews ?: 0}">0</strong>
                 </div>
 
-                <div class="bg-red-100 p-6 rounded-lg w-80">
+                <div class="bg-green-50 p-6 rounded-lg w-80">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-gray-600 font-bold">주간 오답 수</p>
@@ -269,63 +304,38 @@
                         </button>
                     </div>
                 </div>
+                <div class="bg-green-50 p-6 rounded-lg w-80">
+                    <p class="text-gray-600 font-bold">Cheer UP!!</p>
+                </div>
+                <div class="bg-green-50 p-6 rounded-lg w-80">
+                    <p class="text-gray-600 font-bold">Learn More...</p>
+                </div>
             </div>
 
-            <div class="h-5"></div>
-                    <section class="mt-[400px]">
-                        <div class="bg-gray-100 rounded-lg p-4">
-                            <div class="flex items-end space-x-4 ">
-                                <div style="writing-mode: vertical-rl;transform: rotate(180deg);font-size: 45px;line-height: 11px; height: 77px; /* 11px * 7줄 */
+
+            <section class="mt-20">
+                <div class="bg-gray-100 rounded-lg p-4">
+                    <div class="flex items-end space-x-4 ">
+                        <div style="writing-mode: vertical-rl;transform: rotate(180deg);font-size: 50px;line-height: 11px; height: 77px; /* 11px * 7줄 */
                                 color: #4b5563; margin-right: 20px; user-select: none;">
-                                    <span th:text="${#dates.format(new java.util.Date(), 'yyyy')}"></span>
-                                </div>
-
-                                <div>
-                                    <div class="grid grid-rows-7 gap-[4px] text-center text-xs text-gray-600 flex-shrink-0"
-                                         style="grid-template-rows: repeat(7, 12px); width: 14px;">
-                                        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
-                                    </div>
-                                </div>
-
-                                <div id="cal-heatmap" style="margin-left:2px; flex-grow:1;"></div>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <!--오답 모달창-->
-                <div id="wrong-answer-modal" class="modal-overlay hidden">
-                    <div class="modal-content !p-0 rounded-lg overflow-hidden w-full max-w-3xl">
-
-                        <div class="modal-header relative flex justify-center items-center px-6 py-4 bg-[#8CCE47]">
-                            <h4 class="font-bold text-xl text-white">오답 노트</h4>
-                            <button class="close-modal-btn absolute top-1/2 right-4 -translate-y-1/2 text-white/70 hover:text-white text-4xl transition-colors">&times;</button>
+                            <span th:text="${#dates.format(new java.util.Date(), 'yyyy')}"></span>
                         </div>
 
-                        <div class="p-6">
-                            <div class="mb-4 text-right space-x-2">
-                                <button data-sort="recent" class="wrong-sort-btn text-sm font-semibold text-blue-600">최근순</button>
-                                <button data-sort="frequency" class="wrong-sort-btn text-sm font-semibold text-gray-500">빈도순</button>
-                            </div>
-
-                            <div class="max-h-96 overflow-y-auto border rounded-lg">
-                                <table class="w-full text-sm text-left text-gray-500">
-                                    <thead class="text-sm text-gray-700 uppercase bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 whitespace-nowrap">단어/문장</th>
-                                        <th scope="col" class="px-6 py-3 whitespace-nowrap">뜻</th>
-                                        <th scope="col" class="px-2 py-1 text-center whitespace-nowrap ">오답 횟수</th>
-                                        <th scope="col" class="px-6 py-3 text-right whitespace-nowrap">마지막 복습일</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="wrong-answer-list">
-                                    </tbody>
-                                </table>
+                        <div>
+                            <div class="grid grid-rows-7 gap-[8px] text-center text-md text-gray-600 flex-shrink-0"
+                                 style="grid-template-rows: repeat(7, 12px); width: 12px;">
+                                <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
                             </div>
                         </div>
+
+                        <div id="cal-heatmap" style="margin-left:2px; flex-grow:1;"></div>
                     </div>
                 </div>
-            </div>
+            </section>
+        </div>
+
+
+    </div>
 
 </th:block>
 </html>

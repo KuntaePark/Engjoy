@@ -3,6 +3,7 @@ package com.engjoy.control;
 import com.engjoy.dto.IncorrectExprDto;
 import com.engjoy.dto.ReportDataDto;
 import com.engjoy.entity.Account;
+import com.engjoy.repository.AccountRepository;
 import com.engjoy.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -20,21 +21,21 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReportController {
     private final ReportService reportService;
+    private final AccountRepository accountRepository;
 
     @GetMapping
     public String getReportPage(Principal principal, Model model){
-        //        Account account = accountRepository.findByUsername(principal.getName())
-        //                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-//        Account account = new Account();
-//        account.setId(1L);
-//        account.setName(principal.getName());
-
-        Long testAccountId = 1L;
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
 
         int currentYear = Year.now().getValue(); // 현재 년도 히트맵
 
-        ReportDataDto report = reportService.getReportData(testAccountId);
+        ReportDataDto report = reportService.getReportData(accountId);
         model.addAttribute("report",report);
         model.addAttribute("currentYear", currentYear);
         return "report";
@@ -43,7 +44,13 @@ public class ReportController {
     @GetMapping("/wrong")
     @ResponseBody
     public List<IncorrectExprDto> getWrongAnswers(Principal principal){
-        Long testAccountId = 1L;
-        return reportService.getWrongList(testAccountId);
+        if (principal == null) {
+            throw new SecurityException("로그인이 필요합니다.");
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
+        return reportService.getWrongList(accountId);
     }
 }

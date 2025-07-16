@@ -29,7 +29,7 @@ public class ExpressionService {
     private final ExprFavoritesRepository exprFavoritesRepository;
     private final WordInfoRepository wordInfoRepository;
     private final IncorrectExprRepository incorrectExprRepository;
-//    private final AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
     // 사용자의 전체 단어장 페이지 조회 or 필터링된 카드 목록 페이징 반환
     public Page<ExpressionDto> getExpressions(Long accountId, ExpressionSearchDto expressionSearchDto, Pageable pageable){
@@ -71,14 +71,6 @@ public class ExpressionService {
                 pageable
         );
 
-        // --- 👇 테스트용 비상 플랜 추가 ---
-        // 2. 만약 위 쿼리 결과가 비어있다면, 학습 이력과 상관없이 전체 단어장에서 데이터를 가져오기
-        if (expressionPage.isEmpty()) {
-            System.out.println("⚠️ 테스트: 학습 이력이 없어 전체 단어장에서 데이터를 가져옵니다.");
-            // 필터 조건 없이 findAll로 모든 단어를 페이징해서 가져옴
-            expressionPage = expressionRepository.findAll(pageable);
-        }
-        // ---
 
         // DTO 변환 로직은 그대로 유지 (N+1 문제 해결 버전)
         List<Expression> expressions = expressionPage.getContent();
@@ -92,9 +84,6 @@ public class ExpressionService {
         return expressionPage.map(expression -> {
             boolean isFavorite = favoriteIds.contains(expression.getId());
             boolean isUsed = usedIds.contains(expression.getId());
-
-            // 이 부분은 이제 필요 없으므로 삭제하거나, 다른 용도로 사용합니다.
-            // LocalDate date = ...
 
             return ExpressionDto.from(expression, isFavorite, isUsed, null);
         });
@@ -111,19 +100,21 @@ public class ExpressionService {
     // 특정 단어/문장에 대한 사용자의 즐겨찾기 상태 토글(없으면 생성,있으면 삭제)
     @Transactional
     public boolean toggleFavoriteStatus(Long accountId, Long exprId){
-//        Account account = accountRepository.findById(accountId)
-//                .orElseThrow(()->new IllegalArgumentException("해당 ID가 존재하지 않습니다."));
-        Account account = new Account();
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         account.setId(accountId);
         Expression expression = expressionRepository.findById(exprId)
                 .orElseThrow(()->new IllegalArgumentException("해당 ID에 관한 표현이 없습니다."));
         Optional<ExprFavorites> existingFavorite = exprFavoritesRepository.findByAccountAndExpression(account,expression);
 
-        if (existingFavorite.isPresent()){
+        if (existingFavorite.isPresent()) {
+            // 이미 즐겨찾기 되어 있으면 삭제
             exprFavoritesRepository.delete(existingFavorite.get());
             return false;
-        }else{
-            ExprFavorites newFavorite = ExprFavorites.of(account,expression);
+        } else {
+            // 아니라면 새로 생성하고 저장
+            ExprFavorites newFav = ExprFavorites.of(account, expression);
+            exprFavoritesRepository.save(newFav);
             return true;
         }
     }
@@ -174,14 +165,6 @@ public class ExpressionService {
             );
         }
 
-        // ▼▼▼ [핵심] 날짜를 업데이트하는 로직을 여기서 완전히 제거합니다. ▼▼▼
-    /*
-    if (!recommendations.isEmpty()) {
-        recommendations.forEach(IncorrectExpr::updateLastRecommendedDate);
-    }
-    */
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
         // DTO 리스트로 변환하여 반환
         return recommendations.stream()
                 .map(IncorrectExpr::getExpression)
@@ -208,9 +191,8 @@ public class ExpressionService {
         incorrectExpr.setLastRecommendedDate(LocalDate.now());
         incorrectExprRepository.save(incorrectExpr); // 명시적으로 저장
 
-        System.out.printf("✅ [추천 숨김] 문제 ID: %d의 마지막 추천일이 오늘로 업데이트되었습니다.%n", expressionId);
+        System.out.printf("[추천 숨김] 문제 ID: %d의 마지막 추천일이 오늘로 업데이트되었습니다.%n", expressionId);
     }
-
 
 
     // 정답을 제외한 나머지 단어 뜻에서 지정된 개수만큼 무작위로 오답 보기 생성(퀴즈 및 인쇄)

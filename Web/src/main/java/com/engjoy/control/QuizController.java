@@ -1,11 +1,13 @@
 package com.engjoy.control;
 
 import com.engjoy.dto.*;
+import com.engjoy.entity.Account;
+import com.engjoy.repository.AccountRepository;
 import com.engjoy.service.QuizService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class QuizController {
     private final QuizService quizService;
     private static final String QUIZ_STATE = "QUIZ_STATE";
+    private final AccountRepository accountRepository;
 
     // 퀴즈 설정 페이지
     @GetMapping("/setting")
@@ -29,10 +32,6 @@ public class QuizController {
         return "quizSetting";
     }
 
-    @ModelAttribute
-    public void addCsrfToken(Model model, CsrfToken token){
-        model.addAttribute("_csrf", token);
-    }
 
     // 퀴즈 생성 및 시작
     @PostMapping("/start")
@@ -42,11 +41,15 @@ public class QuizController {
                           RedirectAttributes redirectAttributes){
         System.out.println("[Controller] 폼에서 받은 카테고리: " + quizSettingDto.getCategory());
 
-//        Account account = accountRepository.findByUsername(principal.getName())
-//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        Long testAccountId = 1L;
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
 
-        QuizPageDto quizState = quizService.createQuizQuestions(testAccountId,quizSettingDto);
+        QuizPageDto quizState = quizService.createQuizQuestions(accountId,quizSettingDto);
 
         if (quizState.getQuestions().isEmpty()) {
             // 3. 문제가 없으면, 알림 메시지를 담아서 설정 페이지로 "돌려보냄"
@@ -59,8 +62,6 @@ public class QuizController {
         if (quizState.getNotifyMsg() != null ) {
             redirectAttributes.addFlashAttribute("notifyMsg", quizState.getNotifyMsg());
         }
-
-
 
         return "redirect:/quiz/take";
     }
@@ -100,10 +101,14 @@ public class QuizController {
         if(quizState==null){
             return ResponseEntity.badRequest().build();
         }
-        //        Account account = accountRepository.findByUsername(principal.getName())
-//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        Long testAccountId = 1L;
-        QuizGradedDto gradedResult = quizService.gradeQuizAnswer(testAccountId, quizAnsweredDto, session);
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
+        QuizGradedDto gradedResult = quizService.gradeQuizAnswer(accountId, quizAnsweredDto, session);
         return ResponseEntity.ok(gradedResult);
     }
 
@@ -111,10 +116,15 @@ public class QuizController {
     @GetMapping("/result")
     @ResponseBody
     public QuizResultDto quizResult(Principal principal, HttpSession session){
-//        Account account = accountRepository.findByUsername(principal.getName())
-//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        Long testAccountId = 1L;
-        QuizResultDto finalResult = quizService.calculateQuizResult(testAccountId,session);
+        if (principal == null) {
+            throw new SecurityException("로그인이 필요합니다.");
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
+
+        QuizResultDto finalResult = quizService.calculateQuizResult(accountId,session);
 
         return finalResult;
     }
@@ -132,11 +142,18 @@ public class QuizController {
     public ResponseEntity<Map<String, Object>> checkQuizAvailability(
             QuizSettingDto quizSettingDto, Principal principal) {
 
-        Long testAccountId = 1L; // 실제 사용자 ID 로직으로 교체 필요
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
+
         Map<String, Object> response = new HashMap<>();
 
         // 1. 기존의 createQuizQuestions 메서드를 그대로 호출하여 퀴즈 정보를 미리 받아옵니다.
-        QuizPageDto quizInfo = quizService.createQuizQuestions(testAccountId, quizSettingDto);
+        QuizPageDto quizInfo = quizService.createQuizQuestions(accountId, quizSettingDto);
 
         // 2. 받아온 퀴즈 정보(quizInfo)를 바탕으로 상태를 결정합니다.
         if (quizInfo.getQuestions().isEmpty()) {

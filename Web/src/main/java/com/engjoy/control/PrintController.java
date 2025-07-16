@@ -1,9 +1,12 @@
 package com.engjoy.control;
 
 import com.engjoy.dto.PrintOptionDto;
+import com.engjoy.entity.Account;
+import com.engjoy.repository.AccountRepository;
 import com.engjoy.service.PrintService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -20,6 +23,7 @@ import java.security.Principal;
 @RequiredArgsConstructor
 public class PrintController {
     private final PrintService printService;
+    private final AccountRepository accountRepository;
 
     // 인쇄 옵션 설정 페이지
     @GetMapping("/setting")
@@ -33,8 +37,15 @@ public class PrintController {
             @RequestBody PrintOptionDto printOptionDto,
             Principal principal
             ) throws IOException{
-        Long testAccountId = 1L;
-        byte[] pdfBytes = printService.createPrintablePdf(printOptionDto, testAccountId);
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String userEmail = principal.getName();
+        Account account = accountRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Long accountId = account.getId();
+
+        byte[] pdfBytes = printService.createPrintablePdf(printOptionDto, accountId);
 
         // HTTP 응답 헤더 설정
         HttpHeaders headers = new HttpHeaders();

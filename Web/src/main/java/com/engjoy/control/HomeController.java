@@ -150,4 +150,5 @@ public class HomeController {
         boolean exists = accountService.existsByNickname(nickname);
         return Map.of("exists", exists);
     }
+
 }

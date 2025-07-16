@@ -2,7 +2,7 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            background-color: black;
+            background-color: #131f24;
         }
 
         #wrapper{
@@ -34,7 +34,8 @@
         font-size: 14px;
     }
     #btn input[type="submit"]{
-        background-color: #4cf54c
+    border-radius: 5px;
+        background-color: #8CCE47
     }
 
     #link a {
@@ -57,7 +58,6 @@
 
 
     #container{
-        border: 1px solid black;
         border-radius:5px;
         padding: 20px;
         width:350px;
@@ -72,7 +72,7 @@
      display: flex;
      justify-content: space-between;
      align-items: center;
-     background-color: #2f3e46;
+     background-color: #37464f;
      height: 90px;
      padding: 0 40px;
      position: fixed;
