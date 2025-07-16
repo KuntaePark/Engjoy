@@ -6,6 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(AudioSource))]
 public class ResultUIManager : MonoBehaviour
 {
 
@@ -30,6 +31,10 @@ public class ResultUIManager : MonoBehaviour
     //public Button backToLobbyButton; //로비로 버튼
     //public Button againButton; //한판더 버튼
 
+    [Header("Sound Effects")]
+    [SerializeField] private AudioClip gameOverSound; // 게임오버 텍스트 등장 시 재생할 사운드
+    private AudioSource audioSource;
+
 
 
     private void Awake()
@@ -47,6 +52,8 @@ public class ResultUIManager : MonoBehaviour
         {
             resultPanel.SetActive(false);
         }
+
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void Start()
@@ -108,6 +115,11 @@ public class ResultUIManager : MonoBehaviour
         //Game Over 텍스트 띄우기
         if (gameOverText != null)
         {
+            if (audioSource != null && gameOverSound != null)
+            {
+                audioSource.PlayOneShot(gameOverSound);
+            }
+
             gameOverText.SetActive(true);
             yield return StartCoroutine(ShakeObjectCoroutine(gameOverText, 0.15f, 15f));
         }
