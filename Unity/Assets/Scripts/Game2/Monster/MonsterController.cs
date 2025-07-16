@@ -24,7 +24,11 @@ public class MonsterController : MonoBehaviour
 
     private Coroutine takeDamageCoroutine;
     [SerializeField] private Material flashMaterial;
-    private Material originalMaterial; 
+    private Material originalMaterial;
+
+    [SerializeField] private AudioClip takeDamageSound;
+    private AudioSource audioSource;
+
 
 
     public void Awake()
@@ -35,6 +39,8 @@ public class MonsterController : MonoBehaviour
         {
             originalMaterial = spriteRenderer.material; 
         }
+
+        audioSource = GetComponent<AudioSource>();
     }
 
 
@@ -102,6 +108,8 @@ public class MonsterController : MonoBehaviour
         float duration = 0.14f;
         float bounceAmount = 1.2f;
         Vector3 originalScale = transform.localScale;
+
+        audioSource.PlayOneShot(takeDamageSound);
 
         if(flashMaterial != null)
         {

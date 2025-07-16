@@ -29,6 +29,10 @@ public class LobbyPlayerController : MonoBehaviour
 
     public string curState = "move";
 
+    //audio
+    [SerializeField] private AudioClip[] attackSound;
+    private AudioSource audioSource;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -53,6 +57,8 @@ public class LobbyPlayerController : MonoBehaviour
             }));
         }
 
+        audioSource = GetComponent<AudioSource>();
+
     }
 
     // Update is called once per frame
@@ -72,6 +78,10 @@ public class LobbyPlayerController : MonoBehaviour
                 Debug.Log("interact");
                 characterRenderer.weaponAnimator.SetTrigger("Swing");
                 lobbyClient.Send("input_interact", "");
+
+                int randomIndex = UnityEngine.Random.Range(0, attackSound.Length);
+
+                audioSource.PlayOneShot(attackSound[randomIndex]);
             }
 
             if(!isTestDummy)

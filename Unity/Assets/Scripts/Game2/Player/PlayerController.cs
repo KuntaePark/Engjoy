@@ -11,11 +11,11 @@ using WebSocketSharp;
 public class PlayerController : MonoBehaviour
 {
 
-    [Header("Sprites")]
-    public Material hitFlashMaterial; //피격 시 머터리얼
-    private Sprite originalSprite; //원래 스프라이트
+    //[Header("Sprites")]
+    //public Material hitFlashMaterial; //피격 시 머터리얼
+    //private Material originalMaterial;
 
-    private bool isFacingRight = true;
+    //private bool isFacingRight = true;
 
     public long Id { get; private set; } = -1;
     public bool IsHoldingKeyword { get; private set; }
@@ -54,11 +54,17 @@ public class PlayerController : MonoBehaviour
     private bool canInteractWithKeyword; //키워드
     private bool canInteractWithExit; //출구
 
-    UIManager uiManager; //UIManager 스크립트 참조
+    //UIManager uiManager; //UIManager 스크립트 참조
 
-    WsClient wsClient; //wsClient 참조
+    //WsClient wsClient; //wsClient 참조
 
+    [Header("Sound Effects")]
+    [SerializeField] private AudioClip[] attackSound;
+    [SerializeField] private AudioClip takeDamageSound;
+    [SerializeField] private AudioClip deadSound;
+    [SerializeField] private AudioClip useItemSound;
 
+    private AudioSource audioSource;
 
     private void Awake()
     {
@@ -91,7 +97,6 @@ public class PlayerController : MonoBehaviour
         ani = characterRenderer.bodyAnimator;
 
         spriteRenderer = characterRenderer.bodyInstance.GetComponent<SpriteRenderer>();
-        originalSprite = spriteRenderer.sprite; //시작할 떄 원래 스프라이트
 
         if (IsMine)
         {
@@ -102,6 +107,9 @@ public class PlayerController : MonoBehaviour
 
         //받은 데이터로 최초 상태 업데이트
         UpdateVisuals(initialData);
+
+
+        audioSource = GetComponent<AudioSource>();
     }
 
 
@@ -121,6 +129,7 @@ public class PlayerController : MonoBehaviour
 
         if (data.isDown)
         {
+            audioSource.PlayOneShot(deadSound);
             ani.SetTrigger("dead");
         }
 
@@ -141,6 +150,15 @@ public class PlayerController : MonoBehaviour
         else if (data.inputH > 0)
         {
             gameObject.transform.localScale = new Vector3(1, 1, 1);
+        }
+
+        if(data.hp < this.currentHP)
+        {
+            if(ani != null)
+            {
+                ani.SetTrigger("hit");
+                audioSource.PlayOneShot(takeDamageSound);
+            }
         }
 
         //목표 위치 갱신
@@ -276,6 +294,10 @@ public class PlayerController : MonoBehaviour
                 //즉각적인 시각적 효과를 위한 코루틴
                 characterRenderer.weaponAnimator.SetTrigger("Swing");
 
+                int randomIndex = UnityEngine.Random.Range(0, attackSound.Length);
+
+                audioSource.PlayOneShot(attackSound[randomIndex]);
+
                 Debug.Log("Attack input sent to server.");
             }
             else
@@ -291,18 +313,33 @@ public class PlayerController : MonoBehaviour
             var payload = new { itemType = "potion" };
             WsClient.Instance.Send("useItem", JsonConvert.SerializeObject(payload));
             Debug.Log("Sent request to use HP Potion");
+
+            if(useItemSound != null && this.currentHP < 3)
+            {
+                audioSource.PlayOneShot(useItemSound);
+            }
         }
         if (Input.GetKeyDown(KeyCode.S))
         {
             var payload = new { itemType = "buff" };
             WsClient.Instance.Send("useItem", JsonConvert.SerializeObject(payload));
             Debug.Log("Sent request to use Buff");
+
+            if (useItemSound != null && !isBuffed)
+            {
+                audioSource.PlayOneShot(useItemSound);
+            }
         }
         if (Input.GetKeyDown(KeyCode.D))
         {
             var payload = new { itemType = "shield" };
             WsClient.Instance.Send("useItem", JsonConvert.SerializeObject(payload));
             Debug.Log("Sent request to use Shield");
+
+            if (useItemSound != null && !hasShield)
+            {
+                audioSource.PlayOneShot(useItemSound);
+            }
         }
     }
 }
