@@ -1,22 +1,13 @@
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+body {
+  margin: 0;
+  min-height: 100vh;
+}
 
     #intro {
       margin-left: 60px;
       line-height: 1.8;
     }
 
-    img {
-      width: 600px;
-      height: 550px;
-      display: block;
-      margin-right: 40px;
-    }
 
 
 .navbar {
@@ -79,13 +70,94 @@
     margin-left: 80px;
 }
 
-.battle-image{
-      width: 600px;
-      height: 600px;
-      object-fit: cover;
-      border-radius: 50%;
-      background-color: lightgray;
+/* 전역 img 제거함 */
+
+.battle-image {
+  width: 400px;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 50%;
+  background-color: lightgray;
+  margin-left: auto;
+  display: block;
 }
+
+
+.effect-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 40px;
+  gap: 40px;
+}
+
+#question {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.effect-left {
+  flex: 1;
+  text-align: center;
+}
+
+.effect-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.effect-slide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 50px;
+  margin-top: 10px;
+}
+.effect-slide img {
+  width: 140px;
+  height: auto;
+  object-fit: cover;
+}
+
+
+
+
+.effect-slide img.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.effect-right {
+  flex: 1;
+}
+
+.effect-list {
+  list-style: none;
+  padding-left: 0;
+  font-size: 18px;
+  line-height: 2;
+}
+
+.effect-note {
+  margin-top: 20px;
+  font-size: 14px;
+  color: gray;
+}
+
+.intro-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 60px 60px 40px 60px;
+  margin-top: 100px;
+  margin-bottom: 600px;
+  gap:220px;
+}
+
+
+
 
 
 
