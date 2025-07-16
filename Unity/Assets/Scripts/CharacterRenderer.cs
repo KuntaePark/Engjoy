@@ -21,25 +21,26 @@ public class CharacterRenderer : MonoBehaviour
     public int bodyTypeIndex = 0; //몸통 타입 인덱스
     public int weaponTypeIndex = 0; //무기 타입 인덱스
 
-
+    public GameObject bodyInstance;
+    public GameObject weaponInstance;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public void SetBody(int bodyTypeIndex)
     {
         string bodyType = "body_type_" + (bodyTypeIndex + 1).ToString("D3");
         GameObject bodyPrefab = Resources.Load<GameObject>("Character/Body/" + bodyType);
-        if(bodyPrefab == null)
+        if (bodyPrefab == null)
         {
             Debug.LogError("Body prefab not found: " + bodyType);
             return;
@@ -54,6 +55,7 @@ public class CharacterRenderer : MonoBehaviour
             this.bodyTypeIndex = bodyTypeIndex; // Update body type index
             GameObject bodyObject = Instantiate(bodyPrefab, Vector3.zero, Quaternion.identity);
             bodyObject.transform.SetParent(BodyPlacer.transform, false);
+            bodyInstance = bodyObject;
             bodyAnimator = bodyObject.GetComponent<Animator>();
         }
     }
@@ -62,7 +64,7 @@ public class CharacterRenderer : MonoBehaviour
     {
         string weaponType = "weapon_type_" + (weaponTypeIndex + 1).ToString("D3");
         GameObject weaponPrefab = Resources.Load<GameObject>("Character/Weapon/" + weaponType);
-        if(weaponPrefab == null)
+        if (weaponPrefab == null)
         {
             Debug.LogError("Weapon prefab not found: " + weaponType);
             return;
@@ -77,6 +79,7 @@ public class CharacterRenderer : MonoBehaviour
             this.weaponTypeIndex = weaponTypeIndex; // Update weapon type index
             GameObject weaponObject = Instantiate(weaponPrefab, Vector3.zero, Quaternion.identity);
             weaponObject.transform.SetParent(WeaponPlacer.transform, false);
+            weaponInstance = weaponObject;
             weaponAnimator = weaponObject.GetComponent<Animator>();
         }
     }

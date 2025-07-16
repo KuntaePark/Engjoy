@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 125757928331144214}
   - component: {fileID: 2763414270164523995}
   - component: {fileID: 4859017775891958731}
-  - component: {fileID: 2530856713635350398}
   m_Layer: 5
   m_Name: GameStartUI
   m_TagString: Untagged
@@ -112,23 +111,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4644463276219290}
   m_CullTransparentMesh: 1
---- !u!114 &2530856713635350398
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4644463276219290}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5055f2e6a4abd6942a86175808f4e5e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  matchClient: {fileID: 0}
-  gameStartButton: {fileID: 5376056021858585671}
-  gameStartButtonText: {fileID: 9214177091540771649}
-  scoreText: {fileID: 4334407460441487246}
-  rankingText: {fileID: 7538074461853852640}
 --- !u!1 &210905947448255448
 GameObject:
   m_ObjectHideFlags: 0

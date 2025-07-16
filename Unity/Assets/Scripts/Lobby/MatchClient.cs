@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DataForm;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public class MatchClient : WebSocketClient
 {
@@ -25,11 +26,19 @@ public class MatchClient : WebSocketClient
 
     public override void handlePacket(string type, string payload)
     {
-        switch(type)
+        switch (type)
         {
             case "match_success":
                 //매칭 성공, 게임 화면 로드
-                SceneController.Instance.loadScene("game1Scene");
+                int gameId = JsonConvert.DeserializeObject<int>(payload);
+                if (gameId == 0)
+                {
+                    SceneController.Instance.loadScene("game1Scene");
+                }
+                else if (gameId == 1)
+                {
+                    SceneController.Instance.loadScene("Game2-MatchingRoom");
+                }
                 break;
             default:
                 Debug.Log("unknown packet type.");

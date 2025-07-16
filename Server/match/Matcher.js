@@ -1,49 +1,13 @@
 const WebSocket = require('ws');
 const {makePacket} = require('../common/Packet');
-const { json } = require('express');
 
 const matchServerId = 'MATCHSERVER';
 const gameServerAddr = 'ws://localhost:7778';
 
 class Matcher {
-    constructor() {
+    constructor(gameServerAddr) {
         this.matchQueue = [];
-        this.game1ws = this.connectToGameServer();
-    }
-
-    connectToGameServer() {
-        //게임 서버 연결
-        const game1ws = new WebSocket(gameServerAddr);
-
-        game1ws.on('open',() => {
-            console.log('connection to game 1 server successful.');
-            game1ws.send(makePacket('auth',{id: matchServerId}));
-        });
-
-        game1ws.on('message',(message) => {
-            const {type, payload} = JSON.parse(message);
-        });
-
-        game1ws.on('close', (code, reason) => {
-            console.log(`connection to game server has been closed.`);
-            this.tryReconnect();
-        });
-
-        game1ws.on('error', (err) => {
-            console.log(`error occurred while connecting to game server.`);
-        });
-
-        return game1ws;
-    }
-
-
-    //연결 종료 시 5초마다 연결 재시도
-    tryReconnect() {
-        console.log(`try reconnect in 5 seconds...`)
-        setTimeout(() => {
-            console.log(`trying reconnect...`);
-            this.game1ws = this.connectToGameServer();
-        }, 5000);
+        this.serverSocket = new ServerSocket(gameServerAddr);
     }
 
     findMatch(ws) {
@@ -69,14 +33,59 @@ class Matcher {
     }
 
     requestSessionCreate(ws1, ws2) {
-        this.game1ws.send(makePacket('create_session',{ids: [ws1.id, ws2.id]}));
+        this.serverSocket.send(makePacket('create_session',{ids: [ws1.id, ws2.id]}));
         //해당 유저들에게 세션 생성이 요청되었음을 알림
         //해당 유저는 매칭 성공 알림을 받고 게임 서버 접속 시도
-        ws1.send(makePacket('match_success', ''));
-        ws2.send(makePacket('match_success', ''));
-        
+        // ** 주의 ** 게임 서버 쪽 허용이 종료되기 전에 접속할 가능성 있음
+        ws1.send(makePacket('match_success', 0));
+        ws2.send(makePacket('match_success', 0));
     }
-
 };
 
-module.exports = {Matcher};
+class ServerSocket {
+    constructor(serverAddr) {
+        this.serverAddr = serverAddr;
+        this.serverSocket = this.connectToServer(this.serverAddr);
+    }
+
+    connectToServer(serverAddr) {
+        //게임 서버 연결
+        const serverSocket = new WebSocket(serverAddr);
+
+        serverSocket.on('open',() => {
+            console.log('connection to game server successful.');
+         serverSocket.send(makePacket('auth',{id: matchServerId}));
+        });
+
+        serverSocket.on('message',(message) => {
+            const {type, payload} = JSON.parse(message);
+        });
+
+        serverSocket.on('close', (code, reason) => {
+            console.log(`connection to game server has been closed.`);
+            this.tryReconnect();
+        });
+
+        serverSocket.on('error', (err) => {
+            console.log(`error occurred while connecting to game server.`);
+        });
+
+        return serverSocket;
+    }
+
+
+    //연결 종료 시 5초마다 연결 재시도
+    tryReconnect() {
+        console.log(`try reconnect in 5 seconds...`)
+        setTimeout(() => {
+            console.log(`trying reconnect...`);
+            this.serverSocket = this.connectToServer(this.serverAddr);
+        }, 5000);
+    }
+
+    send(packet) {
+        this.serverSocket.send(packet);
+    }
+}
+
+module.exports = {Matcher, ServerSocket};
