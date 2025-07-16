@@ -67,12 +67,6 @@ public class LobbyPlayerManager : MonoBehaviour
                 characterRenderer.SetBody(data.bodyTypeIndex);
                 characterRenderer.SetWeapon(data.weaponTypeIndex);
                 players.Add(playerId, newPlayer);
-
-                if(playerId == DataManager.Instance.id)
-                {
-                    //카메라 부착
-                    Camera.main.gameObject.transform.SetParent(newPlayer.transform, false);
-                }
             }
             else
             {

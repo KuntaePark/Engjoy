@@ -30,6 +30,11 @@ public class ResultUIManager : MonoBehaviour
     //public Button backToLobbyButton; //로비로 버튼
     //public Button againButton; //한판더 버튼
 
+    [Header("Sound Effects")]
+    [SerializeField] private AudioClip gameOverSound; //UI 켜질때 소리
+
+    private AudioSource audioSource;
+
 
 
     private void Awake()
@@ -47,6 +52,8 @@ public class ResultUIManager : MonoBehaviour
         {
             resultPanel.SetActive(false);
         }
+
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void Start()
@@ -108,6 +115,12 @@ public class ResultUIManager : MonoBehaviour
         //Game Over 텍스트 띄우기
         if (gameOverText != null)
         {
+
+            if (audioSource != null && gameOverSound != null)
+            {
+                audioSource.PlayOneShot(gameOverSound);
+            }
+
             gameOverText.SetActive(true);
             yield return StartCoroutine(ShakeObjectCoroutine(gameOverText, 0.15f, 15f));
         }

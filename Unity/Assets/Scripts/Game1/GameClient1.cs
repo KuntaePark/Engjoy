@@ -4,7 +4,6 @@ using UnityEngine;
 using Newtonsoft.Json;
 
 using DataForm;
-using Newtonsoft.Json.Linq;
 
 /*
  * 게임 1 전용 웹소켓 연결
@@ -53,8 +52,8 @@ public class GameClient1 : WebSocketClient
             case "gameEnd":
                 //게임 종료 메시지를 받았을 때
                 Debug.Log("Game ended: " + payload);
-                JObject gameEndData = JsonConvert.DeserializeObject<JObject>(payload);
-                game1Manager.endGame(gameEndData);
+                int winnerIdx = JsonConvert.DeserializeObject<int>(payload);
+                game1Manager.endGame(winnerIdx);
                 break;
             case "auth_unauthorized":
                 //인증 실패 메시지를 받았을 때

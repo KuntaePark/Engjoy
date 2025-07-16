@@ -27,6 +27,8 @@ public class ExitUIManager : MonoBehaviour
             Debug.LogError($"<color=red>Duplicate UIManager found on: {gameObject.name}! This is trying to destroy the Canvas!</color>");
             Destroy(transform.root.gameObject);
         }
+
+
     }
 
     private void Start()

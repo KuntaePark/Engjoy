@@ -78,7 +78,7 @@ public class EffectController : MonoBehaviour
                     }
                 }
 
-                if (player.castEnd && !player.castFail && Projectiles[player.idx] == null)
+                if (player.castEnd && Projectiles[player.idx] == null)
                 {
                     switch (player.currentAction)
                     {
@@ -136,7 +136,7 @@ public class EffectController : MonoBehaviour
         GameObject projectile = Instantiate(ProjectilePrefab, MagicPlaceholder[idx].position, Quaternion.identity);
         Debug.Log("Projectile created for player " + idx + " at position: " + MagicPlaceholder[idx].position);
         //0이면 정방향, 1이면 역방향
-        projectile.transform.localScale = new Vector3(1.0f * Mathf.Sign(0.5f - idx), 1.0f, 1.0f);
+        projectile.transform.localScale = new Vector3(1.0f * Mathf.Sign(0.5f - idx), 1.0f, 1.0f) * (1.0f + ((float)strengthLevel - 1.0f)* projectileScaleFactor);
         Debug.Log("Projectile scale set to: " + projectile.transform.localScale);
         Projectiles[idx] = projectile;
         projectileElapsed[idx] = 0.0f; //투사체 시간 초기화

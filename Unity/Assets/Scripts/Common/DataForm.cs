@@ -85,7 +85,6 @@ namespace DataForm
         public bool isCharging = false;
         public bool isCasting = false;
         public bool castEnd = false;
-        public bool castFail = false;
 
         //커스터마이징 관련
         public int bodyTypeIndex = 0; //몸통 타입 인덱스

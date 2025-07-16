@@ -7,13 +7,20 @@ using System.Runtime.CompilerServices;
 using WebSocketSharp;
 
 
-
+[RequireComponent(typeof(AudioSource))]
 public class PlayerController : MonoBehaviour
 {
 
     [Header("Sprites")]
     public Material hitFlashMaterial; //피격 시 머터리얼
-    private Sprite originalSprite; //원래 스프라이트
+    private Material originalMaterial;
+
+    [Header("Sound Effects")]
+    //[SerializeField] private AudioClip attackSound;
+    [SerializeField] private AudioClip takeDamageSound;
+    [SerializeField] private AudioClip useItemSound;
+
+    private AudioSource audioSource; // 사운드 재생기
 
     private bool isFacingRight = true;
 
@@ -62,7 +69,13 @@ public class PlayerController : MonoBehaviour
     {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         ani = GetComponentInChildren<Animator>();
-        originalSprite = spriteRenderer.sprite; //시작할 떄 원래 스프라이트
+
+        if (spriteRenderer != null)
+        {
+            originalMaterial = spriteRenderer.material;
+        }
+
+        audioSource = GetComponent<AudioSource>();
     }
 
     // ============================== 초기화 (PlayerManager에서 호출) ============================== 
@@ -91,10 +104,17 @@ public class PlayerController : MonoBehaviour
             Debug.Log($"<color=lime>This is my character! ID: {this.Id}</color>");
         }
 
-   
 
-        //받은 데이터로 최초 상태 업데이트
-        UpdateVisuals(initialData);
+
+        //받은 데이터로 최초 상태 업데이트
+        UpdateVisuals(initialData);
+
+
+        this.currentHP = initialData.hp;
+        this.isBuffed = initialData.isBuffed;
+        this.hasShield = initialData.hasShield;
+        this.inventory = initialData.inventory;
+
     }
 
 
@@ -128,9 +148,34 @@ public class PlayerController : MonoBehaviour
         {
             isFacingRight = true;
         }
+        
+        //체력 깎이면
+        if (data.hp < this.currentHP)
+        {
+            StartCoroutine(TakeDamageEffectCoroutine());
+        } 
+        
+        //체력 회복되면
+        if (data.hp > this.currentHP)
+        {
+            if (useItemSound != null) audioSource.PlayOneShot(useItemSound);
 
-        //목표 위치 갱신
-        targetPosition = new Vector3(data.x, data.y, 0);
+        }
+
+        //버프 사용 성공 확인되면
+        if(!this.isBuffed && data.isBuffed)
+        {
+            if (useItemSound != null) audioSource.PlayOneShot(useItemSound);
+        }
+
+        //방어막 사용 성공 확인되면
+        if(!this.hasShield && data.hasShield)
+        {
+            if (useItemSound != null) audioSource.PlayOneShot(useItemSound);
+        }
+
+        //목표 위치 갱신
+        targetPosition = new Vector3(data.x, data.y, 0);
 
         //서버가 결정한 상호작용 가능 상태 갱신
         canInteractWithKeyword = data.interactableKeywordId != null;
@@ -295,6 +340,7 @@ public class PlayerController : MonoBehaviour
 
     private IEnumerator AttackEffectCoroutine()
     {
+
         if (spriteRenderer != null)
         {
             Color originalColor = spriteRenderer.color;
@@ -316,5 +362,26 @@ public class PlayerController : MonoBehaviour
         {
             spriteRenderer.flipX = !isFacingRight;
         }
+    }
+
+    private IEnumerator TakeDamageEffectCoroutine()
+    {
+        if (takeDamageSound != null) audioSource.PlayOneShot(takeDamageSound);
+
+
+        if (ani != null)
+        {
+            ani.SetTrigger("TakeDamage");
+        }
+
+
+        if (spriteRenderer == null || hitFlashMaterial == null) yield break;
+
+        spriteRenderer.material = hitFlashMaterial;
+
+        //0.1초동안
+        yield return new WaitForSeconds(0.1f);
+
+        spriteRenderer.material = originalMaterial;
     }
 }

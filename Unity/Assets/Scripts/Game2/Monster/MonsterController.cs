@@ -4,6 +4,7 @@ using DataForm;
 using TMPro;
 using UnityEngine;
 
+[RequireComponent(typeof(AudioSource))]
 public class MonsterController : MonoBehaviour
 {
    //현재 2025년 07월 02일 오전 10시 46분
@@ -16,8 +17,12 @@ public class MonsterController : MonoBehaviour
     public bool isActive { get; private set; }
 
 
-    [SerializeField] private TextMeshPro hpText; // ◀◀◀ HP를 표시할 텍스트 (테스트용_후에 HP바로 변경)
+    [SerializeField] private TextMeshPro hpText;
     private SpriteRenderer spriteRenderer;
+
+    [Header("Sound Effects")]
+    [SerializeField] private AudioClip takeDamageSound;
+    private AudioSource audioSource;
 
     private Vector3 targetPosition;
     private float positionLerpFactor = 15f;
@@ -35,6 +40,8 @@ public class MonsterController : MonoBehaviour
         {
             originalMaterial = spriteRenderer.material; 
         }
+
+        audioSource = GetComponent<AudioSource>();
     }
 
 
@@ -99,6 +106,10 @@ public class MonsterController : MonoBehaviour
 
     private IEnumerator TakeDamageEffect()
     {
+
+        if (takeDamageSound != null) audioSource.PlayOneShot(takeDamageSound);
+
+
         float duration = 0.14f;
         float bounceAmount = 1.2f;
         Vector3 originalScale = transform.localScale;
