@@ -29,8 +29,8 @@
 
             <div id="profile-box" sec:authorize="isAuthenticated()" class="relative flex items-center space-x-4">
                 <div class="flex flex-col text-sm text-white text-right">
-                    <span><b th:text="${nickname}">홍길동</b>님</span>
-                    <span th:text="${email}" class="text-gray-200">you@example.com</span>
+                    <span><b sec:authentication="principal.nickname">홍길동</b>님</span>
+                    <span sec:authentication="principal.email" class="text-gray-200">you@example.com</span>
                 </div>
                 <button id="profileBtn"
                         class="w-12 h-12 rounded-full bg-gray-200 hover:opacity-80">
@@ -38,7 +38,9 @@
                 <div id="dropdownMenu"
                      class="hidden absolute top-[100%] right-0 mt-2 w-32 bg-white border rounded shadow z-30">
                     <a th:href="@{/myPage}" class="block px-4 py-2 hover:bg-gray-100">마이페이지</a>
-                    <a th:href="@{/login}" class="block px-4 py-2 hover:bg-gray-100">로그아웃</a>
+                    <form th:action="@{/logout}" method="post"class="block px-4 py-2 hover:bg-gray-100">
+                        <button type="submit">로그아웃</button>
+                    </form>
                 </div>
             </div>
         </div>

@@ -15,30 +15,6 @@
 
 
 <th:block layout:fragment="main">
-    <header class="navbar">
-        <div class="nav-left">
-            <a th:href="@{/mainPage}" class="logo">EngJoy</a>
-        </div>
-
-        <nav class="menu">
-            <a th:href="@{#}">게임</a>
-            <a th:href="@{#}">단어장</a>
-            <a th:href="@{/serviceInfo}">서비스 소개</a>
-            <a th:href="@{/gameInfo}">게임 소개</a>
-        </nav>
-
-        <div class="nav-right" sec:authorize="isAuthenticated()">
-            <span th:text="'닉네임: ' + ${nickname}"></span>
-            <a th:href="@{/myPage}">마이페이지</a>
-            <a th:href="@{/logout}">로그아웃</a>
-        </div>
-        <div class="nav-right" sec:authorize="isAnonymous()">
-            <a th:href="@{/login}">로그인</a>
-        </div>
-    </header>
-
-
-
     <div id="wrapper">
 
         <div id="container">
