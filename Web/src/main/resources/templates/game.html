@@ -18,15 +18,17 @@
 
 
 <th:block layout:fragment="main">
-    <div id="unity-container" style="width: 1366px; height: 768px;" class="unity-desktop">
-        <canvas id="unity-canvas" tabindex="-1"></canvas>
-        <div id="unity-loading-bar">
-            <div id="unity-logo"></div>
-            <div id="unity-progress-bar-empty">
-                <div id="unity-progress-bar-full"></div>
+    <div id="wrapper" class="bg-black">
+        <div id="unity-container" style="width: 1366px; height: 768px;" class="unity-desktop">
+            <canvas id="unity-canvas" tabindex="-1"></canvas>
+            <div id="unity-loading-bar">
+                <div id="unity-logo"></div>
+                <div id="unity-progress-bar-empty">
+                    <div id="unity-progress-bar-full"></div>
+                </div>
             </div>
+            <div id="unity-warning"> </div>
         </div>
-        <div id="unity-warning"> </div>
     </div>
     <script>
 

@@ -53,7 +53,7 @@
                 <div class="input-box">
                     <label class="input-label">비밀번호</label>
                     <div class="col-span-3">
-                        <input type="text" th:field="*{password}" class="input-field">
+                        <input type="password" th:field="*{password}" class="input-field">
                         <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}"
                            class="text-red-600"></p>
                     </div>
@@ -61,7 +61,7 @@
                 <div class="input-box">
                     <label class="input-label">비밀번호 확인</label>
                     <div class="col-span-3">
-                        <input type="text" th:field="*{confirmPassword}" class="input-field">
+                        <input type="password" th:field="*{confirmPassword}" class="input-field">
                         <p th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"
                            class="text-red-600"></p>
 
@@ -72,5 +72,6 @@
                 </div>
             </form>
         </div>
+    </div>
 </th:block>
 </html>
