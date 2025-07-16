@@ -34,14 +34,44 @@
             <a th:href="@{/login}">로그인</a>
         </div>
     </header>
-    <div id="container">
-        <h1>외우지 말고, 플레이 하세요!<br>당신의 영어는 게임 속에 있습니다.</h1><br>
+    <div class="intro-wrapper">
+        <div id="container">
+            <h1>외우지 말고, 플레이 하세요!<br>당신의 영어는 게임 속에 있습니다.</h1><br>
 
-        <p>영어 공부, 아직도 '외우니?' 난 '사냥해!'</p>
+            <p>영어 공부, 아직도 '외우니?' 난 '사냥해!'</p>
+        </div>
+
+        <div style="text-align: right;">
+            <img th:src="@{/icons/horses-1980045_1280.png}" alt="말 이미지" class="battle-image">
+        </div>
     </div>
-
     <div>
-        <img src="" alt="battleImage" class="battle-image">
+        <section class="effect-section">
+            <div id="question">
+                <p>그럼 무슨 효과 있는데?</p>
+            </div>
+            <div class="effect-slide">
+                <img th:src="@{/icons/book-8790405_1280.png}" alt="책 효과" width="70" height="70">
+                <img th:src="@{/icons/ai-generated-8741680_1280.jpg}" alt="자신감 폭발" width="70" height="70">
+            </div>
+
+            <div>
+
+                <div class="effect-right">
+                    <ol class="effect-list">
+                        <li>비판적 사고 능력 향상</li>
+                        <li>사회성 발달</li>
+                        <li>창의력 자극</li>
+                        <li>기억력 향상</li>
+                        <li>자신감 향상</li>
+                    </ol>
+                </div>
+            </div>
+
+        </section>
     </div>
+
+
+
 </th:block>
 </html>
