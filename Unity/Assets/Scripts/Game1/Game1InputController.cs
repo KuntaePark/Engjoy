@@ -25,6 +25,14 @@ public class Game1InputController : MonoBehaviour
     private float inputDelay = 0.2f; //입력 딜레이 시간
     private float lastInputTime = 0f; //마지막 입력 시간
 
+    [SerializeField] private AudioClip inputSound; //이동키 효과음
+    [SerializeField] private AudioClip confirmSound; //확인버튼 효과음
+    [SerializeField] private AudioClip cancelSound; //취소버튼 효과음
+    [SerializeField] private AudioClip chargeMpSound; //마나 충전 효과음
+    private bool isChargingMp = false;
+
+    private AudioSource audioSource;
+
     //방향 인덱스 매핑
     Dictionary<Vector2, int> directionIndexMap = new Dictionary<Vector2, int>
     {
@@ -37,7 +45,7 @@ public class Game1InputController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        audioSource = GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -68,13 +76,15 @@ public class Game1InputController : MonoBehaviour
                 if (Input.GetKey(KeyCode.X))
                 {
                     //마나 충전
-                    gameClient.Send("input", JsonConvert.SerializeObject(new { type = "chargeMana" }));
+                    gameClient.Send("input", JsonConvert.SerializeObject(new { type = "chargeMana" }));  
                 }
+
                 if (axisH == -1.0f)
                 {
                     if (actionType != ActionType.ATTACK)
                     {
                         Debug.Log("Action to left");
+                        audioSource.PlayOneShot(inputSound);
                         actionType--;
                         uiController.setAction((int)actionType);
                         lastInputTime = Time.time; //입력 시간 갱신
@@ -85,6 +95,7 @@ public class Game1InputController : MonoBehaviour
                     if (actionType != ActionType.SPECIAL)
                     {
                         Debug.Log("Action to right");
+                        audioSource.PlayOneShot(inputSound);
                         actionType++;
                         uiController.setAction((int)actionType);
                         lastInputTime = Time.time; //입력 시간 갱신
@@ -94,6 +105,7 @@ public class Game1InputController : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.Z))
                 {
                     Debug.Log("Action selected: " + actionType.ToString());
+                    audioSource.PlayOneShot(confirmSound);
                     gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionSelect", action = actionType.ToString() }));
                     isActionSelected = true; //상태 변경
                     lastInputTime = Time.time; //입력 시간 갱신
@@ -115,6 +127,7 @@ public class Game1InputController : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.X))
                 {
                     Debug.Log("Action cancelled");
+                    audioSource.PlayOneShot(cancelSound);
                     gameClient.Send("input", JsonConvert.SerializeObject(new { type = "actionCancel" }));
                     isActionSelected = false; //상태 변경
                     lastInputTime = Time.time; //입력 시간 갱신
@@ -124,6 +137,7 @@ public class Game1InputController : MonoBehaviour
                 if (directionIndexMap.TryGetValue(new Vector2(axisH, axisV), out int index))
                 {
                     //방향 입력에 따라 단어 선택
+                    audioSource.PlayOneShot(inputSound);
                     Debug.Log("Selecting word at index: " + index);
                     gameClient.Send("input", JsonConvert.SerializeObject(new { type = "wordSelect", idx = index }));
                     lastInputTime = Time.time; //입력 시간 갱신
