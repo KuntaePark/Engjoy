@@ -9,12 +9,13 @@ using UnityEngine.UI;
 [RequireComponent(typeof(AudioSource))]
 public class ResultUIManager : MonoBehaviour
 {
+    private BrowserRequest browserRequest = new BrowserRequest();
 
     public static ResultUIManager Instance { get; private set; }
 
     [Header("Effect & Main Panels")]
-    public Image screenEffectImage; //°ÔÀÓ¿À¹ö ÀÌÆåÆ®¿ë ÀÌ¹ÌÁö
-    public GameObject gameOverText; //°ÔÀÓ¿À¹ö ÅØ½ºÆ®
+    public Image screenEffectImage; //ê²Œì„ì˜¤ë²„ ì´í™íŠ¸ìš© ì´ë¯¸ì§€
+    public GameObject gameOverText; //ê²Œì„ì˜¤ë²„ í…ìŠ¤íŠ¸
     public GameObject resultPanel;
 
     [Header("Page 1 UI")]
@@ -23,16 +24,17 @@ public class ResultUIManager : MonoBehaviour
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI goldText;
     public Button nextPageButton;
+    public Button lobbyButton;
 
     [Header("Page 2 UI")]
     public GameObject page2;
     public GameObject sentenceItemPrefab;
-    public Transform sentenceListContent; //¹®Àåµé µé¾î°¥ Content
-    //public Button backToLobbyButton; //·Îºñ·Î ¹öÆ°
-    //public Button againButton; //ÇÑÆÇ´õ ¹öÆ°
+    public Transform sentenceListContent; //ë¬¸ì¥ë“¤ ë“¤ì–´ê°ˆ Content
+    //public Button backToLobbyButton; //ë¡œë¹„ë¡œ ë²„íŠ¼
+    //public Button againButton; //í•œíŒë” ë²„íŠ¼
 
     [Header("Sound Effects")]
-    [SerializeField] private AudioClip gameOverSound; // °ÔÀÓ¿À¹ö ÅØ½ºÆ® µîÀå ½Ã Àç»ıÇÒ »ç¿îµå
+    [SerializeField] private AudioClip gameOverSound; // ê²Œì„ì˜¤ë²„ í…ìŠ¤íŠ¸ ë“±ì¥ ì‹œ ì¬ìƒí•  ì‚¬ìš´ë“œ
     private AudioSource audioSource;
 
 
@@ -58,27 +60,68 @@ public class ResultUIManager : MonoBehaviour
 
     private void Start()
     {
-        //¹öÆ° ÀÌº¥Æ® ¿¬°á
+        //ë²„íŠ¼ ì´ë²¤íŠ¸ ì—°ê²°
         if (nextPageButton != null) nextPageButton.onClick.AddListener(ShowNextPage);
+        lobbyButton.onClick.AddListener(() =>
+        {
+            int requestId = browserRequest.StartRequest("POST", "/game/lobby/join", "");
+            StartCoroutine(browserRequest.waitForResponse(requestId, 10.0f, (response) =>
+            {
+                if (response != null && response.status == 200)
+                {
+                    Debug.Log("Lobby enter successful: " + response.body);
+                    //ë¡œë¹„ ìš”ì²­ ìŠ¹ì¸ ì™„ë£Œ, ë¡œë¹„ ì ‘ì† ì‹œë„
+                    disableAllUI();
+                    removeAllInstances();
+                    //ë°ì´í„° ê°•ì œ ë¡œë“œ ìœ„í•´ ë°ì´í„° ì´ˆê¸°í™”
+                    DataManager.Instance.resetUserData();
+                    StartCoroutine(DataManager.Instance.getUserData((userGameData) => { SceneController.Instance.loadScene("LobbyScene"); }));
+                    ;
+                }
+                else
+                {
+                    Debug.LogError("Lobby enter failed: " + (response != null ? response.body : "No response received."));
+                }
+            }));
 
-        //·Îºñ ¹öÆ°, ÇÑÆÇ´õ ¹öÆ° ÀÌº¥Æ® ¿¬°á
+        });
+        //ë¡œë¹„ ë²„íŠ¼, í•œíŒë” ë²„íŠ¼ ì´ë²¤íŠ¸ ì—°ê²°
 
     }
 
-    public void StartGameOverSequence(GameState finalState)
+    public void disableAllUI()
     {
-        //°ÔÀÓ ¿À¹öµÇ¸é ÀÎ°ÔÀÓ UI ½Ï ²ô±â
+        //ê²Œì„ ì˜¤ë²„ë˜ë©´ ì¸ê²Œì„ UI ì‹¹ ë„ê¸°
         if (UIManager.Instance != null)
         {
             UIManager.Instance.matchingRoomPanel.SetActive(false);
             UIManager.Instance.playingPanel.SetActive(false);
+            UIManager.Instance.Inventory.SetActive(false);
+            UIManager.Instance.MyStatusUI.SetActive(false);
+            UIManager.Instance.playerStatusLayout.gameObject.SetActive(false);
         }
 
 
-        //½ÃÀÛ ½Ã ¸ğµç °ü·Ã UI¸¦ ²ö »óÅÂ·Î ÃÊ±âÈ­
+        //ì‹œì‘ ì‹œ ëª¨ë“  ê´€ë ¨ UIë¥¼ ëˆ ìƒíƒœë¡œ ì´ˆê¸°í™”
         if (resultPanel != null) resultPanel.SetActive(false);
         if (gameOverText != null) gameOverText.SetActive(false);
         if (screenEffectImage != null) screenEffectImage.color = new Color(0, 0, 0, 0);
+    }
+
+    public void removeAllInstances()
+    {
+        //í•´ë‹¹ ê²Œì„ì˜ instance ëª¨ë‘ ì œê±°
+        Destroy(WsClient.Instance.gameObject);
+        Destroy(PlayerManager.Instance.gameObject);
+        Destroy(KeywordManager.Instance.gameObject);
+        Destroy(GameManager.Instance.gameObject);
+        Destroy(ExitUIManager.Instance.gameObject);
+        Destroy(Instance.gameObject);
+    }
+
+    public void StartGameOverSequence(GameState finalState)
+    {
+        disableAllUI();
 
         StartCoroutine(GameOverSequenceCoroutine(finalState));
     }
@@ -90,7 +133,7 @@ public class ResultUIManager : MonoBehaviour
 
         if (screenEffectImage != null) screenEffectImage.gameObject.SetActive(true);
 
-        //È­¸é ¿¬Ãâ
+        //í™”ë©´ ì—°ì¶œ
         screenEffectImage.color = new Color(1, 1, 1, 0.5f);
         yield return new WaitForSeconds(0.1f);
 
@@ -108,11 +151,11 @@ public class ResultUIManager : MonoBehaviour
             yield return null;
 
         }
-        screenEffectImage.color = targetColor; //È­¸é ÀíºûÀ¸·Î
+        screenEffectImage.color = targetColor; //í™”ë©´ ì¿ë¹›ìœ¼ë¡œ
 
-        yield return new WaitForSeconds(1.0f); //1ÃÊ ´ë±â ÈÄ Game Over ÅØ½ºÆ® Ç¥½Ã
+        yield return new WaitForSeconds(1.0f); //1ì´ˆ ëŒ€ê¸° í›„ Game Over í…ìŠ¤íŠ¸ í‘œì‹œ
 
-        //Game Over ÅØ½ºÆ® ¶ç¿ì±â
+        //Game Over í…ìŠ¤íŠ¸ ë„ìš°ê¸°
         if (gameOverText != null)
         {
             if (audioSource != null && gameOverSound != null)
@@ -125,7 +168,7 @@ public class ResultUIManager : MonoBehaviour
         }
         yield return new WaitForSeconds(2.3f);
 
-        //¼­¼­È÷ °ËÀº È­¸éÀ¸·Î(2.7ÃÊµ¿¾È)
+        //ì„œì„œíˆ ê²€ì€ í™”ë©´ìœ¼ë¡œ(2.7ì´ˆë™ì•ˆ)
         timer = 0f;
         startColor = screenEffectImage.color;
         fadeOutDuration = 2.7f;
@@ -144,11 +187,11 @@ public class ResultUIManager : MonoBehaviour
             screenEffectImage.color = Color.black;
             yield return new WaitForSeconds(1.0f);
 
-            //°á°úÃ¢ º¸¿©ÁÖ±â
+            //ê²°ê³¼ì°½ ë³´ì—¬ì£¼ê¸°
             //gameOverText.SetActive(false);
             resultPanel.SetActive(true);
             UpdateResultUI(finalState);
-            GameManager.Instance.NotifyResultVisible(); //°á°úÃ¢ ¶ä!
+            GameManager.Instance.NotifyResultVisible(); //ê²°ê³¼ì°½ ëœ¸!
 
         
     }
@@ -172,16 +215,16 @@ public class ResultUIManager : MonoBehaviour
     }
 
 
-    //°á°úÃ¢ ³»¿ë ¶ç¿öÁÖ±â
+    //ê²°ê³¼ì°½ ë‚´ìš© ë„ì›Œì£¼ê¸°
     void UpdateResultUI(GameState finalState)
     {
-        //ÆäÀÌÁö1 ³»¿ë Ã¤¿ì±â
+        //í˜ì´ì§€1 ë‚´ìš© ì±„ìš°ê¸°
         if (stageText != null) stageText.text = $"CLEARED STAGE: {finalState.gameLevel - 1}";
         if (scoreText != null) scoreText.text = $"TOTAL SCORE: {finalState.score}";
         if (goldText != null) goldText.text = $"EARNED GOLD: {finalState.gold}";
 
-        //ÆäÀÌÁö2_¹®Àå ¸®½ºÆ® ³»¿ë Ã¤¿ì±â
-        //±âÁ¸¿¡ ÀÖ´ø ¸®½ºÆ® »èÁ¦
+        //í˜ì´ì§€2_ë¬¸ì¥ ë¦¬ìŠ¤íŠ¸ ë‚´ìš© ì±„ìš°ê¸°
+        //ê¸°ì¡´ì— ìˆë˜ ë¦¬ìŠ¤íŠ¸ ì‚­ì œ
         if (sentenceListContent != null)
         {
             foreach (Transform child in sentenceListContent)
@@ -190,13 +233,13 @@ public class ResultUIManager : MonoBehaviour
             }
         }
 
-        //¼­¹ö¿¡¼­ ¹ŞÀº ¹®Àå ¸ñ·ÏÀ¸·Î »õ·Î »ı¼º
+        //ì„œë²„ì—ì„œ ë°›ì€ ë¬¸ì¥ ëª©ë¡ìœ¼ë¡œ ìƒˆë¡œ ìƒì„±
         if (sentenceItemPrefab != null && finalState.completedSentences != null)
         {
             foreach (SentenceData sentence in finalState.completedSentences)
             {
                 GameObject itemGO = Instantiate(sentenceItemPrefab, sentenceListContent);
-                //ÇÁ¸®ÆÕ¿¡ ÀÖ´Â Text ÄÄÆ÷³ÍÆ® Ã£¾Æ¼­ ³»¿ë Ã¤¿ö³Ö±â (¿µ¹®Àå ÅØ½ºÆ®, ÇØ¼³¹® ³Ö¾îÁÖ±â)
+                //í”„ë¦¬íŒ¹ì— ìˆëŠ” Text ì»´í¬ë„ŒíŠ¸ ì°¾ì•„ì„œ ë‚´ìš© ì±„ì›Œë„£ê¸° (ì˜ë¬¸ì¥ í…ìŠ¤íŠ¸, í•´ì„¤ë¬¸ ë„£ì–´ì£¼ê¸°)
                 TextMeshProUGUI[] texts = itemGO.GetComponentsInChildren<TextMeshProUGUI>();
                 if (texts.Length >= 2)
                 {
@@ -206,20 +249,20 @@ public class ResultUIManager : MonoBehaviour
             }
         }
 
-        //ÃÊ±â¿£ 1ÆäÀÌÁö¸¸ º¸¿©ÁÖ±â
+        //ì´ˆê¸°ì—” 1í˜ì´ì§€ë§Œ ë³´ì—¬ì£¼ê¸°
         if (page1 != null) page1.SetActive(true);
         if (page2 != null) page2.SetActive(false);
     }
 
 
-    //´ÙÀ½ ÆäÀÌÁö º¸±â ¹öÆ°
+    //ë‹¤ìŒ í˜ì´ì§€ ë³´ê¸° ë²„íŠ¼
     void ShowNextPage()
     {
         if (page1 != null) page1.SetActive(false);
         if (page2 != null) page2.SetActive(true);
     }
 
-    //·Îºñ·Î µ¹¾Æ°¡±â ¹öÆ°
+    //ë¡œë¹„ë¡œ ëŒì•„ê°€ê¸° ë²„íŠ¼
 
-    //ÇÑ ÆÇ ´õ ¹öÆ°
+    //í•œ íŒ ë” ë²„íŠ¼
 }

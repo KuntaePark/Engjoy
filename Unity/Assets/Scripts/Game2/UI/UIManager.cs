@@ -14,6 +14,8 @@ public class UIManager : MonoBehaviour
     [Header("UI Panels")]
     public GameObject matchingRoomPanel; //대기방 UI 패널
     public GameObject playingPanel; //인게임 UI 패널
+    public GameObject Inventory;
+    public GameObject MyStatusUI;
 
     [Header("Matching Room UI(MATCHINGROOM)")]
     public Button readyButton; //준비완료 버튼

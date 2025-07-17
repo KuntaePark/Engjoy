@@ -11,7 +11,7 @@ public class GameStartUI1 : GameStartUI
 
     public override void setGameStartUI(UserGameData userGameData)
     {
-        scoreText.text = userGameData.game1Score.ToString();
-        rankingText.text = userGameData.ranking.ToString();
+        scoreText.text = userGameData.game1Score.ToString() + "점";
+        rankingText.text = userGameData.ranking.ToString() + "위";
     }
 }
