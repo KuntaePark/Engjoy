@@ -50,7 +50,13 @@ class UserDataDB {
                 throw new Error('User not found');
             }
         });
+    }
 
+    updateGame2Data(gameState, userId) {
+        if(!this.DBConnection) {
+            throw new Error(`Database connection not established.`);
+        }
+    //해당 문장 키값을 기반으로 유저의 사용 문장 업데이트
     }
 }
 

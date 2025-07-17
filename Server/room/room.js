@@ -59,10 +59,14 @@ class Room {
     const intervalId = setInterval(() => {
       //게임 로직 업데이트 실행!
   
-      if (Object.keys(gameState.players).length === 0 || gameState.isGameOver) {
+      if (Object.keys(gameState.players).length === 0) {
         console.log(`game end. close room.`);
-        clearInterval(intervalId);
-        this.owner.removeRoom(this.id);
+        this.close(false);
+        return;
+      }
+      if(gameState.isGameOver) {
+        console.log(`game end by Game Over.`);
+        this.close(true);
         return;
       }
   
@@ -74,6 +78,15 @@ class Room {
       gameState.resetPlayerInputs();
     }, deltaTime * 1000);
     return intervalId;
+  }
+
+  close(isGameOver) {
+    if(isGameOver) {
+      //점수 갱신
+      console.log(`update data.`);
+    }
+    clearInterval(this.gameUpdateInterval);
+    this.owner.removeRoom(this.id);
   }
 }
 
