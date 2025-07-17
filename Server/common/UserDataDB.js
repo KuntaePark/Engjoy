@@ -43,7 +43,7 @@ class UserDataDB {
         }
         this.DBConnection.query("update user_game_data set game1score = ? where account_id = ?", [updatedPoint, userId])
         .then(([result]) => {
-            if (result.changedRows != 1) {
+            if (result.affectedRows != 1) {
                 //고유 아이디이므로 1이여야 함
                 throw new Error('User not found');
             }
@@ -74,8 +74,8 @@ class UserDataDB {
         }
         this.DBConnection.query("update user_game_data set game2high_score = ?, gold = ? where account_id = ?", [game2score, gold, userId])
         .then(([result]) => {
-            if (result.changedRows != 1) {
-                throw new Error('User not found');
+            if (result.affectedRows != 1) {
+                throw new Error(`user not found`);
             }
         });  
     }

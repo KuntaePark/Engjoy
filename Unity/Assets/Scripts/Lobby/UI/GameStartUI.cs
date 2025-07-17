@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using DataForm;
 using Newtonsoft.Json;
 using TMPro;
+using Unity.VisualScripting;
 
 public abstract class GameStartUI : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public abstract class GameStartUI : MonoBehaviour
     public int gameId;
 
     //UI 요소
+    public Button closeButton;
     public Button gameStartButton;
     public TextMeshProUGUI gameStartButtonText;
 
@@ -58,6 +60,16 @@ public abstract class GameStartUI : MonoBehaviour
                     }
                 }));
             }
+        });
+        closeButton.onClick.AddListener(() =>
+        {
+            if (inMatch)
+            {
+                matchClient.Send("match_cancel", "");
+                inMatch = false;
+                gameStartButtonText.text = "게임 시작!";
+            }
+            gameObject.SetActive(false);
         });
     }
 

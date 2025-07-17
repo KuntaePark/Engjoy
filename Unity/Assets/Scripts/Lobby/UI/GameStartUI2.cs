@@ -10,7 +10,7 @@ public class GameStartUI2 : GameStartUI
 
     public override void setGameStartUI(UserGameData userGameData)
     {
-        scoreText.text = userGameData.game2Score.ToString();
+        scoreText.text = userGameData.game2Score.ToString() + "점";
         return;
     }
 }
