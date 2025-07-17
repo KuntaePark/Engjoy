@@ -189,7 +189,8 @@ class Session {
                 }                
             }
             player.userScore += diff;
-            userDataDB.updateUserPoint(player.userScore, player.id);
+            userDataDB.saveGameResult(player.userScore, player.id);
+            userDataDB.saveUsedExpressions(player.id, player.usedWords);
             player.socket.send(makePacket('gameEnd', {winner: winnerIdx, score: player.userScore, diff}))
         }
     }

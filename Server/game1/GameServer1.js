@@ -16,13 +16,6 @@ const matchServerId = 'MATCHSERVER';
 //허가된 유저 저장, id - sessionId
 const authorizedMap = new Map();
 
-
-
-//임시 매칭 큐. 매칭 서버 구현 이후 제거.
-const playerQueue = [];
-const idSet = new Set();
-const idLength = 16;
-
 //매칭 서버에 의해 해당 유저들의 세션이 이미 생성되었다고 가정
 //todo - 매칭 서버에 의한 세션 생성 요청 및 수락 구현
 wss.on('connection', function connection(ws) {

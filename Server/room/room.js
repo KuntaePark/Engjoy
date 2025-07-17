@@ -1,6 +1,10 @@
 const { GameState } = require("../gameSetting/gameState.js");
 const { update, deltaTime } = require("../gameSetting/gameUpdate.js");
 const { setupLevel, loadMap } = require("../gameSetting/levelManager.js");
+const UserDataDB = require('../common/UserDataDB');
+
+const userDataDB = new UserDataDB();
+
 
 class Room {
   constructor(id, owner) {
@@ -21,9 +25,21 @@ class Room {
 
   // ================= ▼▼▼ 플레이어 생성 & 삭제 ▼▼▼ =================
   addPlayer(ws) {
-    const player = this.gameState.addPlayer(ws.id);
-    this.players[player.id] = ws;
-    return player;
+    const id = ws['id'];
+    //db에서 정보 불러오기
+    return userDataDB.getUserData(id).then((data) => {
+        if(data) {
+            console.log(`User data loaded for id ${id}`);
+            console.log(data);
+            const player = this.gameState.addPlayer(id, data);
+            this.players[player.id] = ws;
+            return player;
+          } else {
+            throw new Error(`no user data found for id ${id}`);
+          }
+        }).catch((err) => {
+          throw new Error(`Failed to load user data for id ${id}: ${err.message}`);
+        });
   }
 
   //플레이어 제거
@@ -59,10 +75,24 @@ class Room {
     const intervalId = setInterval(() => {
       //게임 로직 업데이트 실행!
   
-      if (Object.keys(gameState.players).length === 0 || gameState.isGameOver) {
+      if (Object.keys(gameState.players).length === 0) {
         console.log(`game end. close room.`);
-        clearInterval(intervalId);
-        this.owner.removeRoom(this.id);
+        this.close();
+        return;
+      }
+      if(gameState.isGameOver) {
+        console.log(`game end by Game Over.`);
+        //정상 게임 종료 시 사용 데이터 저장 및 골드 갱신
+        const ids = gameState.completedSentences.map(sentence => sentence.id);
+        Object.values(gameState.players).forEach((player) => {
+          const id = player.id;
+          userDataDB.saveUsedExpressions(id, ids);
+          const newGold = player.gold + gameState.gold;
+          const gameScore = gameState.score > player.game2HighScore ? gameState.score : player.game2HighScore;
+          userDataDB.saveGame2Result(gameScore, newGold, id);
+        })
+        
+        this.close();
         return;
       }
   
@@ -74,6 +104,11 @@ class Room {
       gameState.resetPlayerInputs();
     }, deltaTime * 1000);
     return intervalId;
+  }
+
+  close() {
+    clearInterval(this.gameUpdateInterval);
+    this.owner.removeRoom(this.id);
   }
 }
 

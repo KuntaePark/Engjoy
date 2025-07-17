@@ -1,10 +1,7 @@
-const UserDataDB = require('../common/UserDataDB');
-
-const userDataDB = new UserDataDB();
 
 class Player {
   //많다..
-  constructor(id, x, y) {
+  constructor(id, x, y, data) {
     this.id = id;
     this.x = x;
     this.y = y;
@@ -32,9 +29,11 @@ class Player {
     this.isBuffed = false;
     this.hasShield = false;
 
-    this.nickname = "";
-    this.bodyTypeIndex = 0;
-    this.weaponTypeIndex = 0;
+    this.nickname = data.nickname;
+    this.bodyTypeIndex = data.body_type_index;
+    this.weaponTypeIndex = data.weapon_type_index;
+    this.game2HighScore = data.game2high_score;
+    this.gold = data.gold;
 
     //인벤토리
     this.inventory = {
@@ -43,20 +42,7 @@ class Player {
       shield: 0,
     };
 
-    //db에서 정보 불러오기
-    userDataDB.getUserData(id).then((data) => {
-        if(data) {
-            console.log(`User data loaded for id ${id}`);
-            console.log(data);
-            this.nickname = data.nickname;
-            this.bodyTypeIndex = data['body_type_index'];
-            this.weaponTypeIndex = data['weapon_type_index'];
-        } else {
-            console.log(`no user data found for id ${id}`);
-        }
-    }).catch((err) => {
-        throw new Error(`Failed to load user data for id ${id}: ${err.message}`);
-    });
+    
   }
 
   toPacket() {

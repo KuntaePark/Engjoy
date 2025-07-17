@@ -89,7 +89,7 @@ wss.on("connection", (ws) => {
   ws.on("message", (data) => {
     const message = JSON.parse(data);
     
-    console.log(message);
+    // console.log(message);
     // const room = roomManager.getRoom(ws.roomId);
     // if (!room) return; //방이 없으면 돌아가세요..
     const packetHandler = PacketHandler[message.type];

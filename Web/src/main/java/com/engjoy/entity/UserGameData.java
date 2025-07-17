@@ -3,10 +3,12 @@ package com.engjoy.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Getter
 @Setter
+@ToString
 public class UserGameData {
     @Id
     @Column(name="account_id")
@@ -24,10 +26,4 @@ public class UserGameData {
     @MapsId
     @JoinColumn(name="account_id")
     private Account account;
-
-    public void setBodyTypeIndex(Integer bodyTypeIndex) {
-    }
-
-    public void setWeaponTypeIndex(Integer weaponTypeIndex) {
-    }
 }
