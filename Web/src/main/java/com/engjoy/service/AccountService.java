@@ -5,6 +5,7 @@ import com.engjoy.entity.Account;
 import com.engjoy.entity.UserGameData;
 import com.engjoy.repository.AccountRepository;
 import com.engjoy.repository.UserGameDataRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -86,10 +87,22 @@ public class AccountService {
     }
 
 
+    public void updateAccountInfo(String email, @Valid SignUpDto signUpDto) {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("해당 이메일의 계정을 찾을 수 없습니다."));
 
+        account.setEmail(signUpDto.getEmail()); // 이메일 변경 가능하게 할 경우
+        account.setNickname(signUpDto.getNickname());
+        account.setName(signUpDto.getName());
+        account.setBirth(signUpDto.getBirth());
 
+        // 비밀번호가 null이 아니고 빈 문자열이 아닌 경우에만 변경
+        if (signUpDto.getPassword() != null && !signUpDto.getPassword().isBlank()) {
+            account.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
+        }
 
-
+        accountRepository.save(account);
+    }
 }
 
 
