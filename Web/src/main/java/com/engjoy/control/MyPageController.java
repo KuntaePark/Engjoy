@@ -79,9 +79,9 @@ public class MyPageController {
     }
 
     @PostMapping("/myInfoChange")
-    public String myInfoChange(@Valid SignUpDto signUpDto,
+    public String myInfoChange(@Valid SignUpDto signUpDto,BindingResult bindingResult,
                                @AuthenticationPrincipal CustomUserDetails userDetails,
-                                Model model, BindingResult bindingResult) {
+                                Model model) {
         String email = userDetails.getUsername();
         String nickname = userDetails.getNickname();
         if (accountService.existsByEmail(signUpDto.getEmail()) && !email.equals(signUpDto.getEmail())) {
@@ -102,8 +102,7 @@ public class MyPageController {
             return "signUp"; // signUp.html로 돌아감
         }
 
-        accountService.insert(signUpDto);
-
+        accountService.updateAccountInfo(email, signUpDto); // ← 수정 메서드로 변경
         return "redirect:/myPage";
     }
 
