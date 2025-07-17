@@ -15,10 +15,15 @@ public class ExitController : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private bool currentIsOpenState = false;
 
+    [SerializeField] private AudioClip openedSound;
+    private AudioSource audioSource;
+
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        audioSource = GetComponent<AudioSource>();
     }
 
 
@@ -35,6 +40,7 @@ public class ExitController : MonoBehaviour
 
             if (currentIsOpenState)
             {
+                audioSource.PlayOneShot(openedSound); 
                 Debug.Log("The Exit is now open!");
             }
         }

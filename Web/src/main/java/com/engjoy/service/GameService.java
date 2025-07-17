@@ -36,7 +36,14 @@ public class GameService{
     }
 
     public UserGameDataDto getUserGameData(String email) {
-        return UserGameDataDto.from(userGameDataRepository.findByAccount_Email(email));
+        UserGameData userGameData = userGameDataRepository.findByAccount_Email(email);
+
+        if (userGameData == null || userGameData.getAccount() == null) {
+            // 에러 방지: 기본값 또는 null 반환
+            return new UserGameDataDto(); // 또는 예외 처리
+        }
+
+        return UserGameDataDto.from(userGameData);
     }
 
     public Long allowMatch(String email, Integer gameId) throws JsonProcessingException {
