@@ -39,11 +39,13 @@ class RoomManager {
     }
 
     //방에 새 플레이어 추가
-    const player = roomToJoin.addPlayer(ws);
-    ws.playerId = player.id;
-    ws.roomId = roomToJoin.id;
-
-    ws.send(JSON.stringify({ type: "playerId", payload: player.id }));
+    roomToJoin.addPlayer(ws).then((player) => {
+      ws.playerId = player.id;
+      ws.roomId = roomToJoin.id;
+      console.log(ws.playerId);
+      
+      ws.send(JSON.stringify({ type: "playerId", payload: player.id }));
+    });
   }
 
   //특정 방을 ID 로 찾기

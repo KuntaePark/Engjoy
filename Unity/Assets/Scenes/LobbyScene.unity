@@ -2247,6 +2247,7 @@ MonoBehaviour:
   gameId: 1
   gameStartButton: {fileID: 241912240}
   gameStartButtonText: {fileID: 241912239}
+  scoreText: {fileID: 1816208732}
 --- !u!224 &244261349 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5398935236855933650, guid: 3c8acd4b806cf374dac2dac3acf9667d, type: 3}
@@ -6591,7 +6592,7 @@ Animator:
   m_GameObject: {fileID: 924676364}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 19c9bdafad33e7b42b4b8ba5d2a6201e, type: 2}
+  m_Controller: {fileID: 9100000, guid: ca214cf2153d7a148bc13702017cdc2f, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -6643,7 +6644,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -123794972, guid: 2bb793538b606e84b904c4fc23217562, type: 3}
+  m_Sprite: {fileID: 972122540, guid: 2bb793538b606e84b904c4fc23217562, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -12598,6 +12599,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3c8acd4b806cf374dac2dac3acf9667d, type: 3}
+--- !u!114 &1816208732 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4334407460441487246, guid: efeec38226e19d243a249ddfd1ffee70, type: 3}
+  m_PrefabInstance: {fileID: 241912237}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1816323367
 GameObject:
   m_ObjectHideFlags: 0

@@ -34,7 +34,7 @@ class GameState {
   } //새 플레이어 추가
 
   // ================= ▼▼▼ 플레이어 생성 & 삭제 ▼▼▼ =================
-  addPlayer(playerId) {
+  addPlayer(playerId, data) {
     const newPlayerId = playerId;
 
     const spawnArea = { minX: 1.0, maxX: 4.0, minY: 8.0, maxY: 11.0 };
@@ -70,7 +70,7 @@ class GameState {
     }
 
     //Player 객체 생성 시 ID만 전달
-    const player = new Player(newPlayerId, spawnX, spawnY);
+    const player = new Player(newPlayerId, spawnX, spawnY , data);
 
     //우선은 inventory에 테스트용으로 최대 세팅
     player.inventory = {

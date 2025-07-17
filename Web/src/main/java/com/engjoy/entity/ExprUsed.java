@@ -10,6 +10,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"account_id", "expr_id"})
+        }
+)
 public class ExprUsed {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

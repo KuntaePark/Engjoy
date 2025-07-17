@@ -90,8 +90,12 @@ class Player {
 
     //단어 관련
     loadWords() {
-        this.words = wordDB.pick4();
-        this.correctIdx = Math.floor(Math.random() * 4);
+        const words= wordDB.pick4();
+        const correctIdx = Math.floor(Math.random() * 4);  
+        this.words = words;
+        this.correctIdx = correctIdx;
+        this.usedWords.push(words[correctIdx].expr_id); //단어 로드할때마다 사용단어에 저장
+        
     }
 
     resetWords() {
@@ -290,9 +294,6 @@ const inputActions = {
 
     'wordSelect': (user) => {
         //단어 맞추기 단계, 틀릴 시 즉시 효과 발동 체크
-
-        //일단 맞추든 틀리든 사용 단어에 등록
-        user.usedWords.push(user.words[user.correctIdx]);
         console.log(`user ${user.id} do wordSelect`);
         const idx = user.inputData.idx;
 

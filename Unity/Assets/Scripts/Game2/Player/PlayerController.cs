@@ -162,6 +162,7 @@ public class PlayerController : MonoBehaviour
         }
 
         //목표 위치 갱신
+        Debug.Log(data.x + " " + data.y);
         targetPosition = new Vector3(data.x, data.y, 0);
 
         //서버가 결정한 상호작용 가능 상태 갱신
@@ -240,8 +241,6 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-
-
         transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * positionLerpFactor);
 
         //이 클라이언트가 조종하는 '내' 캐릭터일 경우에만 입력 처리
