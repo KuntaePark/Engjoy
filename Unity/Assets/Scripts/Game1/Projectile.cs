@@ -4,10 +4,15 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
+
+    [SerializeField] private AudioClip fireHitSound;
+    private AudioSource audioSource;
+
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        audioSource = GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -20,6 +25,8 @@ public class Projectile : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player"))
         {
+            audioSource.PlayOneShot(fireHitSound);
+
             //run player hit animation
             CharacterRenderer characterRenderer = collision.gameObject.GetComponent<CharacterRenderer>();
             characterRenderer.bodyAnimator.SetTrigger("hit");

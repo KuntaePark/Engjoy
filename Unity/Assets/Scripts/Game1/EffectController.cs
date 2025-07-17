@@ -21,12 +21,17 @@ public class EffectController : MonoBehaviour
     private float[] projectileElapsed = new float[2]; //투사체 시간 경과
     private float projectileDuration = 0.5f; //투사체 지속 시간
 
+    [SerializeField] private AudioClip attackSound; //공격 효과음
+    [SerializeField] private AudioClip healSound; //치유 효과음
+    [SerializeField] private AudioClip defenceSound; //방어 효과음
+    private AudioSource audioSource;
+
     public Game1Manager game1Manager;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        audioSource = GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -40,7 +45,7 @@ public class EffectController : MonoBehaviour
             }
             foreach (var player in game1Manager.gameState.players)
             {
-                //charge effect
+                //마나 충전 효과
                 if (player.isCharging && ChargeEffects[player.idx] == null)
                 {
                     // Instantiate charge effect if not already instantiated
@@ -54,7 +59,7 @@ public class EffectController : MonoBehaviour
                     ChargeEffects[player.idx] = null;
                 }
 
-                //magic effect
+                //마법진 효과
                 if (player.isCasting && MagicEffects[player.idx] == null)
                 {
                     // Instantiate magic effect if not already instantiated
@@ -78,13 +83,16 @@ public class EffectController : MonoBehaviour
                     }
                 }
 
+                //캐스트 종료 시
                 if (player.castEnd && !player.castFail && Projectiles[player.idx] == null)
                 {
+                    //종료된 행동 따라
                     switch (player.currentAction)
                     {
                         case "ATTACK":
                             if (Projectiles[player.idx] == null)
                             {
+                                audioSource.PlayOneShot(attackSound);
                                 //투사체 발사
                                 Debug.Log("Player " + player.idx + " is casting attack action.");
                                 shootProjectile(player.idx, player.strengthLevel);
@@ -92,6 +100,7 @@ public class EffectController : MonoBehaviour
                             break;
                         case "DEFENSE":
                             //방어 액션은 투사체를 발사하지 않음
+                            audioSource.PlayOneShot(defenceSound);
                             Debug.Log("Player " + player.idx + " is casting defense action.");
                             break;
                         case "SPECIAL":
@@ -151,6 +160,7 @@ public class EffectController : MonoBehaviour
             case "heal":
                 //Heal effect logic
                 Debug.Log("Player " + idx + " is healing.");
+                audioSource.PlayOneShot(healSound);
                 Instantiate(HealPrefab, ChargePlaceholder[idx].position, Quaternion.identity);
                 break;
             default:
