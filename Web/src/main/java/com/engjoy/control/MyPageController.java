@@ -99,10 +99,10 @@ public class MyPageController {
         }
 
         if (bindingResult.hasErrors()) {
-            return "signUp"; // signUp.html로 돌아감
+            return "myInfoChange"; // signUp.html로 돌아감
         }
 
-        accountService.updateAccountInfo(email, signUpDto); // ← 수정 메서드로 변경
+        accountService.insert(signUpDto);
         return "redirect:/myPage";
     }
 
