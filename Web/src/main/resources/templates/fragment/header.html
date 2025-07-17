@@ -19,11 +19,11 @@
         </nav>
 
         <div class="justify-self-end flex items-center space-x-4">
-            <a id="loginBtn" th:href="@{/login}" class="px-5 py-2 border-2 border-b-4 bg-[#8CCE47] cursor-pointer font-bold hover:border-green-300 border-green-600 rounded-lg text-green-900 transition-colors">
+            <a id="loginBtn" th:href="@{/login}"  sec:authorize="!isAuthenticated()" class="px-5 py-2 border-2 border-b-4 bg-[#8CCE47] cursor-pointer font-bold hover:border-green-300 border-green-600 rounded-lg text-green-900 transition-colors">
                 로그인
             </a>
 
-            <a id="signupBtn" th:href="@{/agree}" class="px-5 py-2 border-2 border-b-4 border-gray-500 text-green-500 font-bold rounded-lg hover:bg-gray-700 hover:border-gray-300 cursor-pointer transition-colors">
+            <a id="signupBtn" th:href="@{/agree}"  sec:authorize="!isAuthenticated()" class="px-5 py-2 border-2 border-b-4 border-gray-500 text-green-500 font-bold rounded-lg hover:bg-gray-700 hover:border-gray-300 cursor-pointer transition-colors">
                 회원가입
             </a>
 
@@ -59,9 +59,6 @@
         const path = window.location.pathname.replace(/\/$/, '');
 
         if (profileBox) {
-            if (loginBtn) loginBtn.style.display = 'none';
-            if (signupBtn) signupBtn.style.display = 'none';
-
             // 로그아웃 링크에 이벤트 리스너 추가
             const logoutLink = document.getElementById('logoutLink');
             if(logoutLink) {
