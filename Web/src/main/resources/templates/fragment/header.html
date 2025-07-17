@@ -31,7 +31,8 @@
                     <span sec:authentication="principal.email" class="text-gray-200">you@example.com</span>
                 </div>
                 <button id="profileBtn"
-                        class="w-12 h-12 rounded-full bg-gray-200 hover:opacity-80">
+                        class="w-12 h-12 rounded-full bg-gray-200 hover:opacity-80 overflow-hidden">
+                    <img th:src="@{/images/charImg.gif}" />
                 </button>
                 <div id="dropdownMenu"
                      class="hidden absolute top-[100%] right-0 mt-2 w-32 bg-white border rounded shadow z-30">
