@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using DG.Tweening;
-using System.IO; //DOTween 사용
+using DG.Tweening; //DOTween 사용
+using System.IO; 
 
 public class TitleSceneAni : MonoBehaviour
 {
