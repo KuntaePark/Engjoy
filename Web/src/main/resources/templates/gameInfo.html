@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" th:href="@{/css/gameInfo.css}">
+</th:block>
+<th:block layout:fragment="script"></th:block>
+
+
+<th:block layout:fragment="main">
+    <div id="wrapper">
+        <div class="gameIntro">
+            <div class="card-container">
+                <!-- 카드 1 -->
+                <div class="card">
+                    <i class="fas fa-cart-shopping" style="font-size: 30px;"></i>
+                    <div id="card1">
+                        <img src="https://via.placeholder.com/150" alt="items" width="150" height="150">
+                        <p>첫째! 다양한 아이템 사서!</p>
+                    </div>
+                </div>
+
+                <!-- 카드 2 -->
+                <div class="card">
+                    <i class="fas fa-people-arrows" style="font-size: 30px;"></i>
+                    <div id="card2">
+                        <img src="https://via.placeholder.com/150" alt="battle" width="150" height="150">
+                        <p>둘째! 유저들끼리 팀을 이뤄 배틀을 통해 영어 실력도 끌어올리고!</p>
+                    </div>
+                </div>
+
+                <!-- 카드 3 -->
+                <div class="card">
+                    <i class="fas fa-calendar-days" style="font-size: 30px;"></i>
+                    <div id="card3">
+                        <img src="https://via.placeholder.com/150" alt="calendar" width="150" height="150">
+                        <p>셋째! 그날 배운 것 복습하는 기회까지!!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+</html>

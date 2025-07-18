@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EngJoy</title>
+
+    <!-- csrf 토큰 추가 -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <th:block layout:fragment="css">
+    </th:block>
+</head>
+<body class="flex flex-col h-screen">
+
+<!-- 헤더-->
+<div th:replace="~{fragment/header :: headerFragment}"></div>
+
+<!--본문만 별도 스크롤 영역 -->
+<main class="flex-1 overflow-y-auto">
+    <th:block layout:fragment="main"></th:block>
+</main>
+
+<!--  헤더 스크립트 -->
+<div th:replace="~{fragment/header :: headerScriptFragment}"></div>
+<th:block layout:fragment="script"></th:block>
+
+</body>
+
+</html>

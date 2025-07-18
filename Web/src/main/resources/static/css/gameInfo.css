@@ -1,0 +1,115 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2f3e46;
+  height: 90px;
+  padding: 0 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+}
+
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
+
+.menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 80px;
+}
+
+.menu a {
+  text-decoration: none;
+  color: white;
+  font-size: 16px;
+  line-height: 90px;
+}
+
+.nav-right {
+  padding-right: 90px;
+  text-align: right;
+}
+
+.nav-right a, .nav-right span {
+  color: white;
+  text-decoration: underline;
+  margin-left: 10px;
+  font-size: 16px;
+  line-height: 90px;
+}
+
+
+
+
+.moving{
+color:white;
+}
+
+#wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 90px);
+    margin-top: 90px;
+}
+
+.card-container {
+  display: flex;
+  justify-content: center;
+  gap: 180px;
+  margin-top: 60px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 300px;
+  font-family: sans-serif;
+}
+
+.card i {
+  font-size: 60px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+#card1, #card2, #card3 {
+  width: 200px;
+  padding: 15px;
+  border-radius: 10px;
+  color: black;
+}
+
+#card1 {
+  background-color: red;
+}
+
+#card2 {
+  background-color: orange;
+}
+
+#card3 {
+  background-color: yellow;
+}
+
+
+
+.login a{
+    color: white;
+    text-decoration:none;
+}
+
+

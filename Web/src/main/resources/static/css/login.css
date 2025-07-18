@@ -1,0 +1,125 @@
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #131f24;
+        }
+
+        #wrapper{
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            height:100vh;
+            flex-direction: column;
+        }
+        #link{
+            justify-content: center;
+            align-items: center;
+            display:flex;
+            margin-top:20px;
+            color: white;
+        }
+        h2{
+            text-align: center;
+            color: white
+        }
+
+    input[type="email"],
+    input[type="password"],
+    #btn input[type="submit"] {
+        width: 250px;
+        padding: 10px;
+        margin-top: 5px;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+    #btn input[type="submit"]{
+    border-radius: 5px;
+        background-color: #8CCE47
+    }
+
+    #link a {
+    color: white;
+    text-decoration: none;
+    margin: 0 5px;
+    font-size: 14px;
+}
+
+
+
+.logo {
+  color: #00cc66;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: '맑은 고딕', sans-serif;
+  text-decoration: none;
+  line-height: 90px;
+}
+
+
+    #container{
+        border-radius:5px;
+        padding: 20px;
+        width:350px;
+        display:flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: whitesmoke;
+    }
+
+   .navbar {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     background-color: #37464f;
+     height: 90px;
+     padding: 0 40px;
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100%;
+     z-index: 1000;
+   }
+
+   .logo {
+     color: #00cc66;
+     font-size: 32px;
+     font-weight: bold;
+     font-family: '맑은 고딕', sans-serif;
+     text-decoration: none;
+     line-height: 90px;
+   }
+
+   .menu {
+     position: absolute;
+     left: 50%;
+     transform: translateX(-50%);
+     display: flex;
+     gap: 80px;
+   }
+
+   .menu a {
+     text-decoration: none;
+     color: white;
+     font-size: 16px;
+     line-height: 90px;
+   }
+
+   .nav-right {
+     padding-right: 90px;
+     text-align: right;
+   }
+
+   .nav-right a, .nav-right span {
+     color: white;
+     text-decoration: underline;
+     margin-left: 10px;
+     font-size: 16px;
+     line-height: 90px;
+   }
+
+
+
+
+

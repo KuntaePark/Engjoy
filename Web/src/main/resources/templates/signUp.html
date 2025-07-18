@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</th:block>
+
+
+<th:block layout:fragment="script">
+    <script th:src="@{/js/signUp.js}"></script>
+</th:block>
+
+
+<th:block layout:fragment="main">
+    <div id="wrapper" class="w-full h-full bg-black flex justify-center items-center">
+        <div id="container" class="bg-white rounded-lg w-[600px] p-8 flex flex-col gap-4">
+            <div class="text-3xl font-bold mb-2">회원가입</div>
+            <form th:action="@{/signUp}" method="post" th:object="${signUpDto}" class="grid grid-cols-4 gap-8">
+                <div class="input-box">
+                    <label for="nickname" class="input-label">닉네임</label>
+                    <div class="col-span-3">
+                        <input id="nickname" th:field="*{nickname}" type="text" class="input-field">
+                        <p th:if="${#fields.hasErrors('nickname')}" th:errors="*{nickname}"
+                           class="text-red-600"></p>
+                    </div>
+                </div>
+                <div class="input-box">
+                    <label class="input-label">이름</label>
+                    <div class="col-span-3">
+                        <input type="text" th:field="*{name}" class="input-field">
+                        <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}"
+                           class="text-red-600"></p>
+                    </div>
+                </div><div class="input-box">
+                <label class="input-label">생년월일</label>
+                <div class="col-span-3">
+                    <input type="date" th:field="*{birth}" class="input-field">
+                    <p th:if="${#fields.hasErrors('birth')}" th:errors="*{birth}"
+                       class="text-red-600"></p>
+                </div>
+            </div><div class="input-box">
+                <label class="input-label">이메일</label>
+                <div class="col-span-3">
+                    <input type="text" th:field="*{email}" class="input-field">
+                    <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}"
+                       class="text-red-600"></p>
+                </div>
+            </div>
+                <div class="input-box">
+                    <label class="input-label">비밀번호</label>
+                    <div class="col-span-3">
+                        <input type="password" th:field="*{password}" class="input-field">
+                        <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}"
+                           class="text-red-600"></p>
+                    </div>
+                </div>
+                <div class="input-box">
+                    <label class="input-label">비밀번호 확인</label>
+                    <div class="col-span-3">
+                        <input type="password" th:field="*{confirmPassword}" class="input-field">
+                        <p th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"
+                           class="text-red-600"></p>
+
+                    </div>
+                </div>
+                <div class="col-span-4 flex justify-end">
+                    <button type="submit" class="rounded-md border-2 px-4 py-2 ">확인</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</th:block>
+</html>

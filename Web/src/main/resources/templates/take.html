@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<head>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+</head>
+
+<th:block layout:fragment="css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* 선택된 답변 버튼 스타일 (단어 퀴즈용) */
+        .answer-btn.selected {
+            border: 2px solid #8CCE47;
+            font-weight: 600;
+        }
+        /* 드래그 앤 드롭 관련 스타일 (문장 퀴즈용) */
+        #answer-board .word-btn:active,
+        .sortable-ghost, sortable-drag { cursor: grab }
+
+        #word-bank .word-btn { cursor: pointer; }
+    </style>
+</th:block>
+<th:block layout:fragment="script">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+        <script th:inline="javascript">
+          document.addEventListener('DOMContentLoaded', () => {
+            // ─── 0) 페이지 이동 허용 여부 플래그 ─────────────────────────
+            const question       = /*[[${question}]]*/ null;
+            const currentIndex   = /*[[${currentIndex}]]*/ 0;
+            const totalQuestions = /*[[${totalQuestions}]]*/ 0;
+            let allowNavigation = false; // 새로고침 이탈 깃발 변수
+            let shouldOpenExitModal = false; // 뒤로가기 깃발 변수
+
+            // ─── 1) 새로고침 감지 & index=0 강제 리다이렉트 ─────────────
+            const params    = new URLSearchParams(window.location.search);
+            const idxParam  = params.get('index') || '0';
+
+            function setupExitListeners(){
+
+                // 새로고침 시 모달 상태 초기화
+                if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+                    history.replaceState(null, '', location.href);  // 초기화
+                }
+                const navEntries = performance.getEntriesByType('navigation');
+                const navType    = navEntries.length
+                                   ? navEntries[0].type
+                                   : (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'other');
+
+                if (navType === 'reload') {
+                  // 새로고침 후 index=0으로 돌아갈 때
+                  if( idxParam !== '0'){
+                      allowNavigation = true;
+                      window.location.replace('/quiz/take?index=0');
+                      return;
+                  }
+                  // 새로고침이지만 index=0인 경우에도 히스토리 상태를 초기화
+                  history.replaceState(null,'',location.href);
+                }
+
+                // ─── 2) 페이지 떠날 때 확인창(beforeunload) 등록 ──────────────
+                window.addEventListener('beforeunload', e => {
+                  if (allowNavigation) return;
+                  e.preventDefault();
+                  e.returnValue = '퀴즈를 떠나시겠습니까? 진행 상황이 저장되지 않을 수 있습니다.';
+                });
+
+                // ─── 3) 뒤로가기·X버튼 모달 제어 ──────────────────────────
+
+                const exitTriggerBtn = document.getElementById('exit-quiz-trigger');
+                const exitModal      = document.getElementById('exit-confirm-modal');
+                const continueBtn    = document.getElementById('continue-quiz-btn');
+                const exitConfirmBtn = document.getElementById('exit-quiz-btn');
+
+                if (exitTriggerBtn && exitModal && question) {
+                  let popstateInitialized = false;
+                  shouldOpenExitModal = true;
+                  history.pushState
+
+                   window.addEventListener('popstate', (event) => {
+                   // 처음 발생하는 popstate는 무시
+                    if(!popstateInitialized){
+                        popstateInitialized = true;
+                        return;
+                    }
+                    // 실제 뒤로가기인 경우에만 실행
+                    if (shouldOpenExitModal && event.state?.modal === true) {
+                      exitModal.classList.remove('hidden');
+                    }
+                });
+
+                  exitTriggerBtn.addEventListener('click', e => {
+                    e.preventDefault();
+                    history.pushState({modal:true},'',location.href);
+                    exitModal.classList.remove('hidden');
+                  });
+
+                  continueBtn.addEventListener('click', () => {
+                    exitModal.classList.add('hidden');
+                    history.back();
+                  });
+
+                  exitConfirmBtn.addEventListener('click', () => {
+                    allowNavigation = true;
+                    window.location.href = exitTriggerBtn.href;
+                  });
+
+                  exitModal.addEventListener('click', e => {
+                    if (e.target === exitModal) {
+                      exitModal.classList.add('hidden');
+                      history.back();
+                    }
+                  });
+                }
+            }
+
+            // ─── 4) 퀴즈 로직 초기화 ───────────────────────────────────
+            const quizContainer = document.getElementById('quiz-container');
+            const feedbackArea  = document.getElementById('feedback-area');
+            const submitBtn     = document.getElementById('submitBtn');
+            const nextBtn       = document.getElementById('nextBtn');
+            const skipBtn       = document.getElementById('skipBtn');
+            const resetBtn      = document.getElementById('resetBtn');
+            const answerBoard   = document.getElementById('answer-board');
+            const wordBank      = document.getElementById('word-bank');
+            const isSentenceQuiz = !!answerBoard;
+            const pronAudioBtn = document.getElementById('pron-audio-btn');
+            let selectedAnswer  = null;
+            let currentPlayingAudio = null;
+
+            if(question){
+              setupExitListeners(); // 나가기/새로고침/뒤로가기 관련 기능 활성화
+              checkSubmitButtonState(); // 제출 버튼 초기 상태 설정
+            }
+
+            // 진행바
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar && totalQuestions > 0) {
+              progressBar.style.width = `${((currentIndex + 1) / totalQuestions) * 100}%`;
+            }
+
+            // 제출 버튼 활성/비활성 체크
+            function checkSubmitButtonState() {
+              if (!submitBtn) return;
+              const answered = isSentenceQuiz
+                ? answerBoard.children.length > 0
+                : selectedAnswer !== null;
+              submitBtn.disabled = !answered;
+            }
+
+
+
+              // --- 퀴즈 유형별 로직 ---
+              if (isSentenceQuiz) {
+                  let initialBankWords = [], bankWords = [], answerWords = [];
+                  const wordBtnClasses = "word-btn flex-none px-6 py-2 bg-white border border-gray-200 border-b-4 rounded-2xl text-gray-600 font-bold transition-all hover:bg-gray-50 active:border-b-0 active:translate-y-px";
+
+                  function render() {
+                      if (!wordBank || !answerBoard) return;
+                      wordBank.innerHTML = '';
+                      answerBoard.innerHTML = '';
+                      bankWords.forEach(word => createWordButton(word, wordBank));
+                      answerWords.forEach(word => createWordButton(word, answerBoard));
+                      checkSubmitButtonState();
+                  }
+
+                  function createWordButton(word, parent) {
+                      const btn = document.createElement('button');
+                      btn.textContent = word.text;
+                      btn.className = wordBtnClasses;
+                      btn.dataset.wordId = word.id;
+                      parent.appendChild(btn);
+                  }
+
+                  function resetState() {
+                      bankWords = JSON.parse(JSON.stringify(initialBankWords));
+                      answerWords = [];
+                      render();
+                  }
+
+                  function initializeSentenceQuiz() {
+                       // HTML에서 읽는 대신, JavaScript 변수(question)에서 직접 단어 목록을 가져와 초기화
+                      initialBankWords = (question.shuffledWords || []).map((wordText, index) => ({
+                          id: index, text: wordText
+                      }));
+                      resetState();
+                  }
+                    if(question){
+                      initializeSentenceQuiz();
+
+                      // 이벤트 리스너 (클릭으로 단어 이동)
+                      wordBank.addEventListener('click', (e) => moveWord(e, bankWords, answerWords, render));
+                      answerBoard.addEventListener('click', (e) => moveWord(e, answerWords, bankWords, render, true));
+                      resetBtn?.addEventListener('click', resetState);
+
+                      // 드래그앤드롭 (순서 변경)
+                      new Sortable(answerBoard, {
+                          animation: 150,
+                          ghostClass: 'sortable-ghost',
+                          onEnd: (evt) => {
+                              const movedItem = answerWords.splice(evt.oldIndex, 1)[0];
+                              answerWords.splice(evt.newIndex, 0, movedItem);
+                          }
+                      });
+                  }
+              }
+              else { // 단어 퀴즈 로직
+                  const choicesArea = document.getElementById('choices-area');
+                  if (choicesArea) {
+                      choicesArea.addEventListener('click', (e) => {
+                          const clickedBtn = e.target.closest('.answer-btn');
+                          if (!clickedBtn) return;
+                          choicesArea.querySelectorAll('.answer-btn').forEach(btn => btn.classList.remove('selected'));
+                          clickedBtn.classList.add('selected');
+                          selectedAnswer = clickedBtn.dataset.answer;
+                          checkSubmitButtonState();
+                      });
+                  }
+              }
+
+              // --- 공통 이벤트 리스너 및 함수 ---
+
+              // 발음 듣기 버튼에 클릭 이벤트 추가
+                pronAudioBtn?.addEventListener('click', () => {
+                    const audioSrc = pronAudioBtn.dataset.audioSrc;
+                    if (!audioSrc) return;
+
+                    // 이전에 재생 중인 오디오가 있으면 정지시킵니다.
+                    if (currentPlayingAudio) {
+                        currentPlayingAudio.pause();
+                    }
+
+                    // 새 오디오 객체를 생성하고 재생합니다.
+                    currentPlayingAudio = new Audio(audioSrc);
+                    currentPlayingAudio.play();
+                });
+
+              submitBtn?.addEventListener('click', () => {
+                  allowNavigation = true; // 제출도 의도된 이동이므로 깃발을 올림
+                  let answeredDto;
+                  if (isSentenceQuiz) {
+                      const submittedWords = Array.from(answerBoard.querySelectorAll('.word-btn')).map(btn => btn.textContent.trim());
+                      if (submittedWords.length === 0) { alert('단어를 옮겨 문장을 만들어주세요!'); allowNavigation = false; return; }
+                      answeredDto = { exprId: question.exprId, submitSentence: submittedWords };
+                  } else {
+                      if (!selectedAnswer) { alert('답을 선택해주세요!'); allowNavigation = false; return; }
+                      answeredDto = { exprId: question.exprId, submitWord: selectedAnswer.trim() };
+                  }
+                  disableAllAnswerButtons();
+                  submitAnswer(answeredDto);
+              });
+
+              // skip과 next 버튼 모두 goToNextQuestion 함수를 호출하도록 통일
+              skipBtn?.addEventListener('click', () => goToNextQuestion());
+              nextBtn?.addEventListener('click', () => goToNextQuestion());
+
+              function moveWord(e, sourceArray, targetArray, renderCallback, sort = false) {
+                  const clickedBtn = e.target.closest('.word-btn');
+                  if (!clickedBtn || clickedBtn.classList.contains('sortable-drag')) return;
+                  const wordId = clickedBtn.dataset.wordId;
+                  const wordIndex = sourceArray.findIndex(w => String(w.id) === wordId);
+                  if (wordIndex > -1) {
+                      const [wordToMove] = sourceArray.splice(wordIndex, 1);
+                      targetArray.push(wordToMove);
+                      if (sort) targetArray.sort((a, b) => a.id - b.id);
+                      renderCallback();
+                  }
+              }
+
+              function submitAnswer(answeredDto) {
+                  const token = document.querySelector("meta[name='_csrf']")?.content;
+                  const header = document.querySelector("meta[name='_csrf_header']")?.content;
+                  const headers = { 'Content-Type': 'application/json' };
+                  if (token && header) headers[header] = token;
+
+                  fetch('/quiz/submit', { method: 'POST', headers: headers, body: JSON.stringify(answeredDto) })
+                      .then(response => response.ok ? response.json() : response.text().then(text => Promise.reject(text)))
+                      .then(gradedResult => {
+                          showFeedback(gradedResult);
+                          toggleActionButtons();
+                      })
+                      .catch(err => {
+                          console.error("채점 오류:", err);
+                          feedbackArea.innerHTML = `<p class="text-red-600">채점 중 오류가 발생했습니다.</p>`;
+                      });
+              }
+
+              function showFeedback(gradedResult) {
+                  let messageText, messageColor, answerText = '';
+
+                  if (gradedResult.correct) {
+                      messageText = '정답입니다! ';
+                      messageColor = 'text-green-600'; // 정답일 때 초록색
+                  } else {
+                      messageText = '오답입니다.';
+                      messageColor = 'text-red-600'; // 오답일 때 빨간색
+                      // 정답 텍스트를 준비
+                      let correctAnswer = gradedResult.correctWordAnswer || (gradedResult.correctSentenceAnswer || []).join(' ') || '';
+                      answerText = `<p class="text-lg font-medium text-gray-700 mt-1">정답: ${correctAnswer}</p>`;
+                  }
+
+                  // 정답/오답 모두 동일한 HTML 구조와 스타일을 사용
+                  feedbackArea.innerHTML = `
+                      <div class="text-center">
+                          <p class="text-2xl font-bold ${messageColor}">${messageText}</p>
+                          ${answerText}
+                      </div>
+                  `;
+              }
+
+              function toggleActionButtons() {
+                  // 제출 버튼은 숨기고, 다음 버튼은 그 자리에 표시
+                  if (submitBtn) submitBtn.classList.add('hidden');
+                  if (nextBtn) nextBtn.classList.remove('hidden');
+
+                  // 건너뛰기와 초기화 버튼을 비활성화
+                  if (skipBtn) {
+                      skipBtn.disabled = true;
+                      skipBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                  }
+                  if (resetBtn) {
+                      resetBtn.disabled = true;
+                      resetBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                  }
+              }
+
+              function disableAllAnswerButtons() {
+                  if (isSentenceQuiz) {
+                      const sortableAnswer = Sortable.get(document.getElementById('answer-board'));
+                      if (sortableAnswer) sortableAnswer.option('disabled', true);
+                      wordBank.querySelectorAll('.word-btn').forEach(btn => btn.style.pointerEvents = 'none');
+                      answerBoard.style.pointerEvents = 'none';
+                  } else {
+                      document.querySelectorAll('.answer-btn').forEach(btn => {
+                          btn.disabled = true;
+                          btn.classList.add('cursor-not-allowed', 'opacity-70');
+                      });
+                  }
+              }
+
+              function goToNextQuestion() {
+                  allowNavigation = true;
+                  if (currentIndex + 1 >= totalQuestions) {
+                      fetch('/quiz/result').then(res => res.json()).then(showFinalResult);
+                  } else {
+                      window.location.href = `/quiz/take?index=${currentIndex + 1}`;
+                  }
+              }
+
+              function showFinalResult(finalResult) {
+                    if (!quizContainer) return;
+
+                    // 진행바 숨기기
+                    const progressWrapper = document.querySelector('.w-full.bg-gray-200.rounded-full.h-4');
+                    if (progressWrapper) progressWrapper.style.display = 'none';
+                    // 퀴즈 개수 숨기기
+                    const quizCountText = document.querySelector('.text-sm.font-medium.text-gray-600.text-right');
+                    if (quizCountText) quizCountText.style.display = 'none';
+                    // X 나가기 버튼 숨기기
+                    const exitBtn = document.getElementById('exit-quiz-trigger');
+                    if (exitBtn) exitBtn.style.display = 'none';
+
+                    // quizContainer(바깥 박스)의 배경/그림자 없애기
+                      quizContainer.classList.remove('bg-white', 'rounded-lg', 'shadow-lg');
+                      quizContainer.classList.add('bg-transparent', 'shadow-none');
+
+                      // 결과 화면 HTML을 생성
+                      quizContainer.innerHTML = `
+                          <div class="max-w-md mx-auto bg-white border border-gray-300 border-2 rounded-lg shadow p-6 space-y-4">
+                              <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">퀴즈 결과</h2>
+                              <div class="space-y-2 text-lg font-semibold">
+                                  <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>총 문제</span><span class="font-bold">${finalResult.totalQuestions}</span></div>
+                                  <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>맞은 개수</span><span class="font-bold text-green-600">${finalResult.correctCount}</span></div>
+                                  <div class="flex justify-between p-4 bg-gray-50 rounded-lg"><span>획득 골드 <span title="골드는 획득날짜와 오답횟수를 기준으로 차등 지급됩니다."> 💰</span></span><span class="font-bold text-yellow-500">${finalResult.rewardGold}</span></div>
+                              </div>
+                              <div class="mt-8">
+                                  <a id="back-to-expressions-btn" href="/expressions" class="w-full inline-block px-4 py-2 bg-[#8CCE47] hover:brightness-110 border-b-4 border-green-600 text-white rounded-xl font-bold text-base text-center uppercase transition-colors">단어장으로 돌아가기</a>
+                              </div>
+                           </div>
+                      `;
+
+                      // 동적으로 생성된 버튼을 찾아서 클릭 이벤트를 추가
+                      const backToExpressionsBtn = document.getElementById('back-to-expressions-btn');
+                      backToExpressionsBtn?.addEventListener('click', (e) => {
+                          // a 태그의 기본 동작(즉시 이동)을 막기
+                          e.preventDefault();
+
+                          // 페이지를 떠나기 전에 '깃발'을 올려서 beforeunload 경고 막기
+                          allowNavigation = true;
+
+                          // JavaScript로 페이지를 이동
+                          window.location.href = backToExpressionsBtn.href;
+                      });
+
+
+                  // 하단의 액션 버튼들을 숨김
+                  const actionButtons = document.getElementById('action-buttons');
+                  if (actionButtons) actionButtons.style.display = 'none';
+              }
+
+          });
+    </script>
+</th:block>
+
+<th:block layout:fragment="main">
+    <div class="h-full p-4 flex flex-col bg-gray-50">
+
+        <div id="exit-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-lg w-full max-w-sm p-8 text-center">
+                <img th:src="@{/icons/exit-quiz.gif}" alt="sad-icon" class="w-24 h-24 mx-auto mb-4"/>
+
+                <h3 class="text-xl font-bold text-gray-800 mb-6">학습을 종료하시겠습니까?</h3>
+
+                <div class="flex flex-col gap-3">
+                    <button id="continue-quiz-btn" class="w-full px-3 py-3 bg-[#8CCE47] hover:brightness-110 border-b-4 border-green-600 text-white rounded-xl font-bold text-base uppercase transition-colors">
+                        계속 학습하기
+                    </button>
+                    <button id="exit-quiz-btn" class="w-full px-3 py-3 text-red-500 hover:bg-green-50 rounded-xl font-bold text-base uppercase transition-colors">
+                        학습 종료하기
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-shrink-0 w-full max-w-4xl mx-auto">
+            <div class="flex items-center gap-4 pt-6 pb-3">
+                <a id="exit-quiz-trigger" th:href="@{/quiz/exit}"
+                   class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors">
+                    <i class="fa-solid fa-xmark fa-xl"></i>
+                </a>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div id="progressBar" class="bg-[#8CCE47] h-4 rounded-full"></div>
+                </div>
+                <div class="flex-shrink-0">
+                    <p class="text-sm font-medium text-gray-600 text-right">
+                        <span th:text="${currentIndex + 1}" class="font-bold text-[#8CCE47] text-xl">1</span> / <span th:text="${totalQuestions}" class="text-lg">10</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <main class="flex-grow w-full flex items-center justify-center">
+            <div id="quiz-container" class="w-full max-w-4xl p-8 bg-white relative pb-24 rounded-lg shadow-md">
+
+                <div class="text-center text-gray-400 text-xl font-bold">
+                    <p th:if="${question.exprType.name() == 'WORD'}">올바른 의미를 선택하세요.</p>
+                    <p th:if="${question.exprType.name() == 'SENTENCE'}">문장의 순서를 올바르게 배열하세요.</p>
+                </div>
+                <hr class="my-6">
+
+                <div class="mb-8 flex items-center justify-center gap-3">
+                    <p class="text-2xl font-medium text-center text-gray-900" th:text="${question.questionText}"></p>
+                    <span th:if="${question.pronAudio != null}"
+                          id="pron-audio-btn"
+                          th:data-audio-src="${question.pronAudio}"
+                          class="text-gray-400 hover:text-blue-600 cursor-pointer transition-colors">
+                <i class="fa-solid fa-volume-high fa-lg"></i>
+            </span>
+                </div>
+
+                <div class="flex flex-col flex-grow" th:classappend="${question.exprType.name() == 'WORD'} ? 'justify-center' : ''">
+                    <div th:if="${question.exprType.name() == 'SENTENCE'}" class="flex flex-col flex-grow">
+                        <div>
+                            <div id="answer-board" class="flex justify-center items-center flex-wrap gap-2 p-4 border-2 border-dashed rounded-lg min-h-[120px] mb-2"></div>
+                            <div class="flex justify-end">
+                                <button id="resetBtn" class="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-600 px-3 py-1.5 rounded-lg text-sm">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                    <span>초기화</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="word-bank" class="flex flex-wrap content-start gap-3 justify-center items-center rounded-lg p-4 bg-gray-50 mt-2 min-h-[120px]">
+                            <button th:if="${question.shuffledWords != null}" th:each="word : ${question.shuffledWords}" th:text="${word}"
+                                    class="word-btn flex-none px-6 py-2 bg-white border border-gray-200 border-b-4 rounded-2xl text-gray-600 font-bold transition-all hover:bg-gray-50 active:border-b-0 active:translate-y-px"></button>
+                        </div>
+                    </div>
+                    <div id="choices-area" th:if="${question.exprType.name()=='WORD'}" class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 place-content-center">
+                        <button th:if="${question.multipleChoices != null}" th:each="choice : ${question.multipleChoices}" type="button" class="answer-btn p-4 text-lg text-left text-gray-700 bg-white border border-gray-200 border-b-4 rounded-2xl text-gray-600 font-bold transition-all hover:bg-gray-50 active:border-b-0 active:translate-y-px" th:data-answer="${choice}">
+                            <span th:text="${choice}" class="font-bold"></span>
+                        </button>
+                    </div>
+                </div>
+                <div id="feedback-area" class="absolute bottom-5 left-0 right-0 text-center"></div>
+            </div>
+        </main>
+
+        <div class="flex-shrink-0 w-full max-w-4xl mx-auto">
+            <div id="action-buttons" class="flex-shrink-0 mt-8 pb-8 flex justify-between items-center">
+                <button id="skipBtn" class="px-6 py-2 bg-white border border-gray-200 border-b-4 rounded-2xl text-gray-600 font-medium transition-all hover:bg-gray-50 active:border-b-0 active:translate-y-px">
+                    건너뛰기
+                </button>
+                <div class="relative w-32 h-12">
+                    <button id="submitBtn" class="absolute inset-0 bg-[#8CCE47] hover:brightness-110 text-white w-full h-full rounded-2xl font-medium border-b-4 border-green-600 transition-all active:border-b-0 active:translate-y-px disabled:bg-gray-300 disabled:border-gray-400 disabled:cursor-not-allowed" disabled>
+                        제출
+                    </button>
+                    <button id="nextBtn" class="absolute inset-0 bg-[#8CCE47] hover:brightness-110 text-white w-full h-full rounded-2xl font-medium border-b-4 border-green-600 transition-all active:border-b-0 active:translate-y-px hidden">
+                        다음
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</th:block>
+</html>

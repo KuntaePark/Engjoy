@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@source "../resources/templates/**/*.{html,js}";
+@source "../resources/static/**/*.{css,js}";
+
+.input-box {
+    @apply col-span-4 grid grid-cols-subgrid  items-center;
+}
+
+.input-label {
+    @apply col-span-1 font-bold;
+}
+
+.input-field {
+    @apply col-span-2 rounded-md border-2 border-gray-200 focus:outline-gray-400 p-[2px];
+}
+
+.input-btn {
+    @apply rounded-md bg-[#8CCE47] p-1 text-sm;
+}
+
+.game-info-title {
+    @apply text-2xl pb-2 font-bold;
+}
+
+.center-alone {
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-4xl;
+}
+
+.game-info {
+    @apply rounded-lg bg-white w-full h-[200px] p-4 relative border-2 border-gray-300;
+}

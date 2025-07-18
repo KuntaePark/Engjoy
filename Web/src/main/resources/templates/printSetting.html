@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragment/default}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학습지 인쇄 설정</title>
+
+    <!-- CSRF 토큰 -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <th:block layout:fragment="css">
+        <style>
+            /* PDF 뷰어 컨테이너 */
+            #pdf-preview-container {
+              max-height: 80vh;
+              padding-top: 1rem;
+              overflow-y: auto;
+              overflow-x: hidden;
+              box-sizing: border-box;
+            }
+
+            .pdf-page {
+              width: 210mm;
+              height: 297mm;
+              margin: 1rem auto;
+              box-shadow: 0 0 5px rgba(0,0,0,0.2);
+              page-break-after: always; /* 인쇄할 때도 페이지 구분 */
+              background: white;
+            }
+
+            .pdf-page-canvas {
+              display: block;
+              /* 페이지 박스 안에서 꽉 차게 */
+              width: 100% !important;
+              height: 100% !important;
+            }
+
+        </style>
+    </th:block>
+</head>
+
+<th:block layout:fragment="script">
+    <!-- PDF.js 모듈 로드 -->
+    <script src="https://mozilla.github.io/pdf.js/build/pdf.mjs" type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ko.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // 요소(Element) 가져오기
+
+            const createPdfBtn    = document.getElementById('create-pdf-btn');
+            const downloadBtn     = document.getElementById('downloadBtn');
+            const printBtn        = document.getElementById('printBtn');
+            const pdfCanvas       = document.getElementById('pdf-preview-canvas');
+            const viewerMsg       = document.getElementById('viewer-message');
+            const printFormRadios = document.querySelectorAll('input[name="printForm"]');
+
+            const dateRangeSelect = document.getElementById('dateRangeSelect');
+            const customPickerContainer = document.getElementById('customDateRangePickerContainer');
+
+            let rangeSeparator = ' ~ ';
+            const customPickerInput = document.getElementById('customDateRangePicker');
+            let flatpickrInstance = null;
+
+            // 인쇄용 숨겨진 iframe 생성
+            const printFrame = document.createElement('iframe');
+            printFrame.style.display = 'none';
+            document.body.appendChild(printFrame);
+
+            // CSRF 토큰
+            const token  = document.querySelector("meta[name='_csrf']").content;
+            const header = document.querySelector("meta[name='_csrf_header']").content;
+
+            // 헬퍼(Helper) 함수 정의
+
+            /** 서버에 PDF 생성을 요청하고 Blob 결과를 반환하는 함수 */
+            function fetchPdfBlob() {
+                const dto = createPrintDto();
+                return fetch('/print/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', [header]: token },
+                    body: JSON.stringify(dto)
+                }).then(res => res.ok ? res.blob() : Promise.reject('PDF 생성에 실패했습니다.'));
+            }
+
+            // 이벤트 리스너(Event Listeners) 등록
+
+
+            // '미리보기 생성' 버튼 클릭 시
+            createPdfBtn.addEventListener('click', () => {
+              createPdfBtn.disabled = true;
+              createPdfBtn.innerText = '미리보기 생성 중...';
+
+              fetchPdfBlob()
+              .then(blob => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload  = () => resolve(new Uint8Array(reader.result));
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(blob);
+              }))
+              .then(data => {
+                const { pdfjsLib } = globalThis;
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.mjs';
+                return pdfjsLib.getDocument({ data }).promise;
+              })
+              .then(pdf => {
+                const container = document.getElementById('pdf-preview-container');
+                container.innerHTML = '';
+                container.classList.remove('hidden');
+                viewerMsg.style.display = 'none';
+
+                const renders = [];
+                for (let i = 1; i <= pdf.numPages; i++) {
+                  renders.push(
+                    pdf.getPage(i).then(page => {
+                      const viewport = page.getViewport({ scale: 1.0 });
+                      const pageDiv = document.createElement('div');
+                      pageDiv.classList.add('pdf-page');
+                      const canvas = document.createElement('canvas');
+                      canvas.classList.add('pdf-page-canvas');
+                      canvas.width  = viewport.width;
+                      canvas.height = viewport.height;
+                      pageDiv.appendChild(canvas);
+                      container.appendChild(pageDiv);
+                      return page.render({
+                        canvasContext: canvas.getContext('2d'),
+                        viewport
+                      }).promise;
+                    })
+                  );
+                }
+                return Promise.all(renders);
+              })
+              .catch(err => {
+                console.error(err);
+                viewerMsg.innerText = '미리보기를 표시할 수 없습니다.';
+                viewerMsg.style.display = 'block';
+              })
+              .finally(() => {
+                createPdfBtn.disabled = false;
+                createPdfBtn.innerText = '학습지 미리보기 생성';
+                // 맨 위로 스크롤
+                document.getElementById('pdf-preview-container').scrollTop = 0;
+              });
+            });
+
+            // '다운로드' 버튼 클릭 시
+            downloadBtn.addEventListener('click', () => {
+                fetchPdfBlob()
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'my_word_list.pdf';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    })
+                    .catch(err => alert('다운로드 실패: ' + err));
+            });
+
+            // '인쇄하기' 버튼 클릭 시
+            printBtn.addEventListener('click', () => {
+                fetchPdfBlob()
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        printFrame.src = url;
+                        printFrame.onload = () => {
+                            try {
+                                printFrame.contentWindow.focus();
+                                printFrame.contentWindow.print();
+                            } catch (e) {
+                                alert("인쇄 팝업 표시에 실패했습니다. 팝업 차단 여부를 확인해 주세요.");
+                            } finally {
+                                URL.revokeObjectURL(url);
+                            }
+                        };
+                    })
+                    .catch(err => alert('인쇄 실패: ' + err));
+            });
+
+            if (customPickerInput) {
+                flatpickrInstance = flatpickr(customPickerInput, {
+                    mode: "range",
+                    dateFormat: "Y-m-d",
+                    locale: "ko"
+                });
+
+                // <select> 박스 선택에 따라 달력을 보여주거나 숨기는 로직
+                dateRangeSelect.addEventListener('change', (event) => {
+                    if (event.target.value === 'CUSTOM') {
+                        customPickerContainer.classList.remove('hidden');
+                        flatpickrInstance.open();
+                    } else {
+                        customPickerContainer.classList.add('hidden');
+                    }
+                });
+            }
+
+            /** 폼 데이터를 읽어 서버에 보낼 DTO 객체를 생성하는 함수 */
+            function createPrintDto() {
+                const form  = document.getElementById('print-options-form');
+                  const formData  = new FormData(form);
+                  const rawRange = formData.get('dateRange');
+                  const dateRange = rawRange && rawRange !== '' ? rawRange : null;
+                  const sel = formData.get('selectionType');
+                  const selectAll = !sel || sel === 'all';
+
+                  let startDate = null, endDate = null;
+                  const today = new Date();
+
+                  const shuffle = formData.has('shuffle');
+                  const orderType = shuffle ? 'SUFF' : 'STAY';
+
+
+
+                  if (dateRange !== null && dateRange !== 'CUSTOM') {
+                    // ① TODAY
+                    if (dateRange === 'TODAY') {
+                      const iso = today.toISOString().slice(0,10); // "YYYY-MM-DD"
+                      startDate = iso;
+                      endDate   = iso;
+                      console.log('→ TODAY 분기, iso=', iso);
+                    }
+                    // ② LAST_WEEK
+                    else if (dateRange === 'LAST_WEEK') {
+                      const lastWeek = new Date(today);
+                      lastWeek.setDate(today.getDate() - 7);
+                      startDate = lastWeek.toISOString().slice(0,10);
+                      endDate   = today.toISOString().slice(0,10);
+                    }
+                    // ③ LAST_MONTH
+                    else if (dateRange === 'LAST_MONTH') {
+                      const lastMonth = new Date(today);
+                      lastMonth.setMonth(today.getMonth() - 1);
+                      startDate = lastMonth.toISOString().slice(0,10);
+                      endDate   = today.toISOString().slice(0,10);
+                    }
+                  }
+                  // ④ CUSTOM (기존 로직)
+                  else if (dateRange === 'CUSTOM') {
+                     if (flatpickrInstance && flatpickrInstance.selectedDates.length === 2) {
+                            const [d1, d2] = flatpickrInstance.selectedDates;
+                            startDate = formatLocalDate(d1);
+                            endDate   = formatLocalDate(d2);
+                          }
+                      }
+
+                  return {
+                    selectAll,
+                    exprIdsToPrint: [],
+                    printForm: formData.get('printForm'),
+                    quizSettingDto: {
+                      category:  formData.get('category'),
+                      dateRange: dateRange,
+                      startDate,
+                      endDate
+                    },
+                    printOptionDetailDto: {
+                        printTitle: formData.get('printTitle'),
+                        userName: formData.has('userName'),
+                        fontSize: formData.get('fontSize'),
+                        orderType
+                    }
+                };
+            }
+
+            function formatLocalDate(date) {
+              const y = date.getFullYear();
+              const m = String(date.getMonth() + 1).padStart(2, '0');
+              const d = String(date.getDate()).padStart(2, '0');
+              return `${y}-${m}-${d}`;
+            }
+    });
+    </script>
+</th:block>
+
+<th:block layout:fragment="main">
+    <div class="container mx-auto p-8 grid grid-cols-1 md:grid-cols-3 gap-8 h-full">
+        <form id="print-options-form" class="md:col-span-1 space-y-6 bg-white p-6 rounded shadow sticky top-8">
+            <h2 class="text-2xl font-bold">인쇄 설정</h2>
+
+            <div>
+                <label for="title-input" class="block font-medium">제목</label>
+                <input type="text" id="title-input" name="printTitle" maxlength="50"
+                       class="w-full border rounded p-1" placeholder="학습지 제목 (최대 50자)" value="My Expression">
+            </div>
+            <div>
+                <label class="flex items-center">
+                    <input type="checkbox" name="userName" value="true" class="mr-2">
+                    <span>이름 박스 포함</span>
+                </label>
+            </div>
+            <div>
+                <label class="block font-medium">폰트 크기</label>
+                <div class="flex items-center space-x-4 border rounded p-1 justify-around">
+                    <label>
+                        <input type="radio" name="fontSize" value="LARGE" class="sr-only peer">
+                        <span class="cursor-pointer px-4 py-1 rounded peer-checked:bg-blue-600 peer-checked:text-white">크게</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="fontSize" value="MED" class="sr-only peer" checked>
+                        <span class="cursor-pointer px-4 py-1 rounded peer-checked:bg-blue-600 peer-checked:text-white">보통</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="fontSize" value="SMALL" class="sr-only peer">
+                        <span class="cursor-pointer px-4 py-1 rounded peer-checked:bg-blue-600 peer-checked:text-white">작게</span>
+                    </label>
+                </div>
+            </div>
+            <hr/> <fieldset>
+        </fieldset>
+
+            <div>
+                <label class="block">카테고리</label>
+                <select name="category" class="w-full border rounded p-1">
+                    <option value="MIXED">전체</option>
+                    <option value="WORD">단어</option>
+                    <option value="SENTENCE">문장</option>
+                </select>
+            </div>
+            <div>
+                <label class="block">기간</label>
+                <select id="dateRangeSelect" name="dateRange" class="w-full border rounded p-1">
+                    <option value="">전체</option>
+                    <option value="TODAY">오늘</option>
+                    <option value="LAST_WEEK">1주일</option>
+                    <option value="LAST_MONTH">1달</option>
+                    <option value="CUSTOM">직접</option>
+                </select>
+                <div id="customDateRangePickerContainer" class="hidden">
+                    <input type="text" id="customDateRangePicker" placeholder="기간을 선택하세요" class="w-full border rounded p-1">
+                </div>
+            </div>
+
+            <div>
+                <label class="flex items-center">
+                    <input type="checkbox" name="shuffle" class="mr-2">
+                    <span>문항 순서 셔플</span>
+                </label>
+            </div>
+
+            <fieldset>
+                <legend class="font-medium">출력 형태</legend>
+                <label class="flex items-center"><input type="radio" name="printForm" value="EXAM" checked class="mr-2">시험지</label>
+                <label class="flex items-center"><input type="radio" name="printForm" value="LIST" class="mr-2">리스트</label>
+                <label class="flex items-center"><input type="radio" name="printForm" value="WORKSHEET" class="mr-2">워크시트</label>
+            </fieldset>
+
+            <button type="button" id="create-pdf-btn"
+                    class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">
+                학습지 미리보기 생성
+            </button>
+            <div class="flex space-x-4">
+                <button type="button" id="downloadBtn"
+                        class="w-full bg-gray-600 text-white py-2 rounded hover:bg-gray-700">
+                    다운로드
+                </button>
+                <button type="button" id="printBtn"
+                        class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                    인쇄하기
+                </button>
+            </div>
+        </form> <div id="pdf-viewer" class="md:col-span-2 bg-gray-100 p-4 rounded shadow overflow-auto">
+        <p id="viewer-message" class="text-gray-500">“학습지 미리보기 생성” 버튼을 눌러주세요.</p>
+        <div id="pdf-preview-container" class="hidden"></div>
+    </div>
+    </div>
+</th:block>
+</html>

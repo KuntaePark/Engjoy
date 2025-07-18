@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</th:block>
+
+<th:block layout:fragment="script">
+</th:block>
+
+
+<th:block layout:fragment="main">
+        <div class="flex-1 flex flex-col  items-center justify-center  bg-[#131f24] h-full space-y-6 pb-10">
+            <h2 class="text-3xl font-bold text-center text-white ">로그인</h2>
+
+            <form th:action="@{/login}" method="post" class="space-y-6">
+                <div>
+                    <input type="email" name="username" placeholder="이메일"
+                           class="w-full px-3 py-3 mt-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <input type="password" name="password" placeholder="비밀번호"
+                           class="w-full px-3 py-3 mt-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <div th:if="${error}" th:text="${error}" class="text-red-500 text-sm text-center"></div>
+
+                <div>
+                    <input type="submit" value="로그인하기"
+                           class="w-full inline-block px-4 py-3 bg-[#8CCE47] cursor-pointer  hover:brightness-110 border-b-4 border-green-600 text-green-900 rounded-xl font-bold text-base text-center uppercase transition-colors">
+                </div>
+            </form>
+
+            <div class="text-md text-center text-gray-400">
+                <a th:href="@{/agree}" class="font-semibold  hover:underline cursor-pointer">회원가입</a>
+                <span class="mx-2">/</span>
+                <a th:href="@{/passwordSearch}" class="font-semibold  hover:underline cursor-pointer">비밀번호 찾기</a>
+            </div>
+        </div>
+
+</th:block>
+</html>

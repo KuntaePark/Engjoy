@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<header th:fragment="headerFragment" class="bg-[#37464f] w-full flex items-center h-20 px-4">
+    <div class="container mx-auto grid grid-cols-3 items-center h-full">
+        <a th:href="@{/mainPage}"
+           class="text-3xl font-bold text-white">
+            ENG<span class="text-green-500">JOY</span>
+        </a>
+
+        <nav class="hidden md:flex justify-self-center space-x-14 text-base font-semibold text-gray-300 hover:text-bold">
+            <a th:href="@{/game}" class="hover:text-green-600">게임</a>
+            <a th:href="@{/expressions}" class="hover:text-green-600">단어장</a>
+        </nav>
+
+        <div class="justify-self-end flex items-center space-x-4">
+            <a id="loginBtn" th:href="@{/login}"  sec:authorize="!isAuthenticated()" class="px-5 py-2 border-2 border-b-4 bg-[#8CCE47] cursor-pointer font-bold hover:border-green-300 border-green-600 rounded-lg text-green-900 transition-colors">
+                로그인
+            </a>
+
+            <a id="signupBtn" th:href="@{/agree}"  sec:authorize="!isAuthenticated()" class="px-5 py-2 border-2 border-b-4 border-gray-500 text-green-500 font-bold rounded-lg hover:bg-gray-700 hover:border-gray-300 cursor-pointer transition-colors">
+                회원가입
+            </a>
+
+            <div id="profile-box" sec:authorize="isAuthenticated()" class="relative flex items-center space-x-4">
+                <div class="flex flex-col text-sm text-white text-right">
+                    <span><b sec:authentication="principal.nickname">홍길동</b>님</span>
+                    <span sec:authentication="principal.email" class="text-gray-200">you@example.com</span>
+                </div>
+                <button id="profileBtn"
+                        class="w-12 h-12 rounded-full bg-gray-200 hover:opacity-80 overflow-hidden">
+                    <img th:src="@{/images/charImg.gif}" />
+                </button>
+                <div id="dropdownMenu"
+                     class="hidden absolute top-[100%] right-0 mt-2 w-32 bg-white border rounded shadow z-30">
+                    <a th:href="@{/myPage}" class="block px-4 py-2 hover:bg-gray-100">마이페이지</a>
+                    <form th:action="@{/logout}" method="post"class="block px-4 py-2 hover:bg-gray-100">
+                        <button type="submit">로그아웃</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<form th:action="@{/logout}" method="post" id="logoutForm" style="display: none;"></form>
+
+<script th:fragment="headerScriptFragment" th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+        const profileBox = document.getElementById('profile-box');
+        const profileBtn = document.getElementById('profileBtn');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        const path = window.location.pathname.replace(/\/$/, '');
+
+        if (profileBox) {
+            // 로그아웃 링크에 이벤트 리스너 추가
+            const logoutLink = document.getElementById('logoutLink');
+            if(logoutLink) {
+                logoutLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.getElementById('logoutForm').submit();
+                });
+            }
+
+            if (profileBtn && dropdownMenu) {
+                profileBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('hidden');
+                });
+                document.addEventListener('click', (e) => {
+                    if (!dropdownMenu.contains(e.target) && !profileBtn.contains(e.target)) {
+                        dropdownMenu.classList.add('hidden');
+                    }
+                });
+            }
+        } else {
+            if (path === '/login') {
+                if (loginBtn) loginBtn.style.display = 'none';
+            } else if (path === '/agree') {
+                if (signupBtn) signupBtn.style.display = 'none';
+            }
+        }
+    });
+</script>
+</html>

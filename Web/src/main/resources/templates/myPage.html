@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+<!--    <link rel="stylesheet" th:href="@{/css/myPage.css}">-->
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</th:block>
+
+
+
+<th:block layout:fragment="script"></th:block>
+
+
+<th:block layout:fragment="main">
+    <div class="h-full w-full flex justify-center">
+        <div class="h-full w-[1320px] grid grid-cols-3 ">
+            <div class="col-span-1 h-full  bg-gray-600 flex flex-col items-center">
+                <div class="flex flex-col items-center gap-4 mt-16">
+                    <div class="rounded-full w-[100px] h-[100px] bg-white overflow-hidden">
+                        <img th:src="@{/images/charImg.gif}"/>
+                    </div>
+                    <span th:text="${nickname}" class="text-xl text-white">닉네임</span>
+                    <span th:text="${email}" class="text-xl text-white">example@example.com</span>
+                    <a th:href="@{/myInfoChange}" class="bg-white  border-2 rounded-lg w-[200px] py-2 text-center">정보 수정</a>
+                </div>
+
+            </div>
+            <div class="col-span-2 flex flex-col gap-4 bg-gray-200 w-full p-8">
+                <div id="title" class="font-bold text-3xl pb-2">
+                    내 게임 정보
+                    <div class="w-full h-[2px] bg-gray-700 mt-2"></div>
+                </div>
+                <div>
+                    <div class="game-info-title">게임1</div>
+                    <div class="flex flex-row gap-4 ">
+                        <div class="game-info">
+                            <div>
+                                최고점수
+                            </div>
+                            <div class="center-alone"><span th:text="${game1score}">3500</span>점</div>
+                        </div>
+                        <div class="game-info">
+                            순위
+                            <div class="center-alone"><span th:text="${ranking}">1</span>위</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="game-info-title">게임2</div>
+                    <div class="game-info">
+                        최고점수
+                        <div class="center-alone"><span th:text="${game2score}">2500</span>점</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="game-info-title">업적</div>
+                    <div class="game-info">
+                        업적 목록
+                        <div class="h-[1px] w-full mt-1 bg-gray-400"></div>
+                        <div id="achv-list" class="w-full overflow-y-auto">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</th:block>
+</html>

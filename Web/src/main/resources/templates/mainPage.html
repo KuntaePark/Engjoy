@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{fragment/default}">
+
+<th:block layout:fragment="css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"/>
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <style>
+        .hide-scrollbar {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            // Swiper 슬라이더 초기화
+            const swiper = new Swiper('.swiper', {
+                loop: true,
+                slidesPerView: 1,
+                slidesPerGroup: 1,
+                spaceBetween: 0,
+                navigation: {
+                  prevEl: '#prevBtn',
+                  nextEl: '#nextBtn',
+                },
+            });
+
+            // .feature 카드 등장 옵저버 (기존과 동일)
+            const featureObserver = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('opacity-100', 'translate-y-0');
+                  entry.target.classList.remove('opacity-0', 'translate-y-8');
+                } else {
+                  entry.target.classList.add('opacity-0', 'translate-y-8');
+                  entry.target.classList.remove('opacity-100', 'translate-y-0');
+                }
+              });
+            }, { threshold: 0.2 });
+
+            document.querySelectorAll('.feature').forEach(el => {
+              el.classList.add('opacity-0', 'translate-y-8', 'transition', 'duration-700');
+              featureObserver.observe(el);
+            });
+
+            // --- 말풍선 로직 ---
+
+            // 모든 말풍선을 초기에 숨김 상태로 설정
+            document.querySelectorAll('.message').forEach(msg => {
+                msg.classList.add('opacity-0', 'translate-y-8', 'transition', 'duration-700');
+            });
+
+            // 각 대화 '그룹'을 관찰할 옵저버 생성
+            const chatGroupObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    const group = entry.target;
+                    const messagesInGroup = group.querySelectorAll('.message');
+
+                    if (entry.isIntersecting) {
+                        // 그룹이 보이면, 그 안의 말풍선들을 순차적으로 표시
+                        messagesInGroup.forEach((msg, index) => {
+                            setTimeout(() => {
+                                // 사용자가 빠르게 스크롤하여 이미 사라진 경우를 대비해 한 번 더 체크
+                                if(entry.isIntersecting) {
+                                    msg.classList.add('opacity-100', 'translate-y-0');
+                                    msg.classList.remove('opacity-0', 'translate-y-8');
+                                }
+                            }, index * 200); // 0.2초 간격으로 순차 등장
+                        });
+                    } else {
+                        // 그룹이 화면에서 나가면, 그 안의 말풍선들을 즉시 숨김
+                        messagesInGroup.forEach(msg => {
+                            msg.classList.add('opacity-0', 'translate-y-8');
+                            msg.classList.remove('opacity-100', 'translate-y-0');
+                        });
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            // 관찰할 대화 그룹들을 명확한 ID로 선택
+            document.querySelectorAll('#game-messages, #review-messages').forEach(group => {
+                chatGroupObserver.observe(group);
+            });
+        });
+    </script>
+</th:block>
+
+
+<th:block layout:fragment="main">
+    <div class="snap-y snap-mandatory w-full h-full overflow-y-auto hide-scrollbar">
+        <section class="bg-cover bg-center bg-no-repeat snap-center"
+                 th:style="|background-image: url('@{/images/background.png}');|">
+            <div class="max-w-screen-xl lg:max-w-screen-2xl mx-auto flex flex-col-reverse md:flex-row items-center justify-center gap-x-4 min-h-screen px-6 py-12 overflow-x-hidden">
+                <div class="md:w-1/2 text-gray-800 space-y-8">
+                    <h1 class="text-5xl font-bold leading-[5rem]">
+                        외우지 말고,플레이하세요!<br/>
+                        당신의 영어는 게임속에 있습니다.
+                    </h1>
+                    <p class="text-gray-500 text-2xl font-semibold">영어 공부, 아직도 외우니? 난 사냥해!</p>
+                    <button th:href="@{/game}" class="bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-3 rounded-full transition">
+                        게임바로가기
+                    </button>
+
+                    <div class="flex gap-8">
+                        <button id="prevBtn" class="text-6xl w-12 h-12 text-gray-800">‹</button>
+                        <button id="nextBtn" class="text-6xl w-12 h-12 text-gray-800">›</button>
+                    </div>
+                </div>
+
+                <!-- 슬라이더 -->
+                <div class="md:w-1/2 flex justify-center relative">
+                    <div class="relative w-[560px] h-[500px]">
+                        <div class="absolute inset-0 flex items-center justify-end">
+                            <div class="swiper w-full h-full">
+                                <div class="swiper-wrapper">
+                                    <div class="swiper-slide flex items-center justify-center !w-full flex-shrink-0">
+                                        <img th:src="@{/images/slide1.png}" alt="슬라이드1" class="max-w-full max-h-full"/>
+                                    </div>
+                                    <div class="swiper-slide flex items-center justify-center !w-full flex-shrink-0">
+                                        <img th:src="@{/images/slide2.png}" alt="슬라이드2" class="max-w-full max-h-full"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!--  말풍선 블록 -->
+        <section class="bg-white py-16 snap-center">
+            <div class="max-w-6xl mx-auto p-6 space-y-24">
+                <!-- 게임 소개 세트 -->
+                <div id="game-messages" class="flex items-start gap-6">
+                    <div class="message flex-shrink-0 w-60 h-60 rounded-full shadow-md overflow-hidden bg-[url(/images/gameImg1.png)] bg-center bg-no-repeat bg-[length:120%]">
+                    </div>
+                    <div class="space-y-6 font-bold">
+                        <div class="message bg-gray-400 rounded-2xl px-4 py-3 shadow text-gray-900 max-w-xl">
+                            여긴 마법 배틀장이야!<br>단어로 맞춰 강력한 마법을 쓸 수 있는 곳이지!
+                        </div>
+                        <div class="message bg-gray-400 rounded-2xl px-4 py-3 shadow text-gray-900 max-w-xl">
+                            영어를 외우는게 아니라, 싸우면서 익히는 거라고!<br>무작정 암기는 이제 그만! 액션으로 배우자!
+                        </div>
+                        <div class="message bg-gray-400 rounded-2xl px-4 py-3 shadow text-gray-900 max-w-xl">
+                        PVP에 도전해 볼래?<br> 1:1대결을 통해 나의 영어 실력을 시험해봐!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 게임 소개2 세트 -->
+                <div id="review-messages" class="flex flex-col md:flex-row-reverse items-start gap-6 md:justify-start">
+                    <div class="message flex-shrink-0 w-60 h-60 rounded-full shadow-md overflow-hidden bg-[url(/images/gameImg2.png)] bg-center bg-no-repeat bg-[length:120%]">
+                    </div>
+                    <div class="space-y-6">
+                        <div class="message bg-gray-400 rounded-2xl px-4 py-3 shadow text-gray-900 max-w-xl">
+                        문장을 완성시켜 던전을 탈출하자!<br>몬스터들을 잡아 단어를 얻어봐!
+                        </div>
+                        <div class="message bg-gray-400 rounded-2xl px-4 py-3 shadow text-gray-900 max-w-xl">
+                        몬스터들이 무섭다구? 아이템을 사용해봐!<br> 아이템을 사용해서 체력을 채우거나 빠르게 이동할 수 있어!
+                        </div>
+                        <div class="message bg-gray-400 rounded-2xl px-4 py-3 shadow text-gray-900 max-w-xl">
+                        높은 점수를 획득하면 보상이 와르르!<br>골드로 멋진 장비 아이템도 살 수 있어!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="py-16 bg-[#f1fce5] snap-center">
+            <div class="max-w-6xl mx-auto px-6">
+                <!-- 타이틀 -->
+                <h2 class="text-3xl font-bold text-gray-800 text-center mb-12">
+                    즐겁게 학습하고 또 반복합니다
+                </h2>
+
+                <!-- 두 개의 카드 박스 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+                    <div class="feature bg-white rounded-xl p-6 opacity-0 translate-y-8 transition duration-700">
+                        <h3 class="text-xl font-semibold mb-4">게임에서 학습한 단어와 문장을 복습</h3>
+                        <img th:src="@{/images/expression.png}" alt="단어장화면" class="w-fullrounded-lg shadow" />
+                    </div>
+
+                    <div class="flex flex-col gap-8">
+                        <div class="feature bg-white rounded-xl p-6 opacity-0 translate-y-8 transition duration-700 delay-200 flex flex-col flex-1">
+                            <h3 class="text-xl font-semibold mb-4">1. 플립카드 형식</h3>
+                            <p class="text-gray-600  text-sm font-semibold">
+                                뜻, 예문, 품사, 발음, 복습 힌트 등 완전한 설명이 담겨 있어요.<br>
+                                발음 버튼, 즐겨찾기 기능을 제공해요.<br>
+                                국제 영어 기준인 CEFR 레벨을 기반으로 A1부터 C1까지 난이도를 숫자(*1~5)로 표시했어요.</p>
+                        </div>
+
+                        <div class="feature bg-white rounded-xl p-6 opacity-0 translate-y-8 transition duration-700 delay-300 flex flex-col flex-1">
+                            <h3 class="text-xl font-semibold mb-4">2. 복습 퀴즈</h3>
+                            <p class="text-gray-600 mb-4 text-sm font-semibold">복습은 다양한 퀴즈 형식으로 진행됩니다.<br>
+                                올바른 단어를 선택하여 정답을 맞추세요.<br>
+                                흩어진 단어를 조합하여 올바른 문장을 만드세요.
+                            </p>
+                        </div>
+
+                        <div class="feature bg-white rounded-xl p-6 opacity-0 translate-y-8 transition duration-700 delay-400 flex flex-col flex-1">
+                            <h3 class="text-xl font-semibold mb-4 ">3.커스터 마이징 인쇄</h3>
+                            <p class="text-gray-600 mb-4 text-sm font-semibold">원하는 단어나 문장만 골라 나만의 맞춤형 학습지를 만들 수 있어요!<br>
+                                시험지,리스트,워크시트 형태로 출력가능해요.<br>
+                                클릭 한 번으로 다운로드하거나 인쇄해 보세요.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+
+</th:block>
+</html>
