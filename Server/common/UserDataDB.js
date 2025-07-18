@@ -53,6 +53,19 @@ class UserDataDB {
     saveUsedExpressions(userId, exprIds) {
         if(exprIds.length === 0) return; //사용한 단어 없이 진 경우
 
+        //밀리초 제거
+        const getFormattedDate = () => {
+            const date = new Date();
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const hh = String(date.getHours()).padStart(2, '0');
+            const mi = String(date.getMinutes()).padStart(2, '0');
+            const ss = String(date.getSeconds()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+        };
+
+        const usedTime = getFormattedDate();
         //사용 단어 저장
         const placeholders = exprIds.map(() => '(?, ?, ?)').join(',');
         const sql = `
@@ -61,7 +74,7 @@ class UserDataDB {
             on duplicate key update
             used_time = values(used_time)
         `;
-        const values = exprIds.flatMap(exprId => [userId, exprId, new Date()]);
+        const values = exprIds.flatMap(exprId => [userId, exprId, usedTime]);
         this.DBConnection.query(sql, values)
         .then(([result]) => {
             console.log(result);

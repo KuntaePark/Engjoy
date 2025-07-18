@@ -24,4 +24,7 @@ public interface UserGameDataRepository extends JpaRepository<UserGameData, Long
 
         @Query("SELECT a.ranking FROM UserGameData a WHERE a.account.id = :accountId")
         Optional<String> findRankingByAccountId(@Param("accountId") Long accountId);
+
+        //랭킹 산정용
+
     }

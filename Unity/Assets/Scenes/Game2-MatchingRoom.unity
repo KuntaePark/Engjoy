@@ -5609,7 +5609,7 @@ MonoBehaviour:
   countdownText: {fileID: 1870437861}
   levelText: {fileID: 549702399}
   timerText: {fileID: 2035394520}
-  timeBar: {fileID: 0}
+  timeBar: {fileID: 513333699}
   heartIcons:
   - {fileID: 60732877}
   - {fileID: 2004845210}

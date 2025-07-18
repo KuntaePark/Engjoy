@@ -1,10 +1,14 @@
 package com.engjoy.dto;
 
 import com.engjoy.entity.UserGameData;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserGameDataDto {
     private String nickname;
     private int game1Score;

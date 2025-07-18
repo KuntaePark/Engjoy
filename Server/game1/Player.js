@@ -28,7 +28,7 @@ class Player {
         this.hp = 100;                  //체력
         this.mp = 0;                    //마나
         this.unitMana = 7.5;              //초당 마나 회복량
-        this.atk = 10;                   //기초공
+        this.atk = 5;                   //기초공
         this.strengthLevel = 0;         //현재 행동 강도
         this.skillId = "heal";          //선택 스킬 종류, 기본값 회복
         

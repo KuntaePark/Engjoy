@@ -27,7 +27,8 @@ class RoomManager {
     //꽉 차지 않은 방 찾기
     for (const roomId in this.rooms) {
       const room = this.rooms[roomId];
-      if (Object.keys(room.players).length < MAX_PLAYERS_PER_ROOM) {
+      console.log(`${room.status}`)
+      if (Object.keys(room.players).length < MAX_PLAYERS_PER_ROOM && room.gameState.status !== 'PLAY') {
         roomToJoin = room;
         break;
       }
@@ -35,11 +36,13 @@ class RoomManager {
 
     //방이 다 빵빵하면 새 방 만들기
     if (!roomToJoin) {
+      console.log(`no room to join.`);
       roomToJoin = this.createRoom();
     }
 
     //방에 새 플레이어 추가
     roomToJoin.addPlayer(ws).then((player) => {
+      console.log(`joined: ${roomToJoin.id}`)
       ws.playerId = player.id;
       ws.roomId = roomToJoin.id;
       console.log(ws.playerId);

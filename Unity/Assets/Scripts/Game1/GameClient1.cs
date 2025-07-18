@@ -18,7 +18,7 @@ public class GameClient1 : WebSocketClient
     private void Awake()
     {
         //서버 연결
-        startConnection("ws://localhost:7778");
+        startConnection("ws://192.168.0.51:7778");
     }
 
     // Start is called before the first frame update
