@@ -17,7 +17,7 @@ public class WsClient : WebSocketClient
 {
     public static WsClient Instance { get; private set; }
 
-    private string game2ServerUrl = "ws://localhost:7780";
+    private string game2ServerUrl = "ws://192.168.0.51:7780";
 
     //메인 스레드에서 실행할 액션을 담을 큐
     private readonly ConcurrentQueue<Action> mainThreadActions = new ConcurrentQueue<Action>();

@@ -233,6 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const toYYYYMMDD = date => date.toISOString().slice(0, 10);
                     startDateInput.value = toYYYYMMDD(startDate);
                     endDateInput.value = toYYYYMMDD(today);
+                    console.log(startDateInput.value);
+                    console.log(endDateInput.value);
                 }
             }
 

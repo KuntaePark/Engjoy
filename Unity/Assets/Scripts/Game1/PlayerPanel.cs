@@ -76,13 +76,13 @@ public class PlayerPanel : MonoBehaviour
     {
         if (isActionSelected)
         {
-            buttonTexts[0].text = "시전\n(Ctrl)"; // 선택 완료 버튼 텍스트
-            buttonTexts[1].text = "취소\n(Alt)"; // 취소 버튼 텍스트
+            buttonTexts[0].text = "시전\n(Z)"; // 선택 완료 버튼 텍스트
+            buttonTexts[1].text = "취소\n(X)"; // 취소 버튼 텍스트
         }
         else
         {
-            buttonTexts[0].text = "결정\n(Ctrl)"; // 선택 버튼 텍스트
-            buttonTexts[1].text = "마나 충전\n(Alt)"; // 마나 충전 버튼 텍스트
+            buttonTexts[0].text = "결정\n(Z)"; // 선택 버튼 텍스트
+            buttonTexts[1].text = "마나 충전\n(X)"; // 마나 충전 버튼 텍스트
         }
     }
 }

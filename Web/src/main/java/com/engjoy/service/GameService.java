@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.Map;
 public class GameService{
     private final UserGameDataRepository userGameDataRepository;
     private final AccountRepository accountRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     private ServerSocket lobbyServerSocket;
     private ServerSocket matchServerSocket;
@@ -35,15 +37,42 @@ public class GameService{
         matchServerSocket.init();
     }
 
+    public UserGameDataDto getUserGameDataDto(String email) {
+        String sql = """
+            SELECT *
+             FROM (
+                 SELECT\s
+                     a.nickname,
+                     u.game1score,
+                     u.game2high_score,
+                     u.gold,
+                     u.body_type_index,
+                     u.weapon_type_index,
+                     RANK() OVER (ORDER BY u.game1score DESC, u.account_id ASC) AS ranking,
+                     (RANK() OVER (ORDER BY u.game1score DESC, u.account_id ASC) - 1) / (COUNT(*) OVER()) AS ranking_percent,
+                     a.email
+                 FROM user_game_data u
+                 JOIN account a ON u.account_id = a.account_id
+             ) ranked
+             WHERE email = ?;
+        """;
+
+        return jdbcTemplate.queryForObject(sql, new Object[]{email}, (rs, rowNum) ->
+                new UserGameDataDto(
+                        rs.getString("nickname"),
+                        rs.getInt("game1score"),
+                        rs.getInt("game2high_score"),
+                        rs.getInt("gold"),
+                        rs.getLong("ranking"),
+                        rs.getFloat("ranking_percent"),
+                        rs.getInt("body_type_index"),
+                        rs.getInt("weapon_type_index")
+                )
+        );
+    }
+
     public UserGameDataDto getUserGameData(String email) {
-        UserGameData userGameData = userGameDataRepository.findByAccount_Email(email);
-
-        if (userGameData == null || userGameData.getAccount() == null) {
-            // 에러 방지: 기본값 또는 null 반환
-            return new UserGameDataDto(); // 또는 예외 처리
-        }
-
-        return UserGameDataDto.from(userGameData);
+        return getUserGameDataDto(email);
     }
 
     public Long allowMatch(String email, Integer gameId) throws JsonProcessingException {

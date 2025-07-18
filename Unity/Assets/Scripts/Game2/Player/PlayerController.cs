@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
 using DataForm;
-using System.Runtime.CompilerServices;
-using WebSocketSharp;
 
 
 
@@ -23,6 +21,7 @@ public class PlayerController : MonoBehaviour
 
     private bool isEscaped = false;
     private bool isDown = false;
+    private bool alreadyDead = false;
 
     //카메라 & 오디오 리스너
     [SerializeField] private Camera playerCamera;
@@ -127,10 +126,11 @@ public class PlayerController : MonoBehaviour
         //    Debug.Log($"<color=cyan>[PlayerController] {this.Id} processing inputH: {data.inputH}</color>");
         //}
 
-        if (data.isDown)
+        if (data.isDown && !alreadyDead)
         {
             audioSource.PlayOneShot(deadSound);
             ani.SetTrigger("dead");
+            alreadyDead = true;
         }
 
         float speed = new Vector2(data.inputH, data.inputV).magnitude;

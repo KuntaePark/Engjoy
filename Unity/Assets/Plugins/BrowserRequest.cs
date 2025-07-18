@@ -10,7 +10,7 @@ public class BrowserRequest
 {
     private static Dictionary<int, string> responseMap = new Dictionary<int, string>();
     private static int requestIdCounter = 0;
-    private const string baseUrl = "http://localhost";
+    private const string baseUrl = "http://192.168.0.51";
     private static IntPtr callbackPtr;
 
     [System.Serializable]
