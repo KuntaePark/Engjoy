@@ -274,6 +274,7 @@ class GameState {
 
     //공격 로직 넣기
     console.log(`[ATTACK] Player ${playerId} initiated an attack.`);
+    player.isAttack = true;
 
     let hitMonster = null;
 

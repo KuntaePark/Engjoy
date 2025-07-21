@@ -28,6 +28,7 @@ class Player {
 
     this.isBuffed = false;
     this.hasShield = false;
+    this.isAttack = false; //애니메이션 플래그
 
     this.nickname = data.nickname;
     this.bodyTypeIndex = data.body_type_index;
