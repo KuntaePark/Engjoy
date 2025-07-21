@@ -16,8 +16,8 @@ public class CustomizeUI : MonoBehaviour
     public int currentBodyTypeIndex = 0; // 현재 바디 타입 인덱스
     public int currentWeaponTypeIndex = 0; // 현재 무기 타입 인덱스
 
-    private const int maxBodyTypes = 2; // 최대 바디 타입 수
-    private const int maxWeaponTypes = 2; // 최대 무기 타입 수
+    private const int maxBodyTypes = 3; // 최대 바디 타입 수
+    private const int maxWeaponTypes = 3; // 최대 무기 타입 수
 
     [SerializeField]
     private Button nextBodyButton; // 다음 바디 타입 버튼
