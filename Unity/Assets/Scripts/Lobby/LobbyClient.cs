@@ -9,7 +9,7 @@ using HybridWebSocket;
 
 public class LobbyClient : WebSocketClient
 {
-    private string lobbyServerUrl = "ws://192.168.0.51:7777"; // URL of the lobby server
+    private string lobbyServerUrl = "ws://localhost:7777"; // URL of the lobby server
 
     public LobbyPlayerManager playerManager;
 
