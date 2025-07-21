@@ -8,6 +8,6 @@
     "lobby": "node lobby/lobbyServer.js",
     "game1": "node game1/GameServer1.js",
     "match": "node match/MatchServer.js",
-    "game2": "node index.js"
+    "game2": "node GameServer2.js"
   }
 }
