@@ -125,15 +125,24 @@ public class PlayerController : MonoBehaviour
         //{
         //    Debug.Log($"<color=cyan>[PlayerController] {this.Id} processing inputH: {data.inputH}</color>");
         //}
-
-        if (data.isDown && !alreadyDead)
+        Debug.Log(data.isDown);
+        if (data.isDown)
         {
-            audioSource.PlayOneShot(deadSound);
-            ani.SetTrigger("dead");
-            alreadyDead = true;
+            if(!alreadyDead)
+            {
+                ani.SetBool("alive", false);
+                audioSource.PlayOneShot(deadSound);
+                ani.SetTrigger("dead");
+                alreadyDead = true;
+            }
+        }
+        else
+        {
+            ani.SetBool("alive", true);
+            alreadyDead = false;
         }
 
-        float speed = new Vector2(data.inputH, data.inputV).magnitude;
+            float speed = new Vector2(data.inputH, data.inputV).magnitude;
         if (speed > 0.01f)
         {
             ani.SetBool("isRunning", true);
