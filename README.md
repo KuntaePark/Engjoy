@@ -34,3 +34,7 @@
 ---
 
 ## 📂 프로젝트 구조
+- Server : node.js 기반 게임 서버 구현 코드
+  - npm run [game1/game2/match/lobby]로 실행
+- Unity : WebGL 기반 게임 구현 코드(Unity project 파일)
+- Web : Spring boot 기반 웹 서버 구현 코드 (Spring boot project 파일)
