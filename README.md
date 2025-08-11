@@ -24,11 +24,10 @@
 ## 🛠 기술 스택
 | 구분 | 기술 |
 |------|------|
-| **Frontend** | Unity WebGL, Tailwind CSS |
-| **Backend** | Spring Boot, JPA, WebSocket |
+| **Frontend** | Unity WebGL, Tailwind CSS, HTML/JS/CSS |
+| **Backend** | Spring Boot, node.js |
 | **Database** | MySQL |
-| **Infra** | AWS EC2, S3, Nginx |
-| **Tools** | Git, GitHub, Figma |
+| **Tools** | GitHub, IntelliJ |
 
 ---
 
