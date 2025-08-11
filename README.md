@@ -37,3 +37,9 @@
   - npm run [game1/game2/match/lobby]로 실행
 - Unity : WebGL 기반 게임 구현 코드(Unity project 파일)
 - Web : Spring boot 기반 웹 서버 구현 코드 (Spring boot project 파일)
+
+## 문서 링크
+- 요구사항
+  - https://docs.google.com/spreadsheets/d/1rnTs1tCQGGGVShEohkv03YSzJllSPNkK/edit?usp=sharing&ouid=115869002334699013787&rtpof=true&sd=true
+- 데이터베이스 ERD
+  - https://dbdiagram.io/d/project2-6850bb8f3cc77757c81e63f5
