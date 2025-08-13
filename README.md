@@ -5,21 +5,15 @@
 
 ![main-demo](docs/images/demo.gif)
 
----
-
 ## 📌 프로젝트 개요
 **Engjoy**는 게임을 통해 영어 단어와 문장을 자연스럽게 익히도록 설계된 학습 플랫폼입니다.  
 반복 학습 이론(Spaced Repetition)과 자기결정 이론(Self-Determination Theory)을 기반으로, 사용자가 재미있게 학습에 몰입할 수 있도록 제작했습니다.
-
----
 
 ## 🚀 주요 기능
 - **회원가입 / 로그인** – Spring Security + CSRF 기반 인증
 - **실시간 게임 매칭 & 플레이** – WebSocket 기반 실시간 통신
 - **단어장 & 복습 시스템** – 학습 이력 기반 자동 복습
 - **랭킹 시스템** – MySQL 윈도우 함수로 효율적 순위 계산
-
----
 
 ## 🛠 기술 스택
 | 구분 | 기술 |
@@ -28,8 +22,6 @@
 | **Backend** | Spring Boot, node.js |
 | **Database** | MySQL |
 | **Tools** | GitHub, IntelliJ |
-
----
 
 ## 📂 프로젝트 구조
 - Server : node.js 기반 게임 서버 구현 코드
